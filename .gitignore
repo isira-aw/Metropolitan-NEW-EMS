@@ -1,0 +1,23 @@
+# Backend
+backEND/target/
+backEND/.mvn/
+backEND/mvnw
+backEND/mvnw.cmd
+backEND/.idea/
+backEND/*.iml
+
+# Frontend
+frontEND/node_modules/
+frontEND/.next/
+frontEND/out/
+frontEND/build/
+frontEND/*.log
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
