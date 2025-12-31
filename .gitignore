@@ -1,18 +1,17 @@
 # Backend
-backEND/target/
-backEND/.mvn/
-backEND/mvnw
-backEND/mvnw.cmd
-backEND/.idea/
-backEND/*.iml
+back-e/target/
+back-e/.mvn/
+back-e/mvnw
+back-e/mvnw.cmd
+back-e/.idea/
+back-e/*.iml
 
 # Frontend
-frontEND/node_modules/
-frontEND/.next/
-frontEND/out/
-frontEND/build/
-frontEND/*.log
-
+front-e/node_modules/
+front-e/.next/
+front-e/out/
+front-e/build/
+front-e/*.log
 # IDE
 .vscode/
 .idea/
