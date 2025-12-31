@@ -1,20 +1,23 @@
 package com.ems.service;
 
+import com.ems.dto.EmployeeDashboardResponse;
 import com.ems.dto.MainTicketRequest;
 import com.ems.dto.StatusUpdateRequest;
 import com.ems.entity.*;
 import com.ems.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class TicketService {
@@ -255,5 +258,415 @@ public class TicketService {
     
     public List<JobStatusLog> getJobStatusLogs(Long miniJobCardId) {
         return jobStatusLogRepository.findByMiniJobCardIdOrderByLoggedAtDesc(miniJobCardId);
+    }
+
+    // Employee job card methods
+    public Page<MiniJobCard> getJobCardsByEmployee(String username, Pageable pageable) {
+        User employee = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Employee not found"));
+        return miniJobCardRepository.findByEmployee(employee, pageable);
+    }
+
+    public MiniJobCard getJobCardByIdForEmployee(Long id, String username) {
+        MiniJobCard jobCard = miniJobCardRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Job card not found"));
+
+        User employee = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Employee not found"));
+
+        if (!jobCard.getEmployee().getId().equals(employee.getId())) {
+            throw new RuntimeException("Unauthorized: This job card doesn't belong to you");
+        }
+
+        return jobCard;
+    }
+
+    public Page<MiniJobCard> getJobCardsByEmployeeAndStatus(String username, String status, Pageable pageable) {
+        User employee = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Employee not found"));
+
+        JobStatus jobStatus = JobStatus.valueOf(status.toUpperCase());
+        return miniJobCardRepository.findByEmployeeAndStatus(employee, jobStatus, pageable);
+    }
+
+    public Long getPendingJobCardsCount(String username) {
+        User employee = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Employee not found"));
+
+        List<MiniJobCard> allCards = miniJobCardRepository.findByEmployee(employee, Pageable.unpaged()).getContent();
+        return allCards.stream()
+                .filter(card -> card.getStatus() == JobStatus.PENDING)
+                .count();
+    }
+
+    public EmployeeDashboardResponse getEmployeeDashboard(String username) {
+        User employee = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Employee not found"));
+
+        List<MiniJobCard> allCards = miniJobCardRepository.findByEmployee(employee, Pageable.unpaged()).getContent();
+
+        long pendingCount = allCards.stream().filter(c -> c.getStatus() == JobStatus.PENDING).count();
+        long inProgressCount = allCards.stream().filter(c ->
+                c.getStatus() == JobStatus.TRAVELING ||
+                c.getStatus() == JobStatus.STARTED ||
+                c.getStatus() == JobStatus.ON_HOLD
+        ).count();
+        long completedCount = allCards.stream().filter(c -> c.getStatus() == JobStatus.COMPLETED).count();
+
+        // Get current month stats
+        LocalDate now = LocalDate.now(ZoneId.of("Asia/Colombo"));
+        LocalDate monthStart = now.withDayOfMonth(1);
+
+        int totalWorkMinutes = allCards.stream()
+                .filter(c -> c.getEndTime() != null &&
+                        c.getEndTime().toLocalDate().isAfter(monthStart.minusDays(1)) &&
+                        c.getEndTime().toLocalDate().isBefore(now.plusDays(1)))
+                .mapToInt(MiniJobCard::getWorkMinutes)
+                .sum();
+
+        // Get scores
+        List<EmployeeScore> scores = employeeScoreRepository.findByEmployeeId(employee.getId());
+        double avgScore = scores.stream()
+                .mapToDouble(EmployeeScore::getScore)
+                .average()
+                .orElse(0.0);
+
+        // Recent job cards
+        List<MiniJobCard> recentCards = allCards.stream()
+                .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+                .limit(5)
+                .collect(Collectors.toList());
+
+        boolean dayStarted = attendanceService.hasDayStarted(employee);
+        boolean dayEnded = attendanceService.hasDayEnded(employee);
+
+        EmployeeDashboardResponse dashboard = new EmployeeDashboardResponse();
+        dashboard.setPendingJobCardsCount(pendingCount);
+        dashboard.setInProgressJobCardsCount(inProgressCount);
+        dashboard.setCompletedJobCardsCount(completedCount);
+        dashboard.setTotalJobCardsCount((long) allCards.size());
+        dashboard.setTotalWorkMinutes(totalWorkMinutes);
+        dashboard.setTotalOTMinutes(0); // Would need attendance calculation
+        dashboard.setMorningOTMinutes(0);
+        dashboard.setEveningOTMinutes(0);
+        dashboard.setAverageScore(avgScore);
+        dashboard.setTotalScores(scores.size());
+        dashboard.setRecentJobCards(recentCards);
+        dashboard.setDayStarted(dayStarted);
+        dashboard.setDayEnded(dayEnded);
+        dashboard.setCurrentStatus(dayStarted && !dayEnded ? "ACTIVE" : "INACTIVE");
+
+        return dashboard;
+    }
+
+    public Map<String, Object> getEmployeeMonthlyStats(String username, int year, int month) {
+        User employee = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Employee not found"));
+
+        LocalDate startDate = LocalDate.of(year, month, 1);
+        LocalDate endDate = startDate.plusMonths(1).minusDays(1);
+
+        List<MiniJobCard> cards = miniJobCardRepository.findByEmployee(employee, Pageable.unpaged())
+                .getContent()
+                .stream()
+                .filter(c -> c.getCreatedAt().toLocalDate().isAfter(startDate.minusDays(1)) &&
+                        c.getCreatedAt().toLocalDate().isBefore(endDate.plusDays(1)))
+                .collect(Collectors.toList());
+
+        int totalWorkMinutes = cards.stream()
+                .mapToInt(MiniJobCard::getWorkMinutes)
+                .sum();
+
+        long completedJobs = cards.stream()
+                .filter(c -> c.getStatus() == JobStatus.COMPLETED)
+                .count();
+
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("year", year);
+        stats.put("month", month);
+        stats.put("totalWorkMinutes", totalWorkMinutes);
+        stats.put("totalWorkHours", totalWorkMinutes / 60.0);
+        stats.put("completedJobs", completedJobs);
+        stats.put("totalJobs", cards.size());
+
+        return stats;
+    }
+
+    // Admin ticket methods
+    public Page<MiniJobCard> getMiniJobCardsByTicketId(Long ticketId, Pageable pageable) {
+        List<MiniJobCard> cards = miniJobCardRepository.findByMainTicketId(ticketId);
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), cards.size());
+        List<MiniJobCard> pageContent = start >= cards.size() ? List.of() : cards.subList(start, end);
+        return new PageImpl<>(pageContent, pageable, cards.size());
+    }
+
+    public List<TicketAssignment> getTicketAssignments(Long ticketId) {
+        return ticketAssignmentRepository.findByMainTicketId(ticketId);
+    }
+
+    @Transactional
+    public MiniJobCard assignEmployeeToTicket(Long ticketId, Long employeeId, String assignedBy) {
+        MainTicket ticket = mainTicketRepository.findById(ticketId)
+                .orElseThrow(() -> new RuntimeException("Ticket not found"));
+
+        User employee = userRepository.findById(employeeId)
+                .orElseThrow(() -> new RuntimeException("Employee not found"));
+
+        if (employee.getRole() != UserRole.EMPLOYEE) {
+            throw new RuntimeException("User is not an employee");
+        }
+
+        // Check if already assigned
+        List<TicketAssignment> existing = ticketAssignmentRepository.findByMainTicketId(ticketId);
+        boolean alreadyAssigned = existing.stream()
+                .anyMatch(ta -> ta.getEmployee().getId().equals(employeeId));
+
+        if (alreadyAssigned) {
+            throw new RuntimeException("Employee already assigned to this ticket");
+        }
+
+        TicketAssignment assignment = new TicketAssignment();
+        assignment.setMainTicket(ticket);
+        assignment.setEmployee(employee);
+        ticketAssignmentRepository.save(assignment);
+
+        MiniJobCard miniJobCard = new MiniJobCard();
+        miniJobCard.setMainTicket(ticket);
+        miniJobCard.setEmployee(employee);
+        miniJobCard.setStatus(JobStatus.PENDING);
+        miniJobCard.setApproved(false);
+        miniJobCard.setWorkMinutes(0);
+
+        return miniJobCardRepository.save(miniJobCard);
+    }
+
+    @Transactional
+    public void unassignEmployeeFromTicket(Long ticketId, Long employeeId) {
+        List<MiniJobCard> cards = miniJobCardRepository.findByMainTicketId(ticketId);
+        MiniJobCard card = cards.stream()
+                .filter(c -> c.getEmployee().getId().equals(employeeId))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Employee not assigned to this ticket"));
+
+        if (card.getStatus() != JobStatus.PENDING && card.getStatus() != JobStatus.CANCEL) {
+            throw new RuntimeException("Cannot unassign employee with status: " + card.getStatus());
+        }
+
+        miniJobCardRepository.delete(card);
+
+        List<TicketAssignment> assignments = ticketAssignmentRepository.findByMainTicketId(ticketId);
+        assignments.stream()
+                .filter(ta -> ta.getEmployee().getId().equals(employeeId))
+                .findFirst()
+                .ifPresent(ticketAssignmentRepository::delete);
+    }
+
+    public Page<MainTicket> getTicketsByStatus(String status, Pageable pageable) {
+        JobStatus jobStatus = JobStatus.valueOf(status.toUpperCase());
+        return mainTicketRepository.findByStatus(jobStatus, pageable);
+    }
+
+    public Page<MainTicket> getTicketsByDateRange(LocalDate startDate, LocalDate endDate, Pageable pageable) {
+        return mainTicketRepository.findByScheduledDateBetween(startDate, endDate, pageable);
+    }
+
+    public Page<MainTicket> getTicketsByCreator(String createdBy, Pageable pageable) {
+        return mainTicketRepository.findByCreatedBy(createdBy, pageable);
+    }
+
+    @Transactional
+    public MainTicket cancelTicket(Long id) {
+        MainTicket ticket = mainTicketRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Ticket not found"));
+
+        ticket.setStatus(JobStatus.CANCEL);
+        mainTicketRepository.save(ticket);
+
+        // Cancel all mini job cards
+        List<MiniJobCard> cards = miniJobCardRepository.findByMainTicketId(id);
+        cards.forEach(card -> {
+            if (card.getStatus() != JobStatus.COMPLETED) {
+                card.setStatus(JobStatus.CANCEL);
+                miniJobCardRepository.save(card);
+            }
+        });
+
+        return ticket;
+    }
+
+    @Transactional
+    public MainTicket updateMainTicket(Long id, MainTicketRequest request, String updatedBy) {
+        MainTicket ticket = mainTicketRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Ticket not found"));
+
+        Generator generator = generatorRepository.findById(request.getGeneratorId())
+                .orElseThrow(() -> new RuntimeException("Generator not found"));
+
+        ticket.setGenerator(generator);
+        ticket.setTitle(request.getTitle());
+        ticket.setDescription(request.getDescription());
+        ticket.setType(request.getType());
+        ticket.setWeight(request.getWeight());
+        ticket.setScheduledDate(request.getScheduledDate());
+        ticket.setScheduledTime(request.getScheduledTime());
+
+        return mainTicketRepository.save(ticket);
+    }
+
+    @Transactional
+    public void deleteMainTicket(Long id) {
+        MainTicket ticket = mainTicketRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Ticket not found"));
+
+        List<MiniJobCard> cards = miniJobCardRepository.findByMainTicketId(id);
+        boolean hasNonPending = cards.stream()
+                .anyMatch(c -> c.getStatus() != JobStatus.PENDING && c.getStatus() != JobStatus.CANCEL);
+
+        if (hasNonPending) {
+            throw new RuntimeException("Cannot delete ticket with active job cards");
+        }
+
+        // Delete mini job cards
+        miniJobCardRepository.deleteAll(cards);
+
+        // Delete assignments
+        List<TicketAssignment> assignments = ticketAssignmentRepository.findByMainTicketId(id);
+        ticketAssignmentRepository.deleteAll(assignments);
+
+        // Delete ticket
+        mainTicketRepository.delete(ticket);
+    }
+
+    public Page<MainTicket> getTicketsByGenerator(Long generatorId, Pageable pageable) {
+        Generator generator = generatorRepository.findById(generatorId)
+                .orElseThrow(() -> new RuntimeException("Generator not found"));
+
+        List<MainTicket> tickets = mainTicketRepository.findAll().stream()
+                .filter(t -> t.getGenerator().getId().equals(generatorId))
+                .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+                .collect(Collectors.toList());
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), tickets.size());
+        List<MainTicket> pageContent = start >= tickets.size() ? List.of() : tickets.subList(start, end);
+        return new PageImpl<>(pageContent, pageable, tickets.size());
+    }
+
+    // Approval methods
+    public Page<MiniJobCard> getPendingApprovals(Pageable pageable) {
+        List<MiniJobCard> allCards = miniJobCardRepository.findAll();
+        List<MiniJobCard> pending = allCards.stream()
+                .filter(c -> c.getStatus() == JobStatus.COMPLETED && !c.isApproved())
+                .sorted((a, b) -> b.getEndTime().compareTo(a.getEndTime()))
+                .collect(Collectors.toList());
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), pending.size());
+        List<MiniJobCard> pageContent = start >= pending.size() ? List.of() : pending.subList(start, end);
+        return new PageImpl<>(pageContent, pageable, pending.size());
+    }
+
+    @Transactional
+    public MiniJobCard approveMiniJobCard(Long miniJobCardId, String approvedBy) {
+        MiniJobCard miniJobCard = miniJobCardRepository.findById(miniJobCardId)
+                .orElseThrow(() -> new RuntimeException("Mini job card not found"));
+
+        if (miniJobCard.getStatus() != JobStatus.COMPLETED) {
+            throw new RuntimeException("Can only approve completed job cards");
+        }
+
+        miniJobCard.setApproved(true);
+        MiniJobCard saved = miniJobCardRepository.save(miniJobCard);
+
+        updateMainTicketStatus(miniJobCard.getMainTicket().getId());
+
+        return saved;
+    }
+
+    @Transactional
+    public MiniJobCard rejectMiniJobCard(Long id, String rejectionNote, String rejectedBy) {
+        MiniJobCard card = miniJobCardRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Mini job card not found"));
+
+        if (card.getStatus() != JobStatus.COMPLETED) {
+            throw new RuntimeException("Can only reject completed job cards");
+        }
+
+        card.setStatus(JobStatus.ON_HOLD);
+        card.setApproved(false);
+
+        return miniJobCardRepository.save(card);
+    }
+
+    @Transactional
+    public List<MiniJobCard> bulkApproveMiniJobCards(List<Long> ids, String approvedBy) {
+        List<MiniJobCard> approved = new ArrayList<>();
+
+        for (Long id : ids) {
+            try {
+                MiniJobCard card = approveMiniJobCard(id, approvedBy);
+                approved.add(card);
+            } catch (Exception e) {
+                // Skip cards that can't be approved
+            }
+        }
+
+        return approved;
+    }
+
+    public List<EmployeeScore> getScoresByTicket(Long ticketId) {
+        return employeeScoreRepository.findByMainTicketId(ticketId);
+    }
+
+    public List<EmployeeScore> getScoresByEmployee(Long employeeId) {
+        return employeeScoreRepository.findByEmployeeId(employeeId);
+    }
+
+    @Transactional
+    public EmployeeScore updateScore(Long scoreId, int newScore, String updatedBy) {
+        EmployeeScore score = employeeScoreRepository.findById(scoreId)
+                .orElseThrow(() -> new RuntimeException("Score not found"));
+
+        if (newScore < 1 || newScore > 10) {
+            throw new RuntimeException("Score must be between 1 and 10");
+        }
+
+        score.setScore(newScore);
+        score.setApprovedBy(updatedBy);
+        score.setApprovedAt(LocalDateTime.now(ZoneId.of("Asia/Colombo")));
+
+        return employeeScoreRepository.save(score);
+    }
+
+    @Transactional
+    public void deleteScore(Long scoreId) {
+        EmployeeScore score = employeeScoreRepository.findById(scoreId)
+                .orElseThrow(() -> new RuntimeException("Score not found"));
+        employeeScoreRepository.delete(score);
+    }
+
+    public Map<String, Object> getApprovalStatistics() {
+        List<MiniJobCard> allCards = miniJobCardRepository.findAll();
+
+        long pending = allCards.stream()
+                .filter(c -> c.getStatus() == JobStatus.COMPLETED && !c.isApproved())
+                .count();
+
+        long approved = allCards.stream()
+                .filter(c -> c.getStatus() == JobStatus.COMPLETED && c.isApproved())
+                .count();
+
+        long rejected = allCards.stream()
+                .filter(c -> c.getStatus() == JobStatus.ON_HOLD)
+                .count();
+
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("pendingApprovals", pending);
+        stats.put("approvedJobs", approved);
+        stats.put("rejectedJobs", rejected);
+        stats.put("totalCompleted", pending + approved);
+
+        return stats;
     }
 }

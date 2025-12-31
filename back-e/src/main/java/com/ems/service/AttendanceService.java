@@ -5,6 +5,9 @@ import com.ems.entity.User;
 import com.ems.repository.EmployeeDayAttendanceRepository;
 import com.ems.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -12,6 +15,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.util.List;
 
 @Service
 public class AttendanceService {
@@ -94,9 +98,43 @@ public class AttendanceService {
     public EmployeeDayAttendance getTodayAttendance(String username) {
         User employee = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
-        
+
         LocalDate today = LocalDate.now(ZoneId.of("Asia/Colombo"));
         return attendanceRepository.findByEmployeeAndDate(employee, today)
                 .orElse(null);
+    }
+
+    public Page<EmployeeDayAttendance> getAttendanceHistory(String username, Pageable pageable) {
+        User employee = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Employee not found"));
+
+        // Get all attendance records and paginate manually
+        // In a real implementation, you would create a repository method with Pageable
+        List<EmployeeDayAttendance> allAttendance = attendanceRepository.findByEmployeeAndDateBetween(
+            employee,
+            LocalDate.of(2000, 1, 1),
+            LocalDate.now(ZoneId.of("Asia/Colombo"))
+        );
+
+        // Manual pagination
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), allAttendance.size());
+
+        List<EmployeeDayAttendance> pageContent = start >= allAttendance.size()
+            ? List.of()
+            : allAttendance.subList(start, end);
+
+        return new PageImpl<>(pageContent, pageable, allAttendance.size());
+    }
+
+    public List<EmployeeDayAttendance> getAttendanceByDateRange(
+            String username,
+            LocalDate startDate,
+            LocalDate endDate) {
+
+        User employee = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Employee not found"));
+
+        return attendanceRepository.findByEmployeeAndDateBetween(employee, startDate, endDate);
     }
 }

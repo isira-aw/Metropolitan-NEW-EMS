@@ -47,28 +47,68 @@ public class UserService {
     public Page<User> getEmployees(Pageable pageable) {
         return userRepository.findByRoleAndActive(UserRole.EMPLOYEE, true, pageable);
     }
-    
+
+    public Page<User> getEmployees(Pageable pageable, boolean activeOnly) {
+        if (activeOnly) {
+            return userRepository.findByRoleAndActive(UserRole.EMPLOYEE, true, pageable);
+        } else {
+            return userRepository.findByRole(UserRole.EMPLOYEE, pageable);
+        }
+    }
+
+    public Page<User> getAdmins(Pageable pageable) {
+        return userRepository.findByRole(UserRole.ADMIN, pageable);
+    }
+
     public User getUserById(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
-    
+
     public User updateUser(Long id, UserRequest request) {
         User user = getUserById(id);
-        
+
         user.setFullName(request.getFullName());
         user.setPhone(request.getPhone());
         user.setEmail(request.getEmail());
         user.setActive(request.getActive());
-        
+        user.setRole(request.getRole());
+
         if (request.getPassword() != null && !request.getPassword().isEmpty()) {
             user.setPassword(passwordEncoder.encode(request.getPassword()));
         }
-        
+
         return userRepository.save(user);
     }
-    
+
     public void deleteUser(Long id) {
-        userRepository.deleteById(id);
+        User user = getUserById(id);
+        user.setActive(false);
+        userRepository.save(user);
+    }
+
+    public User activateUser(Long id) {
+        User user = getUserById(id);
+        user.setActive(true);
+        return userRepository.save(user);
+    }
+
+    public User deactivateUser(Long id) {
+        User user = getUserById(id);
+        user.setActive(false);
+        return userRepository.save(user);
+    }
+
+    public Page<User> searchUsers(String query, Pageable pageable) {
+        // Search by full name or email containing the query
+        return userRepository.findAll(pageable)
+                .map(user -> {
+                    if (user.getFullName().toLowerCase().contains(query.toLowerCase()) ||
+                        (user.getEmail() != null && user.getEmail().toLowerCase().contains(query.toLowerCase()))) {
+                        return user;
+                    }
+                    return null;
+                })
+                .filter(user -> user != null);
     }
 }
