@@ -6,9 +6,12 @@ import com.ems.entity.UserRole;
 import com.ems.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class UserService {
@@ -101,14 +104,16 @@ public class UserService {
 
     public Page<User> searchUsers(String query, Pageable pageable) {
         // Search by full name or email containing the query
-        return userRepository.findAll(pageable)
-                .map(user -> {
-                    if (user.getFullName().toLowerCase().contains(query.toLowerCase()) ||
-                        (user.getEmail() != null && user.getEmail().toLowerCase().contains(query.toLowerCase()))) {
-                        return user;
-                    }
-                    return null;
-                })
-                .filter(user -> user != null);
+        List<User> allUsers = userRepository.findAll();
+        List<User> filtered = allUsers.stream()
+                .filter(user -> user.getFullName().toLowerCase().contains(query.toLowerCase()) ||
+                        (user.getEmail() != null && user.getEmail().toLowerCase().contains(query.toLowerCase())))
+                .toList();
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), filtered.size());
+        List<User> pageContent = start >= filtered.size() ? List.of() : filtered.subList(start, end);
+
+        return new PageImpl<>(pageContent, pageable, filtered.size());
     }
 }

@@ -432,7 +432,7 @@ public class ReportService {
                 .count();
 
         long pendingApprovals = allJobCards.stream()
-                .filter(c -> c.getStatus() == JobStatus.COMPLETED && !c.isApproved())
+                .filter(c -> c.getStatus() == JobStatus.COMPLETED && !c.getApproved())
                 .count();
 
         // Count employees currently working (day started but not ended today)

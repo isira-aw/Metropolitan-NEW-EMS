@@ -557,7 +557,7 @@ public class TicketService {
     public Page<MiniJobCard> getPendingApprovals(Pageable pageable) {
         List<MiniJobCard> allCards = miniJobCardRepository.findAll();
         List<MiniJobCard> pending = allCards.stream()
-                .filter(c -> c.getStatus() == JobStatus.COMPLETED && !c.isApproved())
+                .filter(c -> c.getStatus() == JobStatus.COMPLETED && !c.getApproved())
                 .sorted((a, b) -> b.getEndTime().compareTo(a.getEndTime()))
                 .collect(Collectors.toList());
 
@@ -650,11 +650,11 @@ public class TicketService {
         List<MiniJobCard> allCards = miniJobCardRepository.findAll();
 
         long pending = allCards.stream()
-                .filter(c -> c.getStatus() == JobStatus.COMPLETED && !c.isApproved())
+                .filter(c -> c.getStatus() == JobStatus.COMPLETED && !c.getApproved())
                 .count();
 
         long approved = allCards.stream()
-                .filter(c -> c.getStatus() == JobStatus.COMPLETED && c.isApproved())
+                .filter(c -> c.getStatus() == JobStatus.COMPLETED && c.getApproved())
                 .count();
 
         long rejected = allCards.stream()
