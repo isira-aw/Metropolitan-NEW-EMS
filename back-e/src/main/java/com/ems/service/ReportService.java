@@ -454,4 +454,193 @@ public class ReportService {
 
         return stats;
     }
+
+    /**
+     * Generate comprehensive employee work report for a date range
+     *
+     * Includes:
+     * - Daily attendance (check-in/out, work hours, OT)
+     * - Jobs worked on (generators/machines)
+     * - Daily and total performance scores
+     * - Summary statistics
+     *
+     * @param employeeId Employee ID
+     * @param startDate Report start date
+     * @param endDate Report end date
+     * @return EmployeeWorkReportDTO with complete work details
+     */
+    public com.ems.dto.EmployeeWorkReportDTO getEmployeeWorkReport(
+            Long employeeId, LocalDate startDate, LocalDate endDate) {
+
+        // Fetch employee
+        User employee = userRepository.findById(employeeId)
+                .orElseThrow(() -> new RuntimeException("Employee not found with ID: " + employeeId));
+
+        // Fetch attendance records for date range
+        List<EmployeeDayAttendance> attendances = attendanceRepository
+                .findByEmployeeAndDateBetween(employee, startDate, endDate);
+
+        // Fetch all mini job cards in date range
+        List<MiniJobCard> allJobCards = miniJobCardRepository
+                .findByEmployee(employee, org.springframework.data.domain.Pageable.unpaged())
+                .getContent()
+                .stream()
+                .filter(jc -> jc.getEndTime() != null &&
+                        !jc.getEndTime().toLocalDate().isBefore(startDate) &&
+                        !jc.getEndTime().toLocalDate().isAfter(endDate))
+                .collect(Collectors.toList());
+
+        // Fetch scores for the period
+        List<EmployeeScore> scores = employeeScoreRepository
+                .findByEmployeeIdAndWorkDateBetween(employeeId, startDate, endDate);
+
+        // Build daily records
+        List<com.ems.dto.EmployeeWorkReportDTO.DailyWorkRecord> dailyRecords = new ArrayList<>();
+        int totalDaysWorked = 0;
+        int totalWorkMinutes = 0;
+        int totalOtMinutes = 0;
+        int totalJobsCompleted = 0;
+        int totalJobsScored = 0;
+        int totalJobsPending = 0;
+        int totalWeightedScore = 0;
+        int totalWeight = 0;
+        List<Integer> dailyScores = new ArrayList<>();
+
+        for (EmployeeDayAttendance attendance : attendances) {
+            LocalDate date = attendance.getDate();
+
+            // Filter jobs for this specific date
+            List<MiniJobCard> dayJobs = allJobCards.stream()
+                    .filter(jc -> jc.getEndTime().toLocalDate().equals(date))
+                    .collect(Collectors.toList());
+
+            // Build job details
+            List<com.ems.dto.EmployeeWorkReportDTO.JobDetail> jobDetails = new ArrayList<>();
+            for (MiniJobCard jobCard : dayJobs) {
+                // Get score for this job card if exists
+                Optional<EmployeeScore> jobScore = scores.stream()
+                        .filter(s -> s.getMiniJobCard().getId().equals(jobCard.getId()))
+                        .findFirst();
+
+                com.ems.dto.EmployeeWorkReportDTO.JobDetail jobDetail =
+                        com.ems.dto.EmployeeWorkReportDTO.JobDetail.builder()
+                        .miniJobCardId(jobCard.getId())
+                        .mainTicketId(jobCard.getMainTicket().getId())
+                        .ticketNumber(jobCard.getMainTicket().getTicketNumber())
+                        .ticketTitle(jobCard.getMainTicket().getTitle())
+                        .jobType(jobCard.getMainTicket().getType().toString())
+                        .jobStatus(jobCard.getStatus().toString())
+                        .generatorId(jobCard.getMainTicket().getGenerator().getId())
+                        .generatorName(jobCard.getMainTicket().getGenerator().getName())
+                        .generatorModel(jobCard.getMainTicket().getGenerator().getModel())
+                        .generatorLocation(jobCard.getMainTicket().getGenerator().getLocationName())
+                        .startTime(jobCard.getStartTime())
+                        .endTime(jobCard.getEndTime())
+                        .workMinutes(jobCard.getWorkMinutes())
+                        .workHours(jobCard.getWorkMinutes() / 60.0)
+                        .weight(jobCard.getMainTicket().getWeight())
+                        .score(jobScore.map(EmployeeScore::getScore).orElse(null))
+                        .weightedScore(jobScore.map(s -> s.getScore() * s.getWeight()).orElse(null))
+                        .scored(jobScore.isPresent())
+                        .approved(jobCard.getApproved())
+                        .build();
+
+                jobDetails.add(jobDetail);
+
+                // Update counters
+                if (jobCard.getStatus() == JobStatus.COMPLETED) {
+                    totalJobsCompleted++;
+                    if (jobScore.isPresent()) {
+                        totalJobsScored++;
+                    } else if (jobCard.getApproved()) {
+                        totalJobsPending++;
+                    }
+                }
+            }
+
+            // Calculate daily score
+            int dailyScore = scores.stream()
+                    .filter(s -> s.getWorkDate().equals(date))
+                    .mapToInt(s -> s.getScore() * s.getWeight())
+                    .sum();
+
+            int dailyTotalWeight = scores.stream()
+                    .filter(s -> s.getWorkDate().equals(date))
+                    .mapToInt(EmployeeScore::getWeight)
+                    .sum();
+
+            double dailyAverageScore = dailyTotalWeight > 0
+                    ? (double) dailyScore / dailyTotalWeight
+                    : 0.0;
+
+            if (dailyScore > 0) {
+                dailyScores.add(dailyScore);
+            }
+
+            // Build daily record
+            com.ems.dto.EmployeeWorkReportDTO.DailyWorkRecord dailyRecord =
+                    com.ems.dto.EmployeeWorkReportDTO.DailyWorkRecord.builder()
+                    .date(date)
+                    .checkInTime(attendance.getDayStartTime())
+                    .checkOutTime(attendance.getDayEndTime())
+                    .totalWorkMinutes(attendance.getTotalWorkMinutes())
+                    .totalWorkHours(attendance.getTotalWorkMinutes() / 60.0)
+                    .morningOtMinutes(attendance.getMorningOtMinutes())
+                    .eveningOtMinutes(attendance.getEveningOtMinutes())
+                    .totalOtMinutes(attendance.getMorningOtMinutes() + attendance.getEveningOtMinutes())
+                    .totalOtHours((attendance.getMorningOtMinutes() + attendance.getEveningOtMinutes()) / 60.0)
+                    .jobs(jobDetails)
+                    .dailyScore(dailyScore > 0 ? dailyScore : null)
+                    .dailyTotalWeight(dailyTotalWeight > 0 ? dailyTotalWeight : null)
+                    .dailyAverageScore(dailyAverageScore > 0 ? dailyAverageScore : null)
+                    .build();
+
+            dailyRecords.add(dailyRecord);
+
+            // Update summary counters
+            totalDaysWorked++;
+            totalWorkMinutes += attendance.getTotalWorkMinutes();
+            totalOtMinutes += attendance.getMorningOtMinutes() + attendance.getEveningOtMinutes();
+            totalWeightedScore += dailyScore;
+            totalWeight += dailyTotalWeight;
+        }
+
+        // Calculate summary statistics
+        double overallAverageScore = totalWeight > 0
+                ? (double) totalWeightedScore / totalWeight
+                : 0.0;
+
+        Integer maxDailyScore = dailyScores.isEmpty() ? null : dailyScores.stream().max(Integer::compareTo).orElse(null);
+        Integer minDailyScore = dailyScores.isEmpty() ? null : dailyScores.stream().min(Integer::compareTo).orElse(null);
+        Double averageDailyScore = dailyScores.isEmpty() ? null : dailyScores.stream().mapToInt(Integer::intValue).average().orElse(0.0);
+
+        com.ems.dto.EmployeeWorkReportDTO.SummaryStatistics summary =
+                com.ems.dto.EmployeeWorkReportDTO.SummaryStatistics.builder()
+                .totalDaysWorked(totalDaysWorked)
+                .totalWorkMinutes(totalWorkMinutes)
+                .totalWorkHours(totalWorkMinutes / 60.0)
+                .totalOtMinutes(totalOtMinutes)
+                .totalOtHours(totalOtMinutes / 60.0)
+                .totalJobsCompleted(totalJobsCompleted)
+                .totalJobsScored(totalJobsScored)
+                .totalJobsPending(totalJobsPending)
+                .totalWeightedScore(totalWeightedScore)
+                .totalWeight(totalWeight)
+                .overallAverageScore(overallAverageScore)
+                .maxDailyScore(maxDailyScore)
+                .minDailyScore(minDailyScore)
+                .averageDailyScore(averageDailyScore)
+                .build();
+
+        // Build final report
+        return com.ems.dto.EmployeeWorkReportDTO.builder()
+                .employeeId(employee.getId())
+                .employeeName(employee.getFullName())
+                .employeeEmail(employee.getEmail())
+                .reportStartDate(startDate)
+                .reportEndDate(endDate)
+                .dailyRecords(dailyRecords)
+                .summary(summary)
+                .build();
+    }
 }

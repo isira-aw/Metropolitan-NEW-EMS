@@ -224,35 +224,59 @@ public class TicketService {
         return miniJobCardRepository.save(miniJobCard);
     }
     
+    /**
+     * Assign performance score to an approved mini job card
+     *
+     * Business Rules:
+     * 1. MiniJobCard must exist
+     * 2. MiniJobCard must be COMPLETED
+     * 3. MiniJobCard must be APPROVED by admin
+     * 4. Cannot assign score twice to the same job card
+     *
+     * @param miniJobCardId The mini job card ID
+     * @param score Performance score (1-10)
+     * @param adminUsername Admin who is assigning the score
+     * @return Created EmployeeScore entity
+     */
     @Transactional
-    public EmployeeScore assignScore(Long mainTicketId, Long employeeId, Integer score, String adminUsername) {
-        MainTicket mainTicket = mainTicketRepository.findById(mainTicketId)
-                .orElseThrow(() -> new RuntimeException("Main ticket not found"));
-        
-        User employee = userRepository.findById(employeeId)
-                .orElseThrow(() -> new RuntimeException("Employee not found"));
-        
-        List<MiniJobCard> miniJobCards = miniJobCardRepository.findByMainTicketId(mainTicketId);
-        boolean isAssigned = miniJobCards.stream()
-                .anyMatch(mjc -> mjc.getEmployee().getId().equals(employeeId));
-        
-        if (!isAssigned) {
-            throw new RuntimeException("Employee was not assigned to this ticket");
+    public EmployeeScore assignScore(Long miniJobCardId, Integer score, String adminUsername) {
+        // 1. Fetch mini job card
+        MiniJobCard miniJobCard = miniJobCardRepository.findById(miniJobCardId)
+                .orElseThrow(() -> new RuntimeException("Mini job card not found with ID: " + miniJobCardId));
+
+        // 2. Validate job card is completed
+        if (miniJobCard.getStatus() != JobStatus.COMPLETED) {
+            throw new RuntimeException("Cannot assign score to a job card that is not completed. " +
+                    "Current status: " + miniJobCard.getStatus());
         }
-        
-        List<EmployeeScore> existingScores = employeeScoreRepository.findByMainTicketId(mainTicketId);
-        EmployeeScore employeeScore = existingScores.stream()
-                .filter(es -> es.getEmployee().getId().equals(employeeId))
-                .findFirst()
-                .orElse(new EmployeeScore());
-        
-        employeeScore.setEmployee(employee);
-        employeeScore.setMainTicket(mainTicket);
-        employeeScore.setWeight(mainTicket.getWeight());
+
+        // 3. Validate job card is approved
+        if (!miniJobCard.getApproved()) {
+            throw new RuntimeException("Cannot assign score to an unapproved job card. " +
+                    "Please approve the job card first before assigning a score.");
+        }
+
+        // 4. Check if score already exists
+        if (employeeScoreRepository.existsByMiniJobCardId(miniJobCardId)) {
+            throw new RuntimeException("Score already assigned to this job card. " +
+                    "Use update score endpoint to modify existing scores.");
+        }
+
+        // 5. Validate endTime exists to calculate workDate
+        if (miniJobCard.getEndTime() == null) {
+            throw new RuntimeException("Cannot assign score: job card has no end time recorded.");
+        }
+
+        // 6. Create new score
+        EmployeeScore employeeScore = new EmployeeScore();
+        employeeScore.setEmployee(miniJobCard.getEmployee());
+        employeeScore.setMiniJobCard(miniJobCard);
+        employeeScore.setWorkDate(miniJobCard.getEndTime().toLocalDate());
+        employeeScore.setWeight(miniJobCard.getMainTicket().getWeight());
         employeeScore.setScore(score);
         employeeScore.setApprovedBy(adminUsername);
         employeeScore.setApprovedAt(LocalDateTime.now(ZoneId.of("Asia/Colombo")));
-        
+
         return employeeScoreRepository.save(employeeScore);
     }
     
