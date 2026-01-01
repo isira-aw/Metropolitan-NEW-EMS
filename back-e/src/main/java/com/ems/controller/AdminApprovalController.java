@@ -109,11 +109,15 @@ public class AdminApprovalController {
     }
 
     /**
-     * Assign performance score to employee for a ticket
-     * Score is weighted based on ticket weight (1-5)
-     * Score range: 1-10
+     * Assign performance score to an approved mini job card
      *
-     * @param request ScoreRequest DTO (ticketId, employeeId, score)
+     * Business Rules:
+     * - MiniJobCard must be COMPLETED
+     * - MiniJobCard must be APPROVED by admin first
+     * - Cannot assign score twice to the same job card
+     * - Score is weighted based on ticket complexity (MainTicket.weight)
+     *
+     * @param request ScoreRequest DTO (miniJobCardId, score)
      * @param auth Spring Security authentication
      * @return Created EmployeeScore entity
      */
@@ -124,8 +128,7 @@ public class AdminApprovalController {
 
         String approvedBy = auth.getName();
         EmployeeScore score = ticketService.assignScore(
-            request.getTicketId(),
-            request.getEmployeeId(),
+            request.getMiniJobCardId(),
             request.getScore(),
             approvedBy
         );

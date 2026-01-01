@@ -234,4 +234,31 @@ public class AdminReportController {
         Map<String, Object> stats = reportService.getDashboardStatistics();
         return ResponseEntity.ok(stats);
     }
+
+    /**
+     * Get comprehensive employee work report
+     *
+     * Returns detailed daily breakdown including:
+     * - Attendance (check-in/out, work hours, OT hours)
+     * - Jobs worked on (tickets, generators, work time)
+     * - Performance scores (daily and total)
+     * - Summary statistics for the period
+     *
+     * Use Case: Monthly/weekly employee performance review, payroll calculation
+     *
+     * @param employeeId Employee user ID (required)
+     * @param startDate Report start date (inclusive)
+     * @param endDate Report end date (inclusive)
+     * @return EmployeeWorkReportDTO with complete work details
+     */
+    @GetMapping("/employee-work-report/{employeeId}")
+    public ResponseEntity<com.ems.dto.EmployeeWorkReportDTO> getEmployeeWorkReport(
+            @PathVariable Long employeeId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+
+        com.ems.dto.EmployeeWorkReportDTO report =
+            reportService.getEmployeeWorkReport(employeeId, startDate, endDate);
+        return ResponseEntity.ok(report);
+    }
 }
