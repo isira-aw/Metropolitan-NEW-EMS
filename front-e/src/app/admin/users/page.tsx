@@ -11,6 +11,20 @@ import Pagination from '@/components/ui/Pagination';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { formatDate } from '@/lib/utils/format';
 
+import {
+  Users,
+  Plus,
+  Search,
+  X,
+  Edit,
+  Trash2,
+  Shield,
+  User as UserIcon,
+  CheckCircle,
+  XCircle,
+  Calendar
+} from 'lucide-react';
+
 export default function AdminUsers() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -79,7 +93,7 @@ export default function AdminUsers() {
     setEditingUser(user);
     setFormData({
       username: user.username,
-      password: '', // Don't show password
+      password: '',
       fullName: user.fullName,
       role: user.role,
       phone: user.phone || '',
@@ -119,11 +133,7 @@ export default function AdminUsers() {
 
   const toggleActive = async (id: number, active: boolean) => {
     try {
-      if (active) {
-        await userService.deactivate(id);
-      } else {
-        await userService.activate(id);
-      }
+      active ? await userService.deactivate(id) : await userService.activate(id);
       loadUsers(currentPage, searchQuery);
     } catch (error: any) {
       alert(error.response?.data?.message || 'Error updating user status');
@@ -137,29 +147,50 @@ export default function AdminUsers() {
       <AdminNav currentPage="Users" user={user} />
 
       <div className="container mx-auto p-6">
+        {/* Header */}
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-3xl font-bold">User Management</h2>
-          <button onClick={handleCreate} className="btn-primary">+ Create User</button>
+          <h2 className="text-3xl font-bold flex items-center gap-2">
+            <Users className="w-7 h-7 text-blue-600" />
+            User Management
+          </h2>
+
+          <button onClick={handleCreate} className="btn-primary flex items-center gap-2">
+            <Plus className="w-4 h-4" />
+            Create User
+          </button>
         </div>
 
-        {/* Search Bar */}
+        {/* Search */}
         <Card className="mb-6">
           <form onSubmit={handleSearch} className="flex gap-4">
-            <input
-              type="text"
-              placeholder="Search by name or email..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="input-field flex-1"
-            />
-            <button type="submit" className="btn-primary">Search</button>
-            <button type="button" onClick={() => { setSearchQuery(''); loadUsers(0); }} className="btn-secondary">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search by name or email..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="input-field pl-10"
+              />
+            </div>
+
+            <button type="submit" className="btn-primary flex items-center gap-2">
+              <Search className="w-4 h-4" />
+              Search
+            </button>
+
+            <button
+              type="button"
+              onClick={() => { setSearchQuery(''); loadUsers(0); }}
+              className="btn-secondary flex items-center gap-2"
+            >
+              <X className="w-4 h-4" />
               Clear
             </button>
           </form>
         </Card>
 
-        {/* Users Table */}
+        {/* Table */}
         <Card>
           <div className="table-container">
             <table className="table">
@@ -176,40 +207,58 @@ export default function AdminUsers() {
                   <th>Actions</th>
                 </tr>
               </thead>
+
               <tbody>
-                {users && users.content.length > 0 ? (
-                  users.content.map((u) => (
-                    <tr key={u.id}>
-                      <td>{u.id}</td>
-                      <td className="font-semibold">{u.username}</td>
-                      <td>{u.fullName}</td>
-                      <td>
-                        <span className={`px-2 py-1 rounded text-xs ${u.role === 'ADMIN' ? 'bg-red-200 text-red-800' : 'bg-blue-200 text-blue-800'}`}>
-                          {u.role}
-                        </span>
-                      </td>
-                      <td>{u.email || '-'}</td>
-                      <td>{u.phone || '-'}</td>
-                      <td>
-                        <button
-                          onClick={() => toggleActive(u.id, u.active)}
-                          className={`px-2 py-1 rounded text-xs ${u.active ? 'bg-green-200 text-green-800' : 'bg-gray-200 text-gray-800'}`}
-                        >
-                          {u.active ? 'Active' : 'Inactive'}
-                        </button>
-                      </td>
-                      <td>{formatDate(u.createdAt)}</td>
-                      <td className="space-x-2">
-                        <button onClick={() => handleEdit(u)} className="text-blue-600 hover:underline text-sm">
-                          Edit
-                        </button>
-                        <button onClick={() => handleDelete(u.id)} className="text-red-600 hover:underline text-sm">
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
+                {users?.content.length ? users.content.map((u) => (
+                  <tr key={u.id}>
+                    <td>{u.id}</td>
+                    <td className="font-semibold">{u.username}</td>
+                    <td>{u.fullName}</td>
+
+                    <td>
+                      <span className={`px-2 py-1 rounded text-xs flex items-center gap-1 w-fit
+                        ${u.role === 'ADMIN'
+                          ? 'bg-red-200 text-red-800'
+                          : 'bg-blue-200 text-blue-800'}`}
+                      >
+                        {u.role === 'ADMIN' ? <Shield className="w-3 h-3" /> : <UserIcon className="w-3 h-3" />}
+                        {u.role}
+                      </span>
+                    </td>
+
+                    <td>{u.email || '-'}</td>
+                    <td>{u.phone || '-'}</td>
+
+                    <td>
+                      <button
+                        onClick={() => toggleActive(u.id, u.active)}
+                        className={`px-2 py-1 rounded text-xs flex items-center gap-1
+                          ${u.active
+                            ? 'bg-green-200 text-green-800'
+                            : 'bg-gray-200 text-gray-800'}`}
+                      >
+                        {u.active ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+                        {u.active ? 'Active' : 'Inactive'}
+                      </button>
+                    </td>
+
+                    <td className="flex items-center gap-1 text-sm text-gray-600">
+                      <Calendar className="w-4 h-4" />
+                      {formatDate(u.createdAt)}
+                    </td>
+
+                    <td className="space-x-3">
+                      <button onClick={() => handleEdit(u)} className="text-blue-600 hover:underline text-sm inline-flex items-center gap-1">
+                        <Edit className="w-4 h-4" />
+                        Edit
+                      </button>
+                      <button onClick={() => handleDelete(u.id)} className="text-red-600 hover:underline text-sm inline-flex items-center gap-1">
+                        <Trash2 className="w-4 h-4" />
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                )) : (
                   <tr>
                     <td colSpan={9} className="text-center text-gray-500">No users found</td>
                   </tr>
@@ -218,104 +267,15 @@ export default function AdminUsers() {
             </table>
           </div>
 
-          {users && <Pagination currentPage={currentPage} totalPages={users.totalPages} onPageChange={(p) => loadUsers(p, searchQuery)} />}
+          {users && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={users.totalPages}
+              onPageChange={(p) => loadUsers(p, searchQuery)}
+            />
+          )}
         </Card>
       </div>
-
-      {/* Create/Edit Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-xl font-bold mb-4">{editingUser ? 'Edit User' : 'Create User'}</h3>
-            <form onSubmit={handleSubmit}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Username *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.username}
-                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                    className="input-field"
-                    disabled={!!editingUser}
-                  />
-                </div>
-
-                {!editingUser && (
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Password *</label>
-                    <input
-                      type="password"
-                      required
-                      value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className="input-field"
-                    />
-                  </div>
-                )}
-
-                <div>
-                  <label className="block text-sm font-medium mb-1">Full Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.fullName}
-                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                    className="input-field"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1">Role *</label>
-                  <select
-                    value={formData.role}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
-                    className="input-field"
-                  >
-                    <option value="EMPLOYEE">EMPLOYEE</option>
-                    <option value="ADMIN">ADMIN</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1">Email</label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="input-field"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1">Phone</label>
-                  <input
-                    type="text"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="input-field"
-                  />
-                </div>
-
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={formData.active}
-                    onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
-                    className="mr-2"
-                  />
-                  <label className="text-sm font-medium">Active</label>
-                </div>
-              </div>
-
-              <div className="flex gap-3 mt-6">
-                <button type="submit" className="btn-primary flex-1">Save</button>
-                <button type="button" onClick={() => setShowModal(false)} className="btn-secondary flex-1">Cancel</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
