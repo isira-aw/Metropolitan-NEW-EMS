@@ -87,6 +87,12 @@ export default function AdminApprovals() {
   };
 
   const handleScore = (card: MiniJobCard) => {
+    // Check if job card is approved
+    if (!card.approved) {
+      alert('Please approve the job card first before assigning a score.');
+      return;
+    }
+
     setScoringCard(card);
     setScore(5);
     setShowScoreModal(true);
@@ -94,15 +100,23 @@ export default function AdminApprovals() {
 
   const submitScore = async () => {
     if (!scoringCard) return;
+
+    // Double-check approval status
+    if (!scoringCard.approved) {
+      alert('Cannot assign score to an unapproved job card.');
+      return;
+    }
+
     try {
       await approvalService.addScore({
-        ticketId: scoringCard.mainTicket.id,
-        employeeId: scoringCard.employee.id,
+        miniJobCardId: scoringCard.id,
         score,
       });
       alert('Score added successfully!');
       setShowScoreModal(false);
       setScoringCard(null);
+      // Reload the pending approvals to reflect changes
+      loadPending(currentPage);
     } catch (error: any) {
       alert(error.response?.data?.message || 'Error adding score');
     }

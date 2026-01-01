@@ -228,7 +228,8 @@ export interface MonthlyStats {
 export interface EmployeeScore {
   id: number;
   employee: User;
-  mainTicket: MainTicket;
+  miniJobCard: MiniJobCard;
+  workDate: string; // Date when work was completed
   weight: number;
   score: number;
   approvedBy: string;
@@ -236,8 +237,7 @@ export interface EmployeeScore {
 }
 
 export interface ScoreRequest {
-  ticketId: number;
-  employeeId: number;
+  miniJobCardId: number;
   score: number;
 }
 
@@ -281,6 +281,75 @@ export interface DashboardStats {
   pendingApprovals: number;
   totalWorkMinutesThisMonth: number;
   totalOTMinutesThisMonth: number;
+}
+
+// ===========================
+// EMPLOYEE WORK REPORT TYPES
+// ===========================
+
+export interface EmployeeWorkReportDTO {
+  employeeId: number;
+  employeeName: string;
+  employeeEmail: string;
+  reportStartDate: string;
+  reportEndDate: string;
+  dailyRecords: DailyWorkRecord[];
+  summary: SummaryStatistics;
+}
+
+export interface DailyWorkRecord {
+  date: string;
+  checkInTime?: string;
+  checkOutTime?: string;
+  totalWorkMinutes: number;
+  totalWorkHours: number;
+  morningOtMinutes: number;
+  eveningOtMinutes: number;
+  totalOtMinutes: number;
+  totalOtHours: number;
+  jobs: JobDetail[];
+  dailyScore?: number;
+  dailyTotalWeight?: number;
+  dailyAverageScore?: number;
+}
+
+export interface JobDetail {
+  miniJobCardId: number;
+  mainTicketId: number;
+  ticketNumber: string;
+  ticketTitle: string;
+  jobType: string;
+  jobStatus: string;
+  generatorId: number;
+  generatorName: string;
+  generatorModel: string;
+  generatorLocation: string;
+  startTime?: string;
+  endTime?: string;
+  workMinutes: number;
+  workHours: number;
+  weight: number;
+  score?: number;
+  weightedScore?: number;
+  scored: boolean;
+  approved: boolean;
+}
+
+export interface SummaryStatistics {
+  totalDaysWorked: number;
+  totalWorkMinutes: number;
+  totalWorkHours: number;
+  totalOtMinutes: number;
+  totalOtHours: number;
+  totalJobsCompleted: number;
+  totalJobsScored: number;
+  totalJobsPending: number;
+  totalWeightedScore: number;
+  totalWeight: number;
+  overallAverageScore: number;
+  maxDailyScore?: number;
+  minDailyScore?: number;
+  averageDailyScore?: number;
 }
 
 // ===========================

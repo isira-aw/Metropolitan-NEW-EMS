@@ -15,6 +15,7 @@ import {
   TimeTrackingReportResponse,
   OTReportResponse,
   DashboardStats,
+  EmployeeWorkReportDTO,
   PageResponse,
   PageRequest,
   JobStatus,
@@ -363,6 +364,20 @@ export const reportService = {
 
   async getDashboardStats(): Promise<DashboardStats> {
     const response = await apiClient.get<DashboardStats>('/admin/reports/dashboard-stats');
+    return response.data;
+  },
+
+  async getEmployeeWorkReport(
+    employeeId: number,
+    startDate: string,
+    endDate: string
+  ): Promise<EmployeeWorkReportDTO> {
+    const response = await apiClient.get<EmployeeWorkReportDTO>(
+      `/admin/reports/employee-work-report/${employeeId}`,
+      {
+        params: { startDate, endDate },
+      }
+    );
     return response.data;
   },
 };
