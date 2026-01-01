@@ -1,0 +1,213 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { approvalService } from '@/lib/services/admin.service';
+import { authService } from '@/lib/services/auth.service';
+import { MiniJobCard, PageResponse } from '@/types';
+import AdminNav from '@/components/layouts/AdminNav';
+import Card from '@/components/ui/Card';
+import StatusBadge from '@/components/ui/StatusBadge';
+import Pagination from '@/components/ui/Pagination';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { formatDateTime, formatMinutes } from '@/lib/utils/format';
+
+export default function AdminApprovals() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [pending, setPending] = useState<PageResponse<MiniJobCard> | null>(null);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [showScoreModal, setShowScoreModal] = useState(false);
+  const [scoringCard, setScoringCard] = useState<MiniJobCard | null>(null);
+  const [score, setScore] = useState(5);
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const role = authService.getRole();
+    if (role !== 'ADMIN') {
+      router.push('/login');
+      return;
+    }
+
+    setUser(authService.getStoredUser());
+    loadPending(0);
+  }, [router]);
+
+  const loadPending = async (page: number) => {
+    try {
+      const data = await approvalService.getPending({ page, size: 10 });
+      setPending(data);
+      setCurrentPage(page);
+    } catch (error) {
+      console.error('Error loading pending approvals:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApprove = async (id: number) => {
+    try {
+      await approvalService.approve(id);
+      alert('Job card approved!');
+      loadPending(currentPage);
+      setSelectedIds(selectedIds.filter((sid) => sid !== id));
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Error approving');
+    }
+  };
+
+  const handleReject = async (id: number) => {
+    const note = prompt('Enter rejection reason:');
+    if (!note) return;
+    try {
+      await approvalService.reject(id, note);
+      alert('Job card rejected!');
+      loadPending(currentPage);
+      setSelectedIds(selectedIds.filter((sid) => sid !== id));
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Error rejecting');
+    }
+  };
+
+  const handleBulkApprove = async () => {
+    if (selectedIds.length === 0) {
+      alert('No job cards selected!');
+      return;
+    }
+    if (!confirm(`Approve ${selectedIds.length} job cards?`)) return;
+    try {
+      await approvalService.bulkApprove(selectedIds);
+      alert(`${selectedIds.length} job cards approved!`);
+      setSelectedIds([]);
+      loadPending(currentPage);
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Error bulk approving');
+    }
+  };
+
+  const handleScore = (card: MiniJobCard) => {
+    setScoringCard(card);
+    setScore(5);
+    setShowScoreModal(true);
+  };
+
+  const submitScore = async () => {
+    if (!scoringCard) return;
+    try {
+      await approvalService.addScore({
+        ticketId: scoringCard.mainTicket.id,
+        employeeId: scoringCard.employee.id,
+        score,
+      });
+      alert('Score added successfully!');
+      setShowScoreModal(false);
+      setScoringCard(null);
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Error adding score');
+    }
+  };
+
+  const toggleSelection = (id: number) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((sid) => sid !== id) : [...prev, id]
+    );
+  };
+
+  if (loading) return <LoadingSpinner />;
+
+  return (
+    <div className="min-h-screen bg-gray-100">
+      <AdminNav currentPage="Approvals" user={user} />
+
+      <div className="container mx-auto p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-3xl font-bold">Pending Approvals</h2>
+          {selectedIds.length > 0 && (
+            <button onClick={handleBulkApprove} className="btn-success">
+              ✓ Bulk Approve ({selectedIds.length})
+            </button>
+          )}
+        </div>
+
+        {/* Pending Cards */}
+        <div className="space-y-4">
+          {pending && pending.content.length > 0 ? (
+            pending.content.map((card) => (
+              <Card key={card.id}>
+                <div className="flex items-start gap-4">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(card.id)}
+                    onChange={() => toggleSelection(card.id)}
+                    className="mt-1"
+                  />
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h3 className="text-lg font-bold">{card.mainTicket.title}</h3>
+                        <p className="text-sm text-gray-600">Ticket: {card.mainTicket.ticketNumber}</p>
+                        <p className="text-sm text-gray-600">Employee: {card.employee.fullName}</p>
+                        <p className="text-sm text-gray-600">Type: {card.mainTicket.type} | Weight: {'⭐'.repeat(card.mainTicket.weight)}</p>
+                      </div>
+                      <StatusBadge status={card.status} />
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm mb-3">
+                      <p>Work Time: <strong>{formatMinutes(card.workMinutes)}</strong></p>
+                      {card.startTime && <p>Started: <strong>{formatDateTime(card.startTime)}</strong></p>}
+                      {card.endTime && <p>Ended: <strong>{formatDateTime(card.endTime)}</strong></p>}
+                      <p>Approved: <strong>{card.approved ? 'Yes' : 'No'}</strong></p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => handleApprove(card.id)} className="btn-success text-sm">✓ Approve</button>
+                      <button onClick={() => handleReject(card.id)} className="btn-danger text-sm">✗ Reject</button>
+                      <button onClick={() => handleScore(card)} className="btn-secondary text-sm">⭐ Score</button>
+                      <button onClick={() => router.push(`/employee/job-cards/${card.id}`)} className="btn-secondary text-sm">View Details</button>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            ))
+          ) : (
+            <Card>
+              <p className="text-center text-gray-500 py-8">No pending approvals</p>
+            </Card>
+          )}
+        </div>
+
+        {pending && <Pagination currentPage={currentPage} totalPages={pending.totalPages} onPageChange={loadPending} />}
+      </div>
+
+      {/* Score Modal */}
+      {showScoreModal && scoringCard && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-xl font-bold mb-4">Add Performance Score</h3>
+            <p className="mb-4">
+              <strong>Employee:</strong> {scoringCard.employee.fullName}
+            </p>
+            <p className="mb-4">
+              <strong>Ticket:</strong> {scoringCard.mainTicket.ticketNumber}
+            </p>
+            <div className="mb-6">
+              <label className="block text-sm font-medium mb-2">Score (1-10)</label>
+              <input
+                type="range"
+                min="1"
+                max="10"
+                value={score}
+                onChange={(e) => setScore(parseInt(e.target.value))}
+                className="w-full"
+              />
+              <div className="text-center text-3xl font-bold text-blue-600 mt-2">{score} / 10</div>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={submitScore} className="btn-primary flex-1">Submit Score</button>
+              <button onClick={() => setShowScoreModal(false)} className="btn-secondary flex-1">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

@@ -2,28 +2,28 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { authService } from '@/lib/services/auth.service';
 
 export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
-    const role = localStorage.getItem('role');
+    const role = authService.getRole();
 
-    if (token && role) {
-      if (role === 'ADMIN') {
-        router.push('/admin/dashboard');
-      } else {
-        router.push('/employee/dashboard');
-      }
+    if (!authService.isAuthenticated()) {
+      router.push('/login');
+    } else if (role === 'ADMIN') {
+      router.push('/admin/dashboard');
+    } else if (role === 'EMPLOYEE') {
+      router.push('/employee/dashboard');
     } else {
       router.push('/login');
     }
   }, [router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <p>Loading...</p>
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
     </div>
   );
 }

@@ -1,0 +1,314 @@
+// ===========================
+// ENUMS
+// ===========================
+
+export enum UserRole {
+  ADMIN = 'ADMIN',
+  EMPLOYEE = 'EMPLOYEE',
+}
+
+export enum JobStatus {
+  PENDING = 'PENDING',
+  TRAVELING = 'TRAVELING',
+  STARTED = 'STARTED',
+  ON_HOLD = 'ON_HOLD',
+  COMPLETED = 'COMPLETED',
+  CANCEL = 'CANCEL',
+}
+
+export enum JobCardType {
+  SERVICE = 'SERVICE',
+  REPAIR = 'REPAIR',
+  MAINTENANCE = 'MAINTENANCE',
+  VISIT = 'VISIT',
+  EMERGENCY = 'EMERGENCY',
+}
+
+// ===========================
+// AUTHENTICATION TYPES
+// ===========================
+
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+export interface AuthResponse {
+  accessToken: string;
+  refreshToken: string;
+  username: string;
+  fullName: string;
+  role: UserRole;
+  email: string;
+}
+
+// ===========================
+// USER TYPES
+// ===========================
+
+export interface User {
+  id: number;
+  username: string;
+  fullName: string;
+  role: UserRole;
+  phone?: string;
+  email?: string;
+  active: boolean;
+  createdAt: string;
+}
+
+export interface UserRequest {
+  username: string;
+  password: string;
+  fullName: string;
+  role: UserRole;
+  phone?: string;
+  email?: string;
+  active?: boolean;
+}
+
+// ===========================
+// GENERATOR TYPES
+// ===========================
+
+export interface Generator {
+  id: number;
+  model: string;
+  name: string;
+  capacity?: string;
+  locationName: string;
+  ownerEmail?: string;
+  latitude?: number;
+  longitude?: number;
+  note?: string;
+  createdAt: string;
+}
+
+export interface GeneratorRequest {
+  model: string;
+  name: string;
+  capacity?: string;
+  locationName: string;
+  ownerEmail?: string;
+  latitude?: number;
+  longitude?: number;
+  note?: string;
+}
+
+export interface GeneratorStatistics {
+  totalTickets: number;
+  completedTickets: number;
+  pendingTickets: number;
+  totalServiceMinutes: number;
+  lastServiceDate?: string;
+  averageScore?: number;
+}
+
+// ===========================
+// TICKET TYPES
+// ===========================
+
+export interface MainTicket {
+  id: number;
+  ticketNumber: string;
+  generator: Generator;
+  title: string;
+  description?: string;
+  type: JobCardType;
+  weight: number;
+  status: JobStatus;
+  scheduledDate: string;
+  scheduledTime: string;
+  createdBy: string;
+  createdAt: string;
+}
+
+export interface MainTicketRequest {
+  generatorId: number;
+  title: string;
+  description?: string;
+  type: JobCardType;
+  weight: number;
+  scheduledDate: string;
+  scheduledTime: string;
+  employeeIds: number[];
+}
+
+export interface TicketAssignment {
+  id: number;
+  mainTicket: MainTicket;
+  employee: User;
+  assignedAt: string;
+}
+
+// ===========================
+// JOB CARD TYPES
+// ===========================
+
+export interface MiniJobCard {
+  id: number;
+  mainTicket: MainTicket;
+  employee: User;
+  status: JobStatus;
+  startTime?: string;
+  endTime?: string;
+  approved: boolean;
+  workMinutes: number;
+  imageUrl?: string;
+  createdAt: string;
+}
+
+export interface StatusUpdateRequest {
+  newStatus: JobStatus;
+  latitude?: number;
+  longitude?: number;
+}
+
+export interface JobStatusLog {
+  id: number;
+  miniJobCard: MiniJobCard;
+  employeeEmail: string;
+  prevStatus?: JobStatus;
+  newStatus: JobStatus;
+  latitude?: number;
+  longitude?: number;
+  loggedAt: string;
+}
+
+// ===========================
+// ATTENDANCE TYPES
+// ===========================
+
+export interface EmployeeDayAttendance {
+  id: number;
+  employee: User;
+  date: string;
+  dayStartTime?: string;
+  dayEndTime?: string;
+  totalWorkMinutes: number;
+  morningOtMinutes: number;
+  eveningOtMinutes: number;
+}
+
+// ===========================
+// DASHBOARD TYPES
+// ===========================
+
+export interface EmployeeDashboardResponse {
+  pendingJobCardsCount: number;
+  inProgressJobCardsCount: number;
+  completedJobCardsCount: number;
+  totalJobCardsCount: number;
+  totalWorkMinutes: number;
+  totalOTMinutes: number;
+  morningOTMinutes: number;
+  eveningOTMinutes: number;
+  averageScore: number;
+  totalScores: number;
+  recentJobCards: MiniJobCard[];
+  dayStarted: boolean;
+  dayEnded: boolean;
+  currentStatus: string;
+}
+
+export interface MonthlyStats {
+  year: number;
+  month: number;
+  totalWorkDays: number;
+  totalWorkMinutes: number;
+  totalOTMinutes: number;
+  completedJobs: number;
+  averageScore: number;
+}
+
+// ===========================
+// APPROVAL TYPES
+// ===========================
+
+export interface EmployeeScore {
+  id: number;
+  employee: User;
+  mainTicket: MainTicket;
+  weight: number;
+  score: number;
+  approvedBy: string;
+  approvedAt: string;
+}
+
+export interface ScoreRequest {
+  ticketId: number;
+  employeeId: number;
+  score: number;
+}
+
+export interface ApprovalStatistics {
+  totalPending: number;
+  totalApproved: number;
+  totalRejected: number;
+  averageApprovalTime: number;
+}
+
+// ===========================
+// REPORT TYPES
+// ===========================
+
+export interface TimeTrackingReportResponse {
+  employeeName: string;
+  date: string;
+  dayStartTime?: string;
+  dayEndTime?: string;
+  workMinutes: number;
+  idleMinutes: number;
+  travelMinutes: number;
+  totalMinutes: number;
+}
+
+export interface OTReportResponse {
+  employeeName: string;
+  date: string;
+  morningOtMinutes: number;
+  eveningOtMinutes: number;
+  totalOtMinutes: number;
+}
+
+export interface DashboardStats {
+  totalEmployees: number;
+  activeEmployees: number;
+  totalGenerators: number;
+  totalTickets: number;
+  pendingTickets: number;
+  completedTickets: number;
+  pendingApprovals: number;
+  totalWorkMinutesThisMonth: number;
+  totalOTMinutesThisMonth: number;
+}
+
+// ===========================
+// PAGINATION TYPES
+// ===========================
+
+export interface PageRequest {
+  page?: number;
+  size?: number;
+  sortBy?: string;
+  sortDir?: 'asc' | 'desc';
+}
+
+export interface PageResponse<T> {
+  content: T[];
+  pageable: {
+    pageNumber: number;
+    pageSize: number;
+    offset: number;
+    paged: boolean;
+    unpaged: boolean;
+  };
+  totalPages: number;
+  totalElements: number;
+  last: boolean;
+  first: boolean;
+  size: number;
+  number: number;
+  numberOfElements: number;
+  empty: boolean;
+}

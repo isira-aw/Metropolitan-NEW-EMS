@@ -2,222 +2,320 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import apiClient from '@/lib/api';
+import { userService } from '@/lib/services/admin.service';
+import { authService } from '@/lib/services/auth.service';
+import { User, UserRequest, PageResponse, UserRole } from '@/types';
+import AdminNav from '@/components/layouts/AdminNav';
+import Card from '@/components/ui/Card';
+import Pagination from '@/components/ui/Pagination';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { formatDate } from '@/lib/utils/format';
 
-export default function AdminUsersPage() {
+export default function AdminUsers() {
   const router = useRouter();
-  const [users, setUsers] = useState<any[]>([]);
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  const [formData, setFormData] = useState({
+  const [loading, setLoading] = useState(true);
+  const [users, setUsers] = useState<PageResponse<User> | null>(null);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [formData, setFormData] = useState<UserRequest>({
     username: '',
     password: '',
     fullName: '',
-    role: 'EMPLOYEE',
+    role: UserRole.EMPLOYEE,
     phone: '',
     email: '',
     active: true,
   });
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    const role = localStorage.getItem('role');
+    const role = authService.getRole();
     if (role !== 'ADMIN') {
       router.push('/login');
       return;
     }
-    loadUsers();
+
+    setUser(authService.getStoredUser());
+    loadUsers(0);
   }, [router]);
 
-  const loadUsers = async () => {
+  const loadUsers = async (page: number, query = '') => {
     try {
-      const response = await apiClient.get('/admin/users?size=50');
-      setUsers(response.data.content || []);
+      const data = query
+        ? await userService.search(query, { page, size: 10 })
+        : await userService.getAll({ page, size: 10 });
+
+      setUsers(data);
+      setCurrentPage(page);
     } catch (error) {
       console.error('Error loading users:', error);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      await apiClient.post('/admin/users', formData);
-      alert('User created successfully!');
-      setShowCreateForm(false);
-      setFormData({
-        username: '',
-        password: '',
-        fullName: '',
-        role: 'EMPLOYEE',
-        phone: '',
-        email: '',
-        active: true,
-      });
-      loadUsers();
-    } catch (error: any) {
-      alert('Error creating user: ' + (error.response?.data?.message || error.message));
     } finally {
       setLoading(false);
     }
   };
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    loadUsers(0, searchQuery);
+  };
+
+  const handleCreate = () => {
+    setEditingUser(null);
+    setFormData({
+      username: '',
+      password: '',
+      fullName: '',
+      role: UserRole.EMPLOYEE,
+      phone: '',
+      email: '',
+      active: true,
+    });
+    setShowModal(true);
+  };
+
+  const handleEdit = (user: User) => {
+    setEditingUser(user);
+    setFormData({
+      username: user.username,
+      password: '', // Don't show password
+      fullName: user.fullName,
+      role: user.role,
+      phone: user.phone || '',
+      email: user.email || '',
+      active: user.active,
+    });
+    setShowModal(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingUser) {
+        await userService.update(editingUser.id, formData);
+        alert('User updated successfully!');
+      } else {
+        await userService.create(formData);
+        alert('User created successfully!');
+      }
+      setShowModal(false);
+      loadUsers(currentPage, searchQuery);
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Error saving user');
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this user?')) return;
+    try {
+      await userService.delete(id);
+      alert('User deleted successfully!');
+      loadUsers(currentPage, searchQuery);
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Error deleting user');
+    }
+  };
+
+  const toggleActive = async (id: number, active: boolean) => {
+    try {
+      if (active) {
+        await userService.deactivate(id);
+      } else {
+        await userService.activate(id);
+      }
+      loadUsers(currentPage, searchQuery);
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Error updating user status');
+    }
+  };
+
+  if (loading) return <LoadingSpinner />;
+
   return (
     <div className="min-h-screen bg-gray-100">
-      <nav className="bg-blue-600 text-white p-4">
-        <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold">User Management</h1>
-          <button onClick={() => router.push('/admin/dashboard')} className="btn-secondary">
-            Back to Dashboard
-          </button>
-        </div>
-      </nav>
+      <AdminNav currentPage="Users" user={user} />
 
       <div className="container mx-auto p-6">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-3xl font-bold">Users</h2>
-          <button onClick={() => setShowCreateForm(!showCreateForm)} className="btn-primary">
-            {showCreateForm ? 'Cancel' : '+ Create User'}
-          </button>
+          <h2 className="text-3xl font-bold">User Management</h2>
+          <button onClick={handleCreate} className="btn-primary">+ Create User</button>
         </div>
 
-        {showCreateForm && (
-          <div className="card mb-6">
-            <h3 className="text-xl font-bold mb-4">Create New User</h3>
+        {/* Search Bar */}
+        <Card className="mb-6">
+          <form onSubmit={handleSearch} className="flex gap-4">
+            <input
+              type="text"
+              placeholder="Search by name or email..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="input-field flex-1"
+            />
+            <button type="submit" className="btn-primary">Search</button>
+            <button type="button" onClick={() => { setSearchQuery(''); loadUsers(0); }} className="btn-secondary">
+              Clear
+            </button>
+          </form>
+        </Card>
+
+        {/* Users Table */}
+        <Card>
+          <div className="table-container">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Username</th>
+                  <th>Full Name</th>
+                  <th>Role</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users && users.content.length > 0 ? (
+                  users.content.map((u) => (
+                    <tr key={u.id}>
+                      <td>{u.id}</td>
+                      <td className="font-semibold">{u.username}</td>
+                      <td>{u.fullName}</td>
+                      <td>
+                        <span className={`px-2 py-1 rounded text-xs ${u.role === 'ADMIN' ? 'bg-red-200 text-red-800' : 'bg-blue-200 text-blue-800'}`}>
+                          {u.role}
+                        </span>
+                      </td>
+                      <td>{u.email || '-'}</td>
+                      <td>{u.phone || '-'}</td>
+                      <td>
+                        <button
+                          onClick={() => toggleActive(u.id, u.active)}
+                          className={`px-2 py-1 rounded text-xs ${u.active ? 'bg-green-200 text-green-800' : 'bg-gray-200 text-gray-800'}`}
+                        >
+                          {u.active ? 'Active' : 'Inactive'}
+                        </button>
+                      </td>
+                      <td>{formatDate(u.createdAt)}</td>
+                      <td className="space-x-2">
+                        <button onClick={() => handleEdit(u)} className="text-blue-600 hover:underline text-sm">
+                          Edit
+                        </button>
+                        <button onClick={() => handleDelete(u.id)} className="text-red-600 hover:underline text-sm">
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={9} className="text-center text-gray-500">No users found</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {users && <Pagination currentPage={currentPage} totalPages={users.totalPages} onPageChange={(p) => loadUsers(p, searchQuery)} />}
+        </Card>
+      </div>
+
+      {/* Create/Edit Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-xl font-bold mb-4">{editingUser ? 'Edit User' : 'Create User'}</h3>
             <form onSubmit={handleSubmit}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-gray-700 mb-2">Username *</label>
+                  <label className="block text-sm font-medium mb-1">Username *</label>
                   <input
                     type="text"
-                    className="input-field"
+                    required
                     value={formData.username}
                     onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 mb-2">Password *</label>
-                  <input
-                    type="password"
                     className="input-field"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    required
+                    disabled={!!editingUser}
                   />
                 </div>
 
+                {!editingUser && (
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Password *</label>
+                    <input
+                      type="password"
+                      required
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      className="input-field"
+                    />
+                  </div>
+                )}
+
                 <div>
-                  <label className="block text-gray-700 mb-2">Full Name *</label>
+                  <label className="block text-sm font-medium mb-1">Full Name *</label>
                   <input
                     type="text"
-                    className="input-field"
+                    required
                     value={formData.fullName}
                     onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                    required
+                    className="input-field"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-gray-700 mb-2">Role *</label>
+                  <label className="block text-sm font-medium mb-1">Role *</label>
                   <select
-                    className="input-field"
                     value={formData.role}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                    required
+                    onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
+                    className="input-field"
                   >
-                    <option value="EMPLOYEE">Employee</option>
-                    <option value="ADMIN">Admin</option>
+                    <option value="EMPLOYEE">EMPLOYEE</option>
+                    <option value="ADMIN">ADMIN</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-gray-700 mb-2">Phone</label>
+                  <label className="block text-sm font-medium mb-1">Email</label>
                   <input
-                    type="tel"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="input-field"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-gray-700 mb-2">Email</label>
+                  <label className="block text-sm font-medium mb-1">Phone</label>
                   <input
-                    type="email"
+                    type="text"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     className="input-field"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   />
                 </div>
 
                 <div className="flex items-center">
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={formData.active}
-                      onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
-                    />
-                    <span>Active</span>
-                  </label>
+                  <input
+                    type="checkbox"
+                    checked={formData.active}
+                    onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
+                    className="mr-2"
+                  />
+                  <label className="text-sm font-medium">Active</label>
                 </div>
               </div>
 
-              <button type="submit" className="btn-primary mt-4" disabled={loading}>
-                {loading ? 'Creating...' : 'Create User'}
-              </button>
+              <div className="flex gap-3 mt-6">
+                <button type="submit" className="btn-primary flex-1">Save</button>
+                <button type="button" onClick={() => setShowModal(false)} className="btn-secondary flex-1">Cancel</button>
+              </div>
             </form>
           </div>
-        )}
-
-        <div className="card">
-          <h3 className="text-xl font-bold mb-4">All Users</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="p-3 text-left">Username</th>
-                  <th className="p-3 text-left">Full Name</th>
-                  <th className="p-3 text-left">Role</th>
-                  <th className="p-3 text-left">Email</th>
-                  <th className="p-3 text-left">Phone</th>
-                  <th className="p-3 text-left">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((user) => (
-                  <tr key={user.id} className="border-b hover:bg-gray-50">
-                    <td className="p-3">{user.username}</td>
-                    <td className="p-3">{user.fullName}</td>
-                    <td className="p-3">
-                      <span
-                        className={`px-2 py-1 rounded text-sm ${
-                          user.role === 'ADMIN' ? 'bg-red-200' : 'bg-blue-200'
-                        }`}
-                      >
-                        {user.role}
-                      </span>
-                    </td>
-                    <td className="p-3">{user.email || '-'}</td>
-                    <td className="p-3">{user.phone || '-'}</td>
-                    <td className="p-3">
-                      <span
-                        className={`px-2 py-1 rounded text-sm ${
-                          user.active ? 'bg-green-200' : 'bg-gray-200'
-                        }`}
-                      >
-                        {user.active ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

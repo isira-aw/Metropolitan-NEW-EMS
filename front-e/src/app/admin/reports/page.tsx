@@ -2,279 +2,158 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import apiClient from '@/lib/api';
+import { reportService } from '@/lib/services/admin.service';
+import { authService } from '@/lib/services/auth.service';
+import AdminNav from '@/components/layouts/AdminNav';
+import Card from '@/components/ui/Card';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { downloadCSV } from '@/lib/utils/format';
 
-export default function AdminReportsPage() {
+export default function AdminReports() {
   const router = useRouter();
-  const [reportType, setReportType] = useState('time-tracking');
-  const [employees, setEmployees] = useState<any[]>([]);
-  const [selectedEmployee, setSelectedEmployee] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [reportData, setReportData] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const role = localStorage.getItem('role');
+    const role = authService.getRole();
     if (role !== 'ADMIN') {
       router.push('/login');
       return;
     }
-    loadEmployees();
 
-    // Set default dates
-    const today = new Date();
-    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-    setStartDate(firstDay.toISOString().split('T')[0]);
-    setEndDate(today.toISOString().split('T')[0]);
+    setUser(authService.getStoredUser());
+    
+    // Set default dates (last 30 days)
+    const end = new Date();
+    const start = new Date();
+    start.setDate(start.getDate() - 30);
+    setEndDate(end.toISOString().split('T')[0]);
+    setStartDate(start.toISOString().split('T')[0]);
+    
+    setLoading(false);
   }, [router]);
 
-  const loadEmployees = async () => {
+  const handleExportTimeTracking = async () => {
     try {
-      const response = await apiClient.get('/admin/employees?size=100');
-      setEmployees(response.data.content || []);
-    } catch (error) {
-      console.error('Error loading employees:', error);
-    }
-  };
-
-  const generateReport = async () => {
-    if (!startDate || !endDate) {
-      alert('Please select date range');
-      return;
-    }
-
-    setLoading(true);
-    setReportData(null);
-
-    try {
-      let url = '';
-      const params = new URLSearchParams({
-        startDate,
-        endDate,
-      });
-
-      if (selectedEmployee && reportType !== 'ot-by-generator') {
-        params.append('employeeId', selectedEmployee);
-      }
-
-      if (reportType === 'time-tracking') {
-        url = `/admin/reports/time-tracking?${params}`;
-      } else if (reportType === 'ot') {
-        url = `/admin/reports/ot?${params}`;
-      } else if (reportType === 'ot-by-generator') {
-        url = `/admin/reports/ot-by-generator?${params}`;
-      }
-
-      const response = await apiClient.get(url);
-      setReportData(response.data);
+      const blob = await reportService.exportTimeTracking(startDate, endDate);
+      downloadCSV(blob, `time-tracking-${startDate}-to-${endDate}.csv`);
     } catch (error: any) {
-      alert('Error generating report: ' + (error.response?.data?.message || error.message));
-    } finally {
-      setLoading(false);
+      alert('Error exporting report');
     }
   };
 
-  const renderTimeTrackingReport = () => {
-    if (!reportData || reportData.length === 0) {
-      return <p>No data found for the selected period.</p>;
+  const handleExportOvertime = async () => {
+    try {
+      const blob = await reportService.exportOvertime(startDate, endDate);
+      downloadCSV(blob, `overtime-${startDate}-to-${endDate}.csv`);
+    } catch (error: any) {
+      alert('Error exporting report');
     }
-
-    return (
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="p-3 text-left">Employee</th>
-              <th className="p-3 text-left">Date</th>
-              <th className="p-3 text-left">Start Time</th>
-              <th className="p-3 text-left">End Time</th>
-              <th className="p-3 text-right">Work (min)</th>
-              <th className="p-3 text-right">Idle (min)</th>
-              <th className="p-3 text-right">Travel (min)</th>
-              <th className="p-3 text-right">Total (min)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {reportData.map((row: any, index: number) => (
-              <tr key={index} className="border-b hover:bg-gray-50">
-                <td className="p-3">{row.employeeName}</td>
-                <td className="p-3">{row.date}</td>
-                <td className="p-3">
-                  {row.dayStartTime ? new Date(row.dayStartTime).toLocaleTimeString() : '-'}
-                </td>
-                <td className="p-3">
-                  {row.dayEndTime ? new Date(row.dayEndTime).toLocaleTimeString() : '-'}
-                </td>
-                <td className="p-3 text-right">{row.workMinutes}</td>
-                <td className="p-3 text-right">{row.idleMinutes}</td>
-                <td className="p-3 text-right">{row.travelMinutes}</td>
-                <td className="p-3 text-right font-semibold">{row.totalMinutes}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
   };
 
-  const renderOTReport = () => {
-    if (!reportData || reportData.length === 0) {
-      return <p>No data found for the selected period.</p>;
-    }
-
-    return (
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="p-3 text-left">Employee</th>
-              <th className="p-3 text-left">Date</th>
-              <th className="p-3 text-right">Morning OT (min)</th>
-              <th className="p-3 text-right">Evening OT (min)</th>
-              <th className="p-3 text-right">Total OT (min)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {reportData.map((row: any, index: number) => (
-              <tr key={index} className="border-b hover:bg-gray-50">
-                <td className="p-3">{row.employeeName}</td>
-                <td className="p-3">{row.date}</td>
-                <td className="p-3 text-right">{row.morningOtMinutes}</td>
-                <td className="p-3 text-right">{row.eveningOtMinutes}</td>
-                <td className="p-3 text-right font-semibold">{row.totalOtMinutes}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
-  };
-
-  const renderOTByGeneratorReport = () => {
-    if (!reportData || !reportData.generatorWiseOT) {
-      return <p>No data found for the selected period.</p>;
-    }
-
-    const generators = Object.keys(reportData.generatorWiseOT);
-
-    return (
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="p-3 text-left">Generator</th>
-              <th className="p-3 text-right">Morning OT (min)</th>
-              <th className="p-3 text-right">Evening OT (min)</th>
-              <th className="p-3 text-right">Total OT (min)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {generators.map((gen, index) => {
-              const data = reportData.generatorWiseOT[gen];
-              return (
-                <tr key={index} className="border-b hover:bg-gray-50">
-                  <td className="p-3">{gen}</td>
-                  <td className="p-3 text-right">{data.morningOT}</td>
-                  <td className="p-3 text-right">{data.eveningOT}</td>
-                  <td className="p-3 text-right font-semibold">{data.totalOT}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    );
-  };
+  if (loading) return <LoadingSpinner />;
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <nav className="bg-blue-600 text-white p-4">
-        <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Reports</h1>
-          <button onClick={() => router.push('/admin/dashboard')} className="btn-secondary">
-            Back to Dashboard
-          </button>
-        </div>
-      </nav>
+      <AdminNav currentPage="Reports" user={user} />
 
       <div className="container mx-auto p-6">
-        <h2 className="text-3xl font-bold mb-6">Generate Reports</h2>
+        <h2 className="text-3xl font-bold mb-6">Reports & Analytics</h2>
 
-        <div className="card mb-6">
-          <h3 className="text-xl font-bold mb-4">Report Parameters</h3>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Date Range Selector */}
+        <Card className="mb-6">
+          <h3 className="text-lg font-bold mb-4">Select Date Range</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-gray-700 mb-2">Report Type *</label>
-              <select
-                className="input-field"
-                value={reportType}
-                onChange={(e) => setReportType(e.target.value)}
-              >
-                <option value="time-tracking">Time Tracking Report</option>
-                <option value="ot">OT Report</option>
-                <option value="ot-by-generator">OT by Generator</option>
-              </select>
-            </div>
-
-            {reportType !== 'ot-by-generator' && (
-              <div>
-                <label className="block text-gray-700 mb-2">Employee (Optional)</label>
-                <select
-                  className="input-field"
-                  value={selectedEmployee}
-                  onChange={(e) => setSelectedEmployee(e.target.value)}
-                >
-                  <option value="">All Employees</option>
-                  {employees.map((emp) => (
-                    <option key={emp.id} value={emp.id}>
-                      {emp.fullName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            <div>
-              <label className="block text-gray-700 mb-2">Start Date *</label>
+              <label className="block text-sm font-medium mb-1">Start Date</label>
               <input
                 type="date"
-                className="input-field"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
+                className="input-field"
               />
             </div>
-
             <div>
-              <label className="block text-gray-700 mb-2">End Date *</label>
+              <label className="block text-sm font-medium mb-1">End Date</label>
               <input
                 type="date"
-                className="input-field"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
+                className="input-field"
               />
             </div>
           </div>
+        </Card>
 
-          <button onClick={generateReport} className="btn-primary mt-4" disabled={loading}>
-            {loading ? 'Generating...' : 'Generate Report'}
-          </button>
+        {/* Export Options */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Card className="hover:shadow-lg transition-shadow">
+            <h3 className="text-lg font-bold mb-2">⏱️ Time Tracking Report</h3>
+            <p className="text-sm text-gray-600 mb-4">Export employee work time, travel time, and idle time</p>
+            <button onClick={handleExportTimeTracking} className="btn-primary w-full">
+              📥 Export CSV
+            </button>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow">
+            <h3 className="text-lg font-bold mb-2">⏰ Overtime Report</h3>
+            <p className="text-sm text-gray-600 mb-4">Export morning and evening overtime by employee</p>
+            <button onClick={handleExportOvertime} className="btn-primary w-full">
+              📥 Export CSV
+            </button>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow">
+            <h3 className="text-lg font-bold mb-2">📊 Dashboard Statistics</h3>
+            <p className="text-sm text-gray-600 mb-4">View real-time system statistics</p>
+            <button onClick={() => router.push('/admin/dashboard')} className="btn-secondary w-full">
+              View Dashboard
+            </button>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow">
+            <h3 className="text-lg font-bold mb-2">📈 Productivity Report</h3>
+            <p className="text-sm text-gray-600 mb-4">Employee productivity metrics (View backend API)</p>
+            <button className="btn-secondary w-full" disabled>
+              Coming Soon
+            </button>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow">
+            <h3 className="text-lg font-bold mb-2">🎯 Ticket Completion</h3>
+            <p className="text-sm text-gray-600 mb-4">Ticket completion statistics (View backend API)</p>
+            <button className="btn-secondary w-full" disabled>
+              Coming Soon
+            </button>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow">
+            <h3 className="text-lg font-bold mb-2">📅 Monthly Summary</h3>
+            <p className="text-sm text-gray-600 mb-4">Comprehensive monthly report (View backend API)</p>
+            <button className="btn-secondary w-full" disabled>
+              Coming Soon
+            </button>
+          </Card>
         </div>
 
-        {reportData && (
-          <div className="card">
-            <h3 className="text-xl font-bold mb-4">
-              {reportType === 'time-tracking' && 'Time Tracking Report'}
-              {reportType === 'ot' && 'OT Report'}
-              {reportType === 'ot-by-generator' && 'OT Report by Generator'}
-            </h3>
-
-            {reportType === 'time-tracking' && renderTimeTrackingReport()}
-            {reportType === 'ot' && renderOTReport()}
-            {reportType === 'ot-by-generator' && renderOTByGeneratorReport()}
-          </div>
-        )}
+        <Card className="mt-6">
+          <h3 className="text-lg font-bold mb-3">📝 Available Report Endpoints</h3>
+          <p className="text-sm text-gray-600 mb-4">All backend report endpoints are integrated via the reportService. You can extend this page to show detailed analytics.</p>
+          <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
+            <li>Time Tracking Report (Integrated ✅)</li>
+            <li>Overtime Report (Integrated ✅)</li>
+            <li>Overtime by Generator</li>
+            <li>Employee Performance Scores</li>
+            <li>Ticket Completion Statistics</li>
+            <li>Employee Productivity Metrics</li>
+            <li>Generator Service History</li>
+            <li>Daily Attendance Summary</li>
+            <li>Monthly Summary Report</li>
+            <li>Dashboard Statistics (Integrated ✅)</li>
+          </ul>
+        </Card>
       </div>
     </div>
   );

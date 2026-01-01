@@ -2,208 +2,228 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import apiClient from '@/lib/api';
+import { generatorService } from '@/lib/services/admin.service';
+import { authService } from '@/lib/services/auth.service';
+import { Generator, GeneratorRequest, PageResponse } from '@/types';
+import AdminNav from '@/components/layouts/AdminNav';
+import Card from '@/components/ui/Card';
+import Pagination from '@/components/ui/Pagination';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { formatDate } from '@/lib/utils/format';
 
-export default function AdminGeneratorsPage() {
+export default function AdminGenerators() {
   const router = useRouter();
-  const [generators, setGenerators] = useState<any[]>([]);
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  const [formData, setFormData] = useState({
+  const [loading, setLoading] = useState(true);
+  const [generators, setGenerators] = useState<PageResponse<Generator> | null>(null);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [editingGen, setEditingGen] = useState<Generator | null>(null);
+  const [formData, setFormData] = useState<GeneratorRequest>({
     model: '',
     name: '',
     capacity: '',
     locationName: '',
     ownerEmail: '',
-    latitude: '',
-    longitude: '',
+    latitude: undefined,
+    longitude: undefined,
     note: '',
   });
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    const role = localStorage.getItem('role');
+    const role = authService.getRole();
     if (role !== 'ADMIN') {
       router.push('/login');
       return;
     }
-    loadGenerators();
+
+    setUser(authService.getStoredUser());
+    loadGenerators(0);
   }, [router]);
 
-  const loadGenerators = async () => {
+  const loadGenerators = async (page: number, query = '') => {
     try {
-      const response = await apiClient.get('/admin/generators?size=50');
-      setGenerators(response.data.content || []);
+      const data = query
+        ? await generatorService.searchByName(query, { page, size: 10 })
+        : await generatorService.getAll({ page, size: 10 });
+
+      setGenerators(data);
+      setCurrentPage(page);
     } catch (error) {
       console.error('Error loading generators:', error);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const payload = {
-        ...formData,
-        latitude: formData.latitude ? parseFloat(formData.latitude) : null,
-        longitude: formData.longitude ? parseFloat(formData.longitude) : null,
-      };
-      await apiClient.post('/admin/generators', payload);
-      alert('Generator created successfully!');
-      setShowCreateForm(false);
-      setFormData({
-        model: '',
-        name: '',
-        capacity: '',
-        locationName: '',
-        ownerEmail: '',
-        latitude: '',
-        longitude: '',
-        note: '',
-      });
-      loadGenerators();
-    } catch (error: any) {
-      alert('Error creating generator: ' + (error.response?.data?.message || error.message));
     } finally {
       setLoading(false);
     }
   };
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    loadGenerators(0, searchQuery);
+  };
+
+  const handleCreate = () => {
+    setEditingGen(null);
+    setFormData({
+      model: '',
+      name: '',
+      capacity: '',
+      locationName: '',
+      ownerEmail: '',
+      latitude: undefined,
+      longitude: undefined,
+      note: '',
+    });
+    setShowModal(true);
+  };
+
+  const handleEdit = (gen: Generator) => {
+    setEditingGen(gen);
+    setFormData({
+      model: gen.model,
+      name: gen.name,
+      capacity: gen.capacity || '',
+      locationName: gen.locationName,
+      ownerEmail: gen.ownerEmail || '',
+      latitude: gen.latitude,
+      longitude: gen.longitude,
+      note: gen.note || '',
+    });
+    setShowModal(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingGen) {
+        await generatorService.update(editingGen.id, formData);
+        alert('Generator updated successfully!');
+      } else {
+        await generatorService.create(formData);
+        alert('Generator created successfully!');
+      }
+      setShowModal(false);
+      loadGenerators(currentPage, searchQuery);
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Error saving generator');
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('Are you sure? This will fail if there are associated tickets.')) return;
+    try {
+      await generatorService.delete(id);
+      alert('Generator deleted successfully!');
+      loadGenerators(currentPage, searchQuery);
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Error deleting generator');
+    }
+  };
+
+  if (loading) return <LoadingSpinner />;
+
   return (
     <div className="min-h-screen bg-gray-100">
-      <nav className="bg-blue-600 text-white p-4">
-        <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Generator Management</h1>
-          <button onClick={() => router.push('/admin/dashboard')} className="btn-secondary">
-            Back to Dashboard
-          </button>
-        </div>
-      </nav>
+      <AdminNav currentPage="Generators" user={user} />
 
       <div className="container mx-auto p-6">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-3xl font-bold">Generators</h2>
-          <button onClick={() => setShowCreateForm(!showCreateForm)} className="btn-primary">
-            {showCreateForm ? 'Cancel' : '+ Add Generator'}
-          </button>
+          <h2 className="text-3xl font-bold">Generator Management</h2>
+          <button onClick={handleCreate} className="btn-primary">+ Create Generator</button>
         </div>
 
-        {showCreateForm && (
-          <div className="card mb-6">
-            <h3 className="text-xl font-bold mb-4">Add New Generator</h3>
+        {/* Search Bar */}
+        <Card className="mb-6">
+          <form onSubmit={handleSearch} className="flex gap-4">
+            <input
+              type="text"
+              placeholder="Search by name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="input-field flex-1"
+            />
+            <button type="submit" className="btn-primary">Search</button>
+            <button type="button" onClick={() => { setSearchQuery(''); loadGenerators(0); }} className="btn-secondary">Clear</button>
+          </form>
+        </Card>
+
+        {/* Generators Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {generators && generators.content.length > 0 ? (
+            generators.content.map((gen) => (
+              <Card key={gen.id}>
+                <h3 className="text-xl font-bold mb-2">{gen.name}</h3>
+                <p className="text-sm text-gray-600 mb-2">Model: {gen.model}</p>
+                <p className="text-sm text-gray-600 mb-2">Capacity: {gen.capacity || 'N/A'}</p>
+                <p className="text-sm text-gray-600 mb-2">Location: {gen.locationName}</p>
+                {gen.ownerEmail && <p className="text-sm text-gray-600 mb-2">Owner: {gen.ownerEmail}</p>}
+                {gen.note && <p className="text-sm text-gray-500 italic mb-3">{gen.note}</p>}
+                <p className="text-xs text-gray-500 mb-3">Created: {formatDate(gen.createdAt)}</p>
+                <div className="flex gap-2">
+                  <button onClick={() => handleEdit(gen)} className="btn-secondary flex-1 text-sm">Edit</button>
+                  <button onClick={() => router.push(`/admin/generators/${gen.id}`)} className="btn-primary flex-1 text-sm">View Details</button>
+                  <button onClick={() => handleDelete(gen.id)} className="btn-danger text-sm">Delete</button>
+                </div>
+              </Card>
+            ))
+          ) : (
+            <div className="col-span-full text-center py-12 text-gray-500">No generators found</div>
+          )}
+        </div>
+
+        {generators && <Pagination currentPage={currentPage} totalPages={generators.totalPages} onPageChange={(p) => loadGenerators(p, searchQuery)} />}
+      </div>
+
+      {/* Create/Edit Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <h3 className="text-xl font-bold mb-4">{editingGen ? 'Edit Generator' : 'Create Generator'}</h3>
             <form onSubmit={handleSubmit}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-gray-700 mb-2">Model *</label>
-                  <input
-                    type="text"
-                    className="input-field"
-                    value={formData.model}
-                    onChange={(e) => setFormData({ ...formData, model: e.target.value })}
-                    required
-                  />
+                  <label className="block text-sm font-medium mb-1">Model *</label>
+                  <input type="text" required value={formData.model} onChange={(e) => setFormData({ ...formData, model: e.target.value })} className="input-field" />
                 </div>
-
                 <div>
-                  <label className="block text-gray-700 mb-2">Name *</label>
-                  <input
-                    type="text"
-                    className="input-field"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
-                  />
+                  <label className="block text-sm font-medium mb-1">Name *</label>
+                  <input type="text" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="input-field" />
                 </div>
-
                 <div>
-                  <label className="block text-gray-700 mb-2">Capacity</label>
-                  <input
-                    type="text"
-                    className="input-field"
-                    placeholder="e.g., 5000 KVA"
-                    value={formData.capacity}
-                    onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
-                  />
+                  <label className="block text-sm font-medium mb-1">Capacity</label>
+                  <input type="text" value={formData.capacity} onChange={(e) => setFormData({ ...formData, capacity: e.target.value })} className="input-field" />
                 </div>
-
                 <div>
-                  <label className="block text-gray-700 mb-2">Location Name *</label>
-                  <input
-                    type="text"
-                    className="input-field"
-                    value={formData.locationName}
-                    onChange={(e) => setFormData({ ...formData, locationName: e.target.value })}
-                    required
-                  />
+                  <label className="block text-sm font-medium mb-1">Location Name *</label>
+                  <input type="text" required value={formData.locationName} onChange={(e) => setFormData({ ...formData, locationName: e.target.value })} className="input-field" />
                 </div>
-
                 <div>
-                  <label className="block text-gray-700 mb-2">Owner Email</label>
-                  <input
-                    type="email"
-                    className="input-field"
-                    value={formData.ownerEmail}
-                    onChange={(e) => setFormData({ ...formData, ownerEmail: e.target.value })}
-                  />
+                  <label className="block text-sm font-medium mb-1">Owner Email</label>
+                  <input type="email" value={formData.ownerEmail} onChange={(e) => setFormData({ ...formData, ownerEmail: e.target.value })} className="input-field" />
                 </div>
-
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Latitude</label>
+                    <input type="number" step="any" value={formData.latitude || ''} onChange={(e) => setFormData({ ...formData, latitude: e.target.value ? parseFloat(e.target.value) : undefined })} className="input-field" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Longitude</label>
+                    <input type="number" step="any" value={formData.longitude || ''} onChange={(e) => setFormData({ ...formData, longitude: e.target.value ? parseFloat(e.target.value) : undefined })} className="input-field" />
+                  </div>
+                </div>
                 <div>
-                  <label className="block text-gray-700 mb-2">Latitude</label>
-                  <input
-                    type="number"
-                    step="any"
-                    className="input-field"
-                    value={formData.latitude}
-                    onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 mb-2">Longitude</label>
-                  <input
-                    type="number"
-                    step="any"
-                    className="input-field"
-                    value={formData.longitude}
-                    onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-gray-700 mb-2">Note</label>
-                  <textarea
-                    className="input-field"
-                    rows={3}
-                    value={formData.note}
-                    onChange={(e) => setFormData({ ...formData, note: e.target.value })}
-                  />
+                  <label className="block text-sm font-medium mb-1">Notes</label>
+                  <textarea value={formData.note} onChange={(e) => setFormData({ ...formData, note: e.target.value })} className="input-field" rows={3} />
                 </div>
               </div>
-
-              <button type="submit" className="btn-primary mt-4" disabled={loading}>
-                {loading ? 'Adding...' : 'Add Generator'}
-              </button>
+              <div className="flex gap-3 mt-6">
+                <button type="submit" className="btn-primary flex-1">Save</button>
+                <button type="button" onClick={() => setShowModal(false)} className="btn-secondary flex-1">Cancel</button>
+              </div>
             </form>
           </div>
-        )}
-
-        <div className="card">
-          <h3 className="text-xl font-bold mb-4">All Generators</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {generators.map((gen) => (
-              <div key={gen.id} className="border rounded p-4 bg-white hover:shadow-lg">
-                <h4 className="font-bold text-lg">{gen.name}</h4>
-                <p className="text-sm text-gray-600">Model: {gen.model}</p>
-                {gen.capacity && <p className="text-sm text-gray-600">Capacity: {gen.capacity}</p>}
-                <p className="text-sm text-gray-600 mt-2">📍 {gen.locationName}</p>
-                {gen.ownerEmail && <p className="text-sm text-gray-600">✉️ {gen.ownerEmail}</p>}
-                {gen.note && <p className="text-sm text-gray-500 mt-2 italic">{gen.note}</p>}
-              </div>
-            ))}
-          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
