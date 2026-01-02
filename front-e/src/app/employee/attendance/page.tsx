@@ -16,6 +16,8 @@ export default function EmployeeAttendance() {
   const [history, setHistory] = useState<PageResponse<EmployeeDayAttendance> | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [user, setUser] = useState<any>(null);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
 
   useEffect(() => {
     const role = authService.getRole();
@@ -45,18 +47,80 @@ export default function EmployeeAttendance() {
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Navigation */}
-      <nav className="bg-green-600 text-white p-4 shadow-lg">
-        <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold">EMS Employee Portal</h1>
-          <div className="flex items-center gap-6">
-            <button onClick={() => router.push('/employee/dashboard')} className="hover:text-green-200">Dashboard</button>
-            <button className="font-bold">Attendance</button>
-            <button onClick={() => router.push('/employee/job-cards')} className="hover:text-green-200">Job Cards</button>
-            <div className="border-l border-green-400 pl-6 flex items-center gap-4">
-              <span className="text-sm">👤 {user?.fullName}</span>
-              <button onClick={() => authService.logout()} className="btn-secondary text-sm">Logout</button>
+      <nav className="bg-green-600 text-white shadow-lg">
+        <div className="container mx-auto px-4 py-3">
+          {/* Mobile Header */}
+          <div className="flex justify-between items-center">
+            <h1 className="text-lg sm:text-2xl font-bold">EMS Employee</h1>
+
+            {/* Mobile Menu Toggle */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lg:hidden p-2 hover:bg-green-700 rounded-lg transition-colors"
+              aria-label="Toggle menu"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {mobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+
+            {/* Desktop Navigation */}
+            <div className="hidden lg:flex items-center gap-6">
+              <button onClick={() => router.push('/employee/dashboard')} className="hover:text-green-200 transition-colors">Dashboard</button>
+              <button onClick={() => router.push('/employee/job-cards')} className=" hover:text-green-200 transition-colors">
+                Job Cards
+                {pendingCount > 0 && (
+                  <span className="bg-red-500 px-2 py-1 rounded-full text-xs ml-2 animate-pulse">{pendingCount}</span>
+                )}
+              </button>
+              <button className="font-bold hover:text-green-200 transition-colors">Attendance</button>
+              <div className="border-l border-green-400 pl-6 flex items-center gap-4">
+                <span className="text-sm">👤 {user?.fullName}</span>
+                <button onClick={() => authService.logout()} className="px-3 py-1.5 bg-white text-green-600 rounded-lg hover:bg-green-50 text-sm font-medium transition-colors">
+                  Logout
+                </button>
+              </div>
             </div>
           </div>
+
+          {/* Mobile Menu Dropdown */}
+          {mobileMenuOpen && (
+            <div className="lg:hidden mt-4 pb-4 space-y-2 border-t border-green-500 pt-4">
+              <button
+                onClick={() => { router.push('/employee/dashboard'); setMobileMenuOpen(false); }}
+                className="block w-full text-left px-4 py-3 hover:bg-green-700 rounded-lg transition-colors"
+              >
+                Dashboard
+              </button>
+              <button   className="block w-full text-left px-4 py-3 hover:bg-green-700 rounded-lg transition-colors"
+              onClick={() => { router.push('/employee/job-cards'); setMobileMenuOpen(false); }}>
+                Job Cards
+                {pendingCount > 0 && (
+                  <span className="bg-red-500 px-2 py-1 rounded-full text-xs ml-2">{pendingCount}</span>
+                )}
+              </button>
+              <button
+              className="block w-full text-left px-4 py-3 font-bold bg-green-700 rounded-lg"
+              
+              >
+                Attendance
+              </button>
+              
+              <div className="border-t border-green-500 pt-3 mt-3 px-4">
+                <p className="text-sm mb-3">👤 {user?.fullName}</p>
+                <button
+                  onClick={() => authService.logout()}
+                  className="w-full px-4 py-2 bg-white text-green-600 rounded-lg hover:bg-green-50 font-medium transition-colors"
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </nav>
 
