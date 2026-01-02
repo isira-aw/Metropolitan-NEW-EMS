@@ -57,7 +57,7 @@ export default function AdminReports() {
 
   const loadEmployees = async () => {
     try {
-      const response = await userService.getAll(0, 1000, UserRole.EMPLOYEE);
+      const response = await userService.getEmployees({ page: 0, size: 1000 });
       setEmployees(response.content);
     } catch (error) {
       console.error('Error loading employees:', error);

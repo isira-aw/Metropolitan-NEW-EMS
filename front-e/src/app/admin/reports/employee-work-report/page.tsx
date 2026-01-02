@@ -322,7 +322,7 @@ export default function EmployeeWorkReportPage() {
                               <span className="font-medium text-gray-900">
                                 {job.ticketNumber}
                               </span>
-                              <StatusBadge status={job.jobStatus} />
+                              <StatusBadge status={job.jobStatus as any} />
                               {job.approved && (
                                 <CheckCircle className="w-4 h-4 text-green-500" />
                               )}

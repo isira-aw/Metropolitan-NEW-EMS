@@ -15,10 +15,16 @@ export default function EmployeeJobCards() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [jobCards, setJobCards] = useState<PageResponse<MiniJobCard> | null>(null);
+  const [allJobCards, setAllJobCards] = useState<MiniJobCard[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [statusFilter, setStatusFilter] = useState<JobStatus | 'ALL'>('ALL');
   const [pendingCount, setPendingCount] = useState(0);
   const [user, setUser] = useState<any>(null);
+
+  // Date filter state
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [dateFilterActive, setDateFilterActive] = useState(false);
 
   useEffect(() => {
     const role = authService.getRole();
@@ -38,13 +44,56 @@ export default function EmployeeJobCards() {
         ? await jobCardService.getAll({ page, size: 10 })
         : await jobCardService.getByStatus(statusFilter, { page, size: 10 });
 
-      setJobCards(data);
+      setAllJobCards(data.content);
+
+      // Apply date filter if active
+      let filteredContent = data.content;
+      if (dateFilterActive && startDate && endDate) {
+        filteredContent = data.content.filter(card => {
+          const scheduledDate = card.mainTicket.scheduledDate;
+          return scheduledDate >= startDate && scheduledDate <= endDate;
+        });
+      }
+
+      setJobCards({
+        ...data,
+        content: filteredContent,
+        totalElements: filteredContent.length,
+        totalPages: Math.ceil(filteredContent.length / 10),
+      });
       setCurrentPage(page);
     } catch (error) {
       console.error('Error loading job cards:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleTodayFilter = () => {
+    const today = new Date().toISOString().split('T')[0];
+    setStartDate(today);
+    setEndDate(today);
+    setDateFilterActive(true);
+    setCurrentPage(0);
+
+    // Apply filter to current data
+    setTimeout(() => loadJobCards(0), 100);
+  };
+
+  const handleDateFilter = () => {
+    if (startDate && endDate) {
+      setDateFilterActive(true);
+      setCurrentPage(0);
+      loadJobCards(0);
+    }
+  };
+
+  const handleClearFilter = () => {
+    setStartDate('');
+    setEndDate('');
+    setDateFilterActive(false);
+    setCurrentPage(0);
+    loadJobCards(0);
   };
 
   const loadPendingCount = async () => {
@@ -80,6 +129,58 @@ export default function EmployeeJobCards() {
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-3xl font-bold">My Job Cards</h2>
         </div>
+
+        {/* Date Filter Controls */}
+        <Card className="mb-4">
+          <div className="flex flex-wrap gap-4 items-end">
+            <div>
+              <label className="block text-sm font-semibold mb-1">Start Date</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="input"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-1">End Date</label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="input"
+              />
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handleTodayFilter}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                📅 Today
+              </button>
+              <button
+                onClick={handleDateFilter}
+                disabled={!startDate || !endDate}
+                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Apply Filter
+              </button>
+              {dateFilterActive && (
+                <button
+                  onClick={handleClearFilter}
+                  className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+                >
+                  Clear Filter
+                </button>
+              )}
+            </div>
+          </div>
+          {dateFilterActive && (
+            <div className="mt-3 text-sm text-blue-600">
+              📌 Showing job cards scheduled from {startDate} to {endDate}
+            </div>
+          )}
+        </Card>
 
         {/* Filter Tabs */}
         <div className="flex gap-2 mb-6 flex-wrap">
@@ -120,7 +221,7 @@ export default function EmployeeJobCards() {
             ))
           ) : (
             <div className="col-span-full text-center py-12 text-gray-500">
-              No job cards found
+              {dateFilterActive ? 'No job cards found for selected date range' : 'No job cards found'}
             </div>
           )}
         </div>
