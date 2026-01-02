@@ -19,6 +19,8 @@ export default function JobCardDetail() {
   const [jobCard, setJobCard] = useState<MiniJobCard | null>(null);
   const [logs, setLogs] = useState<JobStatusLog[]>([]);
   const [user, setUser] = useState<any>(null);
+  const [uploading, setUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   useEffect(() => {
     const role = authService.getRole();
@@ -60,6 +62,31 @@ export default function JobCardDetail() {
       alert(`Status updated to ${newStatus}`);
     } catch (error: any) {
       alert(error.response?.data?.message || 'Error updating status');
+    }
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      setSelectedFile(event.target.files[0]);
+    }
+  };
+
+  const handleImageUpload = async () => {
+    if (!selectedFile) {
+      alert('Please select an image first');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      await jobCardService.uploadImage(id, selectedFile);
+      alert('Image uploaded successfully');
+      setSelectedFile(null);
+      loadJobCard(); // Reload to get the updated imageUrl
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Error uploading image');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -135,6 +162,59 @@ export default function JobCardDetail() {
                   </div>
                 </div>
               )}
+
+              {/* Image Upload Section */}
+              <div className="mt-6 border-t pt-6">
+                <h3 className="font-semibold mb-3">Job Review Image</h3>
+
+                {/* Display existing image if available */}
+                {jobCard.imageUrl && (
+                  <div className="mb-4">
+                    <img
+                      src={jobCardService.getImageUrl(jobCard.imageUrl)}
+                      alt="Job card review"
+                      className="max-w-full h-auto rounded-lg shadow-md"
+                      style={{ maxHeight: '400px' }}
+                    />
+                  </div>
+                )}
+
+                {/* Upload new image */}
+                <div className="space-y-3">
+                  <div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileSelect}
+                      className="block w-full text-sm text-gray-500
+                        file:mr-4 file:py-2 file:px-4
+                        file:rounded-md file:border-0
+                        file:text-sm file:font-semibold
+                        file:bg-green-50 file:text-green-700
+                        hover:file:bg-green-100"
+                    />
+                  </div>
+
+                  {selectedFile && (
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm text-gray-600">
+                        Selected: {selectedFile.name}
+                      </span>
+                      <button
+                        onClick={handleImageUpload}
+                        disabled={uploading}
+                        className="btn-primary"
+                      >
+                        {uploading ? 'Uploading...' : jobCard.imageUrl ? 'Replace Image' : 'Upload Image'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <p className="text-xs text-gray-500 mt-2">
+                  Upload one image for admin review. Maximum file size: 10MB
+                </p>
+              </div>
             </Card>
           </div>
 

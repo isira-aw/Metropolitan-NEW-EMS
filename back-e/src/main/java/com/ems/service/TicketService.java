@@ -752,4 +752,20 @@ public class TicketService {
 
         return count;
     }
+
+    /**
+     * Update job card image URL
+     *
+     * @param miniJobCardId The mini job card ID
+     * @param imageUrl The image filename/URL
+     * @return Updated MiniJobCard
+     */
+    @Transactional
+    public MiniJobCard updateJobCardImage(Long miniJobCardId, String imageUrl) {
+        MiniJobCard miniJobCard = miniJobCardRepository.findById(miniJobCardId)
+                .orElseThrow(() -> new RuntimeException("Mini job card not found with ID: " + miniJobCardId));
+
+        miniJobCard.setImageUrl(imageUrl);
+        return miniJobCardRepository.save(miniJobCard);
+    }
 }
