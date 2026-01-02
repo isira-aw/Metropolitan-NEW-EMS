@@ -190,16 +190,14 @@ public class ReportService {
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
         
         List<EmployeeScore> scores = employeeScoreRepository.findByEmployeeId(employeeId);
-        
-        int totalWeightedScore = 0;
-        int totalWeight = 0;
-        
+
+        int totalScore = 0;
+
         for (EmployeeScore score : scores) {
-            totalWeightedScore += score.getScore() * score.getWeight();
-            totalWeight += score.getWeight();
+            totalScore += score.getWeight(); // Weight is the score
         }
-        
-        double averageScore = totalWeight > 0 ? (double) totalWeightedScore / totalWeight : 0.0;
+
+        double averageScore = scores.size() > 0 ? (double) totalScore / scores.size() : 0.0;
         
         Map<String, Object> result = new HashMap<>();
         result.put("employeeName", employee.getFullName());
@@ -502,8 +500,7 @@ public class ReportService {
         int totalJobsCompleted = 0;
         int totalJobsScored = 0;
         int totalJobsPending = 0;
-        int totalWeightedScore = 0;
-        int totalWeight = 0;
+        int totalScore = 0; // Total score (sum of all weights since weight = score)
         List<Integer> dailyScores = new ArrayList<>();
 
         for (EmployeeDayAttendance attendance : attendances) {
@@ -539,8 +536,8 @@ public class ReportService {
                         .workMinutes(jobCard.getWorkMinutes())
                         .workHours(jobCard.getWorkMinutes() / 60.0)
                         .weight(jobCard.getMainTicket().getWeight())
-                        .score(jobScore.map(EmployeeScore::getScore).orElse(null))
-                        .weightedScore(jobScore.map(s -> s.getScore() * s.getWeight()).orElse(null))
+                        .score(jobScore.map(EmployeeScore::getWeight).orElse(null)) // Weight is the score
+                        .weightedScore(jobScore.map(EmployeeScore::getWeight).orElse(null)) // Same as score now
                         .scored(jobScore.isPresent())
                         .approved(jobCard.getApproved())
                         .build();
@@ -558,19 +555,18 @@ public class ReportService {
                 }
             }
 
-            // Calculate daily score
+            // Calculate daily score (weight is the score)
             int dailyScore = scores.stream()
                     .filter(s -> s.getWorkDate().equals(date))
-                    .mapToInt(s -> s.getScore() * s.getWeight())
+                    .mapToInt(EmployeeScore::getWeight) // Weight is the score
                     .sum();
 
-            int dailyTotalWeight = scores.stream()
+            long dailyJobCount = scores.stream()
                     .filter(s -> s.getWorkDate().equals(date))
-                    .mapToInt(EmployeeScore::getWeight)
-                    .sum();
+                    .count();
 
-            double dailyAverageScore = dailyTotalWeight > 0
-                    ? (double) dailyScore / dailyTotalWeight
+            double dailyAverageScore = dailyJobCount > 0
+                    ? (double) dailyScore / dailyJobCount
                     : 0.0;
 
             if (dailyScore > 0) {
@@ -591,7 +587,7 @@ public class ReportService {
                     .totalOtHours((attendance.getMorningOtMinutes() + attendance.getEveningOtMinutes()) / 60.0)
                     .jobs(jobDetails)
                     .dailyScore(dailyScore > 0 ? dailyScore : null)
-                    .dailyTotalWeight(dailyTotalWeight > 0 ? dailyTotalWeight : null)
+                    .dailyTotalWeight(dailyScore > 0 ? dailyScore : null) // Same as dailyScore now (weight = score)
                     .dailyAverageScore(dailyAverageScore > 0 ? dailyAverageScore : null)
                     .build();
 
@@ -601,13 +597,12 @@ public class ReportService {
             totalDaysWorked++;
             totalWorkMinutes += attendance.getTotalWorkMinutes();
             totalOtMinutes += attendance.getMorningOtMinutes() + attendance.getEveningOtMinutes();
-            totalWeightedScore += dailyScore;
-            totalWeight += dailyTotalWeight;
+            totalScore += dailyScore; // dailyScore is sum of weights for the day
         }
 
         // Calculate summary statistics
-        double overallAverageScore = totalWeight > 0
-                ? (double) totalWeightedScore / totalWeight
+        double overallAverageScore = totalJobsScored > 0
+                ? (double) totalScore / totalJobsScored
                 : 0.0;
 
         Integer maxDailyScore = dailyScores.isEmpty() ? null : dailyScores.stream().max(Integer::compareTo).orElse(null);
@@ -624,8 +619,8 @@ public class ReportService {
                 .totalJobsCompleted(totalJobsCompleted)
                 .totalJobsScored(totalJobsScored)
                 .totalJobsPending(totalJobsPending)
-                .totalWeightedScore(totalWeightedScore)
-                .totalWeight(totalWeight)
+                .totalWeightedScore(totalScore) // Total score (weight = score)
+                .totalWeight(totalScore) // Same as totalWeightedScore now
                 .overallAverageScore(overallAverageScore)
                 .maxDailyScore(maxDailyScore)
                 .minDailyScore(minDailyScore)
