@@ -48,7 +48,7 @@ export default function AdminTickets() {
     loadTickets(0);
     loadGenerators();
     loadEmployees();
-  }, [router, statusFilter]);
+  }, [router, statusFilter, dateFilterActive, selectedDate]);
 
   const loadTickets = async (page: number) => {
     try {
@@ -90,7 +90,6 @@ export default function AdminTickets() {
     setSelectedDate(today);
     setDateFilterActive(true);
     setCurrentPage(0);
-    setTimeout(() => loadTickets(0), 100);
   };
 
   const handleClearFilter = () => {
@@ -199,7 +198,6 @@ export default function AdminTickets() {
                   if (e.target.value) {
                     setDateFilterActive(true);
                     setCurrentPage(0);
-                    setTimeout(() => loadTickets(0), 100);
                   }
                 }}
                 className="input"

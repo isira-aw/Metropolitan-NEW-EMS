@@ -35,7 +35,7 @@ export default function EmployeeJobCards() {
     setUser(authService.getStoredUser());
     loadJobCards(0);
     loadPendingCount();
-  }, [router, statusFilter]);
+  }, [router, statusFilter, dateFilterActive, selectedDate]);
 
   const loadJobCards = async (page: number) => {
     try {
@@ -73,9 +73,6 @@ export default function EmployeeJobCards() {
     setSelectedDate(today);
     setDateFilterActive(true);
     setCurrentPage(0);
-
-    // Apply filter to current data
-    setTimeout(() => loadJobCards(0), 100);
   };
 
   const handleClearFilter = () => {
@@ -132,7 +129,6 @@ export default function EmployeeJobCards() {
                   if (e.target.value) {
                     setDateFilterActive(true);
                     setCurrentPage(0);
-                    setTimeout(() => loadJobCards(0), 100);
                   }
                 }}
                 className="input"

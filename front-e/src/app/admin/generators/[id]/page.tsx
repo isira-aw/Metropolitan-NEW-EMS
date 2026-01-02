@@ -38,7 +38,7 @@ export default function AdminGeneratorDetail() {
     loadGenerator();
     loadStatistics();
     loadTickets(0);
-  }, [id, router]);
+  }, [id, router, dateFilterActive, selectedDate]);
 
   const loadGenerator = async () => {
     try {
@@ -91,9 +91,6 @@ export default function AdminGeneratorDetail() {
     setSelectedDate(today);
     setDateFilterActive(true);
     setCurrentPage(0);
-
-    // Reload tickets with today's date
-    setTimeout(() => loadTickets(0), 100);
   };
 
   const handleDateFilter = () => {
@@ -183,7 +180,6 @@ export default function AdminGeneratorDetail() {
                     if (e.target.value) {
                       setDateFilterActive(true);
                       setCurrentPage(0);
-                      setTimeout(() => loadTickets(0), 100);
                     }
                   }}
                   className="input"
