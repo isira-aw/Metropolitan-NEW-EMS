@@ -607,6 +607,25 @@ public class TicketService {
 
         updateMainTicketStatus(miniJobCard.getMainTicket().getId());
 
+        // Automatically create EmployeeScore when approving
+        // Only create if score doesn't already exist and endTime is set
+        if (!employeeScoreRepository.existsByMiniJobCardId(miniJobCardId) &&
+            miniJobCard.getEndTime() != null) {
+            try {
+                EmployeeScore employeeScore = new EmployeeScore();
+                employeeScore.setEmployee(miniJobCard.getEmployee());
+                employeeScore.setMiniJobCard(miniJobCard);
+                employeeScore.setWorkDate(miniJobCard.getEndTime().toLocalDate());
+                employeeScore.setWeight(miniJobCard.getMainTicket().getWeight());
+                employeeScore.setApprovedBy(approvedBy);
+                employeeScore.setApprovedAt(LocalDateTime.now(ZoneId.of("Asia/Colombo")));
+                employeeScoreRepository.save(employeeScore);
+            } catch (Exception e) {
+                // Log but don't fail approval if score creation fails
+                System.err.println("Warning: Failed to create EmployeeScore for job card " + miniJobCardId + ": " + e.getMessage());
+            }
+        }
+
         return saved;
     }
 
@@ -694,5 +713,43 @@ public class TicketService {
         stats.put("totalCompleted", pending + approved);
 
         return stats;
+    }
+
+    /**
+     * Backfill EmployeeScore records for approved jobs that don't have scores
+     * Useful for fixing data where jobs were approved before automatic score creation was implemented
+     *
+     * @param adminUsername Admin performing the backfill
+     * @return Number of scores created
+     */
+    @Transactional
+    public int backfillEmployeeScores(String adminUsername) {
+        List<MiniJobCard> allJobCards = miniJobCardRepository.findAll();
+        int count = 0;
+
+        for (MiniJobCard jobCard : allJobCards) {
+            // Only backfill for approved, completed jobs that don't have scores
+            if (jobCard.getApproved() &&
+                jobCard.getStatus() == JobStatus.COMPLETED &&
+                jobCard.getEndTime() != null &&
+                !employeeScoreRepository.existsByMiniJobCardId(jobCard.getId())) {
+
+                try {
+                    EmployeeScore employeeScore = new EmployeeScore();
+                    employeeScore.setEmployee(jobCard.getEmployee());
+                    employeeScore.setMiniJobCard(jobCard);
+                    employeeScore.setWorkDate(jobCard.getEndTime().toLocalDate());
+                    employeeScore.setWeight(jobCard.getMainTicket().getWeight());
+                    employeeScore.setApprovedBy(adminUsername);
+                    employeeScore.setApprovedAt(LocalDateTime.now(ZoneId.of("Asia/Colombo")));
+                    employeeScoreRepository.save(employeeScore);
+                    count++;
+                } catch (Exception e) {
+                    System.err.println("Warning: Failed to backfill score for job card " + jobCard.getId() + ": " + e.getMessage());
+                }
+            }
+        }
+
+        return count;
     }
 }

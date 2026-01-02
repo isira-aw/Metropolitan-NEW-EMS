@@ -205,4 +205,21 @@ public class AdminApprovalController {
         var stats = ticketService.getApprovalStatistics();
         return ResponseEntity.ok(stats);
     }
+
+    /**
+     * Backfill scores for approved jobs
+     * Creates EmployeeScore records for jobs that are approved but don't have scores yet
+     *
+     * @param auth Authentication object to get admin username
+     * @return Number of scores created
+     */
+    @PostMapping("/scores/backfill")
+    public ResponseEntity<?> backfillScores(Authentication auth) {
+        String adminUsername = auth.getName();
+        int count = ticketService.backfillEmployeeScores(adminUsername);
+        return ResponseEntity.ok(java.util.Map.of(
+            "message", "Backfilled " + count + " employee scores",
+            "count", count
+        ));
+    }
 }
