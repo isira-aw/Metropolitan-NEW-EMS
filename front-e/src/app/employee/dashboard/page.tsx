@@ -92,8 +92,9 @@ export default function EmployeeDashboard() {
             {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center gap-6">
               <button className="font-bold">Dashboard</button>
-              <button onClick={() => router.push('/employee/attendance')} className="hover:text-green-200 transition-colors">Attendance</button>
+
               <button onClick={() => router.push('/employee/job-cards')} className="hover:text-green-200 transition-colors">Job Cards</button>
+              <button onClick={() => router.push('/employee/attendance')} className="hover:text-green-200 transition-colors">Attendance</button>
               <div className="border-l border-green-400 pl-6 flex items-center gap-4">
                 <span className="text-sm">👤 {user?.fullName}</span>
                 <button onClick={handleLogout} className="px-3 py-1.5 bg-white text-green-600 rounded-lg hover:bg-green-50 text-sm font-medium transition-colors">
@@ -110,17 +111,18 @@ export default function EmployeeDashboard() {
                 Dashboard
               </button>
               <button
-                onClick={() => { router.push('/employee/attendance'); setMobileMenuOpen(false); }}
-                className="block w-full text-left px-4 py-3 hover:bg-green-700 rounded-lg transition-colors"
-              >
-                Attendance
-              </button>
-              <button
                 onClick={() => { router.push('/employee/job-cards'); setMobileMenuOpen(false); }}
                 className="block w-full text-left px-4 py-3 hover:bg-green-700 rounded-lg transition-colors"
               >
                 Job Cards
               </button>
+              <button
+                onClick={() => { router.push('/employee/attendance'); setMobileMenuOpen(false); }}
+                className="block w-full text-left px-4 py-3 hover:bg-green-700 rounded-lg transition-colors"
+              >
+                Attendance
+              </button>
+
               <div className="border-t border-green-500 pt-3 mt-3 px-4">
                 <p className="text-sm mb-3">👤 {user?.fullName}</p>
                 <button

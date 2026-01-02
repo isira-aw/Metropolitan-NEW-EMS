@@ -8,6 +8,7 @@ import { DashboardStats } from '@/types';
 import Card from '@/components/ui/Card';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { formatMinutes } from '@/lib/utils/format';
+import AdminNav from '@/components/layouts/AdminNav';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -41,24 +42,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Navigation */}
-      <nav className="bg-blue-600 text-white p-4 shadow-lg">
-        <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold">EMS Admin Portal</h1>
-          <div className="flex items-center gap-6">
-            <button onClick={() => router.push('/admin/dashboard')} className="font-bold">Dashboard</button>
-            <button onClick={() => router.push('/admin/users')} className="hover:text-blue-200">Users</button>
-            <button onClick={() => router.push('/admin/generators')} className="hover:text-blue-200">Generators</button>
-            <button onClick={() => router.push('/admin/tickets')} className="hover:text-blue-200">Tickets</button>
-            <button onClick={() => router.push('/admin/approvals')} className="hover:text-blue-200">Approvals</button>
-            <button onClick={() => router.push('/admin/reports')} className="hover:text-blue-200">Reports</button>
-            <div className="border-l border-blue-400 pl-6 flex items-center gap-4">
-              <span className="text-sm">👤 {user?.fullName}</span>
-              <button onClick={() => authService.logout()} className="btn-secondary text-sm">Logout</button>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <AdminNav currentPage="Dashboard" user={user} />
 
       <div className="container mx-auto p-6">
         <h2 className="text-3xl font-bold mb-6">Admin Dashboard</h2>

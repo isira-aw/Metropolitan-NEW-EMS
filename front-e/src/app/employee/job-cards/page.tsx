@@ -121,13 +121,14 @@ export default function EmployeeJobCards() {
             {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center gap-6">
               <button onClick={() => router.push('/employee/dashboard')} className="hover:text-green-200 transition-colors">Dashboard</button>
-              <button onClick={() => router.push('/employee/attendance')} className="hover:text-green-200 transition-colors">Attendance</button>
               <button className="font-bold">
                 Job Cards
                 {pendingCount > 0 && (
                   <span className="bg-red-500 px-2 py-1 rounded-full text-xs ml-2 animate-pulse">{pendingCount}</span>
                 )}
               </button>
+              <button onClick={() => router.push('/employee/attendance')} className="hover:text-green-200 transition-colors">Attendance</button>
+              
               <div className="border-l border-green-400 pl-6 flex items-center gap-4">
                 <span className="text-sm">👤 {user?.fullName}</span>
                 <button onClick={() => authService.logout()} className="px-3 py-1.5 bg-white text-green-600 rounded-lg hover:bg-green-50 text-sm font-medium transition-colors">
@@ -146,18 +147,19 @@ export default function EmployeeJobCards() {
               >
                 Dashboard
               </button>
+                            <button className="block w-full text-left px-4 py-3 font-bold bg-green-700 rounded-lg">
+                Job Cards
+                {pendingCount > 0 && (
+                  <span className="bg-red-500 px-2 py-1 rounded-full text-xs ml-2">{pendingCount}</span>
+                )}
+              </button>
               <button
                 onClick={() => { router.push('/employee/attendance'); setMobileMenuOpen(false); }}
                 className="block w-full text-left px-4 py-3 hover:bg-green-700 rounded-lg transition-colors"
               >
                 Attendance
               </button>
-              <button className="block w-full text-left px-4 py-3 font-bold bg-green-700 rounded-lg">
-                Job Cards
-                {pendingCount > 0 && (
-                  <span className="bg-red-500 px-2 py-1 rounded-full text-xs ml-2">{pendingCount}</span>
-                )}
-              </button>
+
               <div className="border-t border-green-500 pt-3 mt-3 px-4">
                 <p className="text-sm mb-3">👤 {user?.fullName}</p>
                 <button
