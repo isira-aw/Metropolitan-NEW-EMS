@@ -33,8 +33,9 @@ public interface EmployeeScoreRepository extends JpaRepository<EmployeeScore, Lo
     // Check if a mini job card already has a score
     boolean existsByMiniJobCardId(Long miniJobCardId);
 
-    // Get total weighted score for employee in date range
-    @Query("SELECT COALESCE(SUM(es.score * es.weight), 0) FROM EmployeeScore es " +
+    // Get total weight (score) for employee in date range
+    // Note: weight and score are consolidated - weight IS the score
+    @Query("SELECT COALESCE(SUM(es.weight), 0) FROM EmployeeScore es " +
            "WHERE es.employee.id = :employeeId " +
            "AND es.workDate BETWEEN :startDate AND :endDate")
     Integer getTotalWeightedScore(
