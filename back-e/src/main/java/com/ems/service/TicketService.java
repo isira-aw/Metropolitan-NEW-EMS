@@ -225,21 +225,22 @@ public class TicketService {
     }
     
     /**
-     * Assign performance score to an approved mini job card
+     * Assign score to an approved mini job card
+     * Score is automatically set to the MainTicket's weight value
      *
      * Business Rules:
      * 1. MiniJobCard must exist
      * 2. MiniJobCard must be COMPLETED
      * 3. MiniJobCard must be APPROVED by admin
      * 4. Cannot assign score twice to the same job card
+     * 5. Score equals weight from MainTicket (1-5)
      *
      * @param miniJobCardId The mini job card ID
-     * @param score Performance score (1-10)
      * @param adminUsername Admin who is assigning the score
      * @return Created EmployeeScore entity
      */
     @Transactional
-    public EmployeeScore assignScore(Long miniJobCardId, Integer score, String adminUsername) {
+    public EmployeeScore assignScore(Long miniJobCardId, String adminUsername) {
         // 1. Fetch mini job card
         MiniJobCard miniJobCard = miniJobCardRepository.findById(miniJobCardId)
                 .orElseThrow(() -> new RuntimeException("Mini job card not found with ID: " + miniJobCardId));
@@ -267,13 +268,14 @@ public class TicketService {
             throw new RuntimeException("Cannot assign score: job card has no end time recorded.");
         }
 
-        // 6. Create new score
+        // 6. Create new score - weight from MainTicket is used as the score
+        Integer weight = miniJobCard.getMainTicket().getWeight();
+
         EmployeeScore employeeScore = new EmployeeScore();
         employeeScore.setEmployee(miniJobCard.getEmployee());
         employeeScore.setMiniJobCard(miniJobCard);
         employeeScore.setWorkDate(miniJobCard.getEndTime().toLocalDate());
-        employeeScore.setWeight(miniJobCard.getMainTicket().getWeight());
-        employeeScore.setScore(score);
+        employeeScore.setWeight(weight); // Weight and score are the same
         employeeScore.setApprovedBy(adminUsername);
         employeeScore.setApprovedAt(LocalDateTime.now(ZoneId.of("Asia/Colombo")));
 
@@ -351,7 +353,7 @@ public class TicketService {
         // Get scores
         List<EmployeeScore> scores = employeeScoreRepository.findByEmployeeId(employee.getId());
         double avgScore = scores.stream()
-                .mapToDouble(EmployeeScore::getScore)
+                .mapToDouble(EmployeeScore::getWeight) // Weight is the score
                 .average()
                 .orElse(0.0);
 
@@ -648,15 +650,15 @@ public class TicketService {
     }
 
     @Transactional
-    public EmployeeScore updateScore(Long scoreId, int newScore, String updatedBy) {
+    public EmployeeScore updateScore(Long scoreId, int newWeight, String updatedBy) {
         EmployeeScore score = employeeScoreRepository.findById(scoreId)
                 .orElseThrow(() -> new RuntimeException("Score not found"));
 
-        if (newScore < 1 || newScore > 10) {
-            throw new RuntimeException("Score must be between 1 and 10");
+        if (newWeight < 1 || newWeight > 5) {
+            throw new RuntimeException("Weight/Score must be between 1 and 5");
         }
 
-        score.setScore(newScore);
+        score.setWeight(newWeight); // Weight and score are the same
         score.setApprovedBy(updatedBy);
         score.setApprovedAt(LocalDateTime.now(ZoneId.of("Asia/Colombo")));
 

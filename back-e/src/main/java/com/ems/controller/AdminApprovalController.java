@@ -109,15 +109,16 @@ public class AdminApprovalController {
     }
 
     /**
-     * Assign performance score to an approved mini job card
+     * Assign score to an approved mini job card
+     * Score is automatically set to the MainTicket's weight value
      *
      * Business Rules:
      * - MiniJobCard must be COMPLETED
      * - MiniJobCard must be APPROVED by admin first
      * - Cannot assign score twice to the same job card
-     * - Score is weighted based on ticket complexity (MainTicket.weight)
+     * - Score equals weight from MainTicket (1-5)
      *
-     * @param request ScoreRequest DTO (miniJobCardId, score)
+     * @param request ScoreRequest DTO (miniJobCardId only)
      * @param auth Spring Security authentication
      * @return Created EmployeeScore entity
      */
@@ -129,7 +130,6 @@ public class AdminApprovalController {
         String approvedBy = auth.getName();
         EmployeeScore score = ticketService.assignScore(
             request.getMiniJobCardId(),
-            request.getScore(),
             approvedBy
         );
         return ResponseEntity.ok(score);
@@ -162,22 +162,22 @@ public class AdminApprovalController {
     }
 
     /**
-     * Update score
-     * Modify existing performance score
+     * Update score/weight
+     * Modify existing score (which is the weight value)
      *
      * @param scoreId EmployeeScore ID
-     * @param newScore New score value (1-10)
+     * @param newWeight New weight/score value (1-5)
      * @param auth Spring Security authentication
      * @return Updated EmployeeScore
      */
     @PutMapping("/scores/{scoreId}")
     public ResponseEntity<EmployeeScore> updateScore(
             @PathVariable Long scoreId,
-            @RequestParam int newScore,
+            @RequestParam int newWeight,
             Authentication auth) {
 
         String updatedBy = auth.getName();
-        EmployeeScore score = ticketService.updateScore(scoreId, newScore, updatedBy);
+        EmployeeScore score = ticketService.updateScore(scoreId, newWeight, updatedBy);
         return ResponseEntity.ok(score);
     }
 

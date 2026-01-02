@@ -18,9 +18,6 @@ export default function AdminApprovals() {
   const [pending, setPending] = useState<PageResponse<MiniJobCard> | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  const [showScoreModal, setShowScoreModal] = useState(false);
-  const [scoringCard, setScoringCard] = useState<MiniJobCard | null>(null);
-  const [score, setScore] = useState(5);
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
@@ -86,36 +83,22 @@ export default function AdminApprovals() {
     }
   };
 
-  const handleScore = (card: MiniJobCard) => {
+  const handleAssignScore = async (card: MiniJobCard) => {
     // Check if job card is approved
     if (!card.approved) {
       alert('Please approve the job card first before assigning a score.');
       return;
     }
 
-    setScoringCard(card);
-    setScore(5);
-    setShowScoreModal(true);
-  };
-
-  const submitScore = async () => {
-    if (!scoringCard) return;
-
-    // Double-check approval status
-    if (!scoringCard.approved) {
-      alert('Cannot assign score to an unapproved job card.');
+    if (!confirm(`Assign score (weight: ${card.mainTicket.weight}) to this job card?`)) {
       return;
     }
 
     try {
       await approvalService.addScore({
-        miniJobCardId: scoringCard.id,
-        score,
+        miniJobCardId: card.id,
       });
-      alert('Score added successfully!');
-      setShowScoreModal(false);
-      setScoringCard(null);
-      // Reload the pending approvals to reflect changes
+      alert(`Score of ${card.mainTicket.weight} assigned successfully!`);
       loadPending(currentPage);
     } catch (error: any) {
       alert(error.response?.data?.message || 'Error adding score');
@@ -175,7 +158,7 @@ export default function AdminApprovals() {
                     <div className="flex gap-2">
                       <button onClick={() => handleApprove(card.id)} className="btn-success text-sm">✓ Approve</button>
                       <button onClick={() => handleReject(card.id)} className="btn-danger text-sm">✗ Reject</button>
-                      <button onClick={() => handleScore(card)} className="btn-secondary text-sm">⭐ Score</button>
+                      <button onClick={() => handleAssignScore(card)} className="btn-secondary text-sm">⭐ Assign Score ({card.mainTicket.weight})</button>
                       <button onClick={() => router.push(`/employee/job-cards/${card.id}`)} className="btn-secondary text-sm">View Details</button>
                     </div>
                   </div>
@@ -191,37 +174,6 @@ export default function AdminApprovals() {
 
         {pending && <Pagination currentPage={currentPage} totalPages={pending.totalPages} onPageChange={loadPending} />}
       </div>
-
-      {/* Score Modal */}
-      {showScoreModal && scoringCard && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-xl font-bold mb-4">Add Performance Score</h3>
-            <p className="mb-4">
-              <strong>Employee:</strong> {scoringCard.employee.fullName}
-            </p>
-            <p className="mb-4">
-              <strong>Ticket:</strong> {scoringCard.mainTicket.ticketNumber}
-            </p>
-            <div className="mb-6">
-              <label className="block text-sm font-medium mb-2">Score (1-10)</label>
-              <input
-                type="range"
-                min="1"
-                max="10"
-                value={score}
-                onChange={(e) => setScore(parseInt(e.target.value))}
-                className="w-full"
-              />
-              <div className="text-center text-3xl font-bold text-blue-600 mt-2">{score} / 10</div>
-            </div>
-            <div className="flex gap-3">
-              <button onClick={submitScore} className="btn-primary flex-1">Submit Score</button>
-              <button onClick={() => setShowScoreModal(false)} className="btn-secondary flex-1">Cancel</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

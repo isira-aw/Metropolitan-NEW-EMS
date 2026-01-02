@@ -230,15 +230,14 @@ export interface EmployeeScore {
   employee: User;
   miniJobCard: MiniJobCard;
   workDate: string; // Date when work was completed
-  weight: number;
-  score: number;
+  weight: number; // Weight is the score (1-5) - consolidated
   approvedBy: string;
   approvedAt: string;
 }
 
 export interface ScoreRequest {
   miniJobCardId: number;
-  score: number;
+  // Score is automatically set to the weight from MainTicket
 }
 
 export interface ApprovalStatistics {
@@ -328,9 +327,9 @@ export interface JobDetail {
   endTime?: string;
   workMinutes: number;
   workHours: number;
-  weight: number;
-  score?: number;
-  weightedScore?: number;
+  weight: number; // Weight is the score (1-5) - consolidated
+  score?: number; // Same as weight
+  weightedScore?: number; // Same as weight (since weight = score)
   scored: boolean;
   approved: boolean;
 }

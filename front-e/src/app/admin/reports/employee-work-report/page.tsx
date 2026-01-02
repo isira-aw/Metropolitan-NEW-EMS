@@ -338,10 +338,9 @@ export default function EmployeeWorkReportPage() {
                             <div className="text-sm font-medium text-gray-900">
                               {job.workHours.toFixed(1)}h worked
                             </div>
-                            {job.scored && job.score && (
+                            {job.scored && (
                               <div className="text-sm text-blue-600 mt-1">
-                                Score: {job.score} × {job.weight} ={' '}
-                                {job.weightedScore}
+                                Score: {job.weight} {'⭐'.repeat(job.weight)}
                               </div>
                             )}
                           </div>

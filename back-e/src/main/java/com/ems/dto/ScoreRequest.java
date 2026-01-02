@@ -7,17 +7,13 @@ import lombok.Data;
 
 /**
  * Score Request DTO
- * Used by admin to assign performance score to an approved mini job card
+ * Used by admin to approve a mini job card and automatically assign score based on weight
  *
- * Business Rule: MiniJobCard must be COMPLETED and APPROVED before scoring
+ * Business Rule: MiniJobCard must be COMPLETED and APPROVED
+ * Score is automatically set to the MainTicket's weight value (1-5)
  */
 @Data
 public class ScoreRequest {
     @NotNull(message = "Mini Job Card ID is required")
     private Long miniJobCardId;
-
-    @NotNull(message = "Score is required")
-    @Min(value = 1, message = "Score must be between 1 and 10")
-    @Max(value = 10, message = "Score must be between 1 and 10")
-    private Integer score;
 }
