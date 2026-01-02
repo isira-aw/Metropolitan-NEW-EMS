@@ -88,6 +88,22 @@ export const jobCardService = {
     const response = await apiClient.get<number>('/employee/job-cards/pending/count');
     return response.data;
   },
+
+  async uploadImage(id: number, file: File): Promise<{ message: string; success: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await apiClient.post<{ message: string; success: string }>(
+      `/employee/job-cards/${id}/upload-image`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    return response.data;
+  },
 };
 
 // ===========================

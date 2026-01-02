@@ -13,9 +13,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.validation.Valid;
+import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Employee Job Card Controller
@@ -151,5 +155,58 @@ public class EmployeeJobCardController {
         String username = auth.getName();
         Long count = ticketService.getPendingJobCardsCount(username);
         return ResponseEntity.ok(count);
+    }
+
+    /**
+     * Upload image for a job card as base64
+     * Only one image per job card is allowed
+     * Validates that job card belongs to current employee
+     *
+     * @param id Mini job card ID
+     * @param file Image file to upload
+     * @param auth Spring Security authentication
+     * @return Success response with confirmation
+     */
+    @PostMapping("/{id}/upload-image")
+    public ResponseEntity<Map<String, String>> uploadImage(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file,
+            Authentication auth) {
+
+        try {
+            String username = auth.getName();
+
+            // Validate employee owns this job card
+            ticketService.getJobCardByIdForEmployee(id, username);
+
+            // Validate file
+            if (file.isEmpty()) {
+                throw new RuntimeException("File is empty");
+            }
+
+            // Validate image type
+            String contentType = file.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                throw new RuntimeException("Only image files are allowed");
+            }
+
+            // Convert to base64
+            byte[] imageBytes = file.getBytes();
+            String base64Image = "data:" + contentType + ";base64," + Base64.getEncoder().encodeToString(imageBytes);
+
+            // Update job card with base64 image
+            ticketService.updateJobCardImage(id, base64Image);
+
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Image uploaded successfully");
+            response.put("success", "true");
+
+            return ResponseEntity.ok(response);
+        } catch (Exception ex) {
+            Map<String, String> response = new HashMap<>();
+            response.put("message", ex.getMessage());
+            response.put("success", "false");
+            return ResponseEntity.badRequest().body(response);
+        }
     }
 }

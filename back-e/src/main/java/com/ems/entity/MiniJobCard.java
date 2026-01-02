@@ -37,9 +37,10 @@ public class MiniJobCard {
     
     @Column(nullable = false)
     private Boolean approved = false;
-    
+
     private Integer workMinutes = 0;
-    
+
+    @Column(columnDefinition = "TEXT")
     private String imageUrl;
     
     @CreationTimestamp
