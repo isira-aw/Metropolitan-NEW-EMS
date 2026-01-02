@@ -1,5 +1,7 @@
 package com.ems.controller;
 
+import com.ems.dto.DailyTimeTrackingReportDTO;
+import com.ems.dto.EmployeeDailyWorkTimeReportDTO;
 import com.ems.dto.OTReportResponse;
 import com.ems.dto.TimeTrackingReportResponse;
 import com.ems.service.ReportService;
@@ -259,6 +261,46 @@ public class AdminReportController {
 
         com.ems.dto.EmployeeWorkReportDTO report =
             reportService.getEmployeeWorkReport(employeeId, startDate, endDate);
+        return ResponseEntity.ok(report);
+    }
+
+    /**
+     * Get Daily Time Tracking Report
+     * Shows employee time tracking with location, working time, idle time, travel time
+     *
+     * @param startDate Start date (inclusive)
+     * @param endDate End date (inclusive)
+     * @param employeeId Optional employee filter (null = all employees)
+     * @return List of DailyTimeTrackingReportDTO
+     */
+    @GetMapping("/daily-time-tracking")
+    public ResponseEntity<List<DailyTimeTrackingReportDTO>> getDailyTimeTrackingReport(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) Long employeeId) {
+
+        List<DailyTimeTrackingReportDTO> report =
+            reportService.getDailyTimeTrackingReport(employeeId, startDate, endDate);
+        return ResponseEntity.ok(report);
+    }
+
+    /**
+     * Get Employee Daily Work Time Report
+     * Shows daily work hours, OT hours, and weight earned for a specific employee
+     *
+     * @param employeeId Employee ID (required)
+     * @param startDate Start date (inclusive)
+     * @param endDate End date (inclusive)
+     * @return List of EmployeeDailyWorkTimeReportDTO
+     */
+    @GetMapping("/employee-daily-work-time/{employeeId}")
+    public ResponseEntity<List<EmployeeDailyWorkTimeReportDTO>> getEmployeeDailyWorkTimeReport(
+            @PathVariable Long employeeId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+
+        List<EmployeeDailyWorkTimeReportDTO> report =
+            reportService.getEmployeeDailyWorkTimeReport(employeeId, startDate, endDate);
         return ResponseEntity.ok(report);
     }
 }

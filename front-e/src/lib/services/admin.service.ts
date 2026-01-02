@@ -14,6 +14,8 @@ import {
   ApprovalStatistics,
   TimeTrackingReportResponse,
   OTReportResponse,
+  DailyTimeTrackingReportDTO,
+  EmployeeDailyWorkTimeReportDTO,
   DashboardStats,
   EmployeeWorkReportDTO,
   PageResponse,
@@ -374,6 +376,34 @@ export const reportService = {
   ): Promise<EmployeeWorkReportDTO> {
     const response = await apiClient.get<EmployeeWorkReportDTO>(
       `/admin/reports/employee-work-report/${employeeId}`,
+      {
+        params: { startDate, endDate },
+      }
+    );
+    return response.data;
+  },
+
+  async getDailyTimeTracking(
+    startDate: string,
+    endDate: string,
+    employeeId?: number
+  ): Promise<DailyTimeTrackingReportDTO[]> {
+    const response = await apiClient.get<DailyTimeTrackingReportDTO[]>(
+      '/admin/reports/daily-time-tracking',
+      {
+        params: { startDate, endDate, employeeId },
+      }
+    );
+    return response.data;
+  },
+
+  async getEmployeeDailyWorkTime(
+    employeeId: number,
+    startDate: string,
+    endDate: string
+  ): Promise<EmployeeDailyWorkTimeReportDTO[]> {
+    const response = await apiClient.get<EmployeeDailyWorkTimeReportDTO[]>(
+      `/admin/reports/employee-daily-work-time/${employeeId}`,
       {
         params: { startDate, endDate },
       }

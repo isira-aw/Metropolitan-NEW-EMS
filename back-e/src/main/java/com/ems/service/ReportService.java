@@ -1,5 +1,7 @@
 package com.ems.service;
 
+import com.ems.dto.DailyTimeTrackingReportDTO;
+import com.ems.dto.EmployeeDailyWorkTimeReportDTO;
 import com.ems.dto.OTReportResponse;
 import com.ems.dto.TimeTrackingReportResponse;
 import com.ems.entity.*;
@@ -8,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -634,5 +637,169 @@ public class ReportService {
                 .dailyRecords(dailyRecords)
                 .summary(summary)
                 .build();
+    }
+
+    /**
+     * Generate Daily Time Tracking Report with location information
+     *
+     * @param employeeId Optional employee ID (null for all employees)
+     * @param startDate Report start date
+     * @param endDate Report end date
+     * @return List of DailyTimeTrackingReportDTO
+     */
+    public List<DailyTimeTrackingReportDTO> getDailyTimeTrackingReport(
+            Long employeeId, LocalDate startDate, LocalDate endDate) {
+
+        List<User> employees;
+        if (employeeId != null) {
+            User emp = userRepository.findById(employeeId)
+                    .orElseThrow(() -> new RuntimeException("Employee not found"));
+            employees = List.of(emp);
+        } else {
+            employees = userRepository.findByRole(UserRole.EMPLOYEE,
+                    org.springframework.data.domain.Pageable.unpaged()).getContent();
+        }
+
+        List<DailyTimeTrackingReportDTO> reports = new ArrayList<>();
+
+        for (User employee : employees) {
+            List<EmployeeDayAttendance> attendances = attendanceRepository
+                    .findByEmployeeAndDateBetween(employee, startDate, endDate);
+
+            for (EmployeeDayAttendance attendance : attendances) {
+                LocalDate date = attendance.getDate();
+
+                // Get all job cards for this employee on this date
+                List<MiniJobCard> jobCards = miniJobCardRepository
+                        .findByEmployee(employee, org.springframework.data.domain.Pageable.unpaged())
+                        .getContent()
+                        .stream()
+                        .filter(jc -> jc.getStartTime() != null &&
+                                jc.getStartTime().toLocalDate().equals(date))
+                        .collect(Collectors.toList());
+
+                // Calculate work, idle, and travel time from job status logs
+                int totalWorkMinutes = 0;
+                int totalIdleMinutes = 0;
+                int totalTravelMinutes = 0;
+                String location = "";
+
+                for (MiniJobCard jobCard : jobCards) {
+                    List<JobStatusLog> logs = jobStatusLogRepository
+                            .findByMiniJobCardIdOrderByLoggedAtDesc(jobCard.getId());
+
+                    // Get location from the latest log with location data
+                    if (location.isEmpty() && !logs.isEmpty()) {
+                        for (JobStatusLog log : logs) {
+                            if (log.getLatitude() != null && log.getLongitude() != null) {
+                                // Use generator location as primary location
+                                location = jobCard.getMainTicket().getGenerator().getLocationName();
+                                break;
+                            }
+                        }
+                    }
+
+                    // Calculate time in each status
+                    for (int i = logs.size() - 1; i > 0; i--) {
+                        JobStatusLog currentLog = logs.get(i);
+                        JobStatusLog nextLog = logs.get(i - 1);
+
+                        long minutes = java.time.Duration.between(
+                                currentLog.getLoggedAt(), nextLog.getLoggedAt()).toMinutes();
+
+                        if (currentLog.getNewStatus() == JobStatus.STARTED) {
+                            totalWorkMinutes += minutes;
+                        } else if (currentLog.getNewStatus() == JobStatus.ON_HOLD) {
+                            totalIdleMinutes += minutes;
+                        } else if (currentLog.getNewStatus() == JobStatus.TRAVELING) {
+                            totalTravelMinutes += minutes;
+                        }
+                    }
+                }
+
+                DailyTimeTrackingReportDTO report = DailyTimeTrackingReportDTO.builder()
+                        .employeeId(employee.getId())
+                        .employeeName(employee.getFullName())
+                        .date(date)
+                        .startTime(attendance.getDayStartTime())
+                        .endTime(attendance.getDayEndTime())
+                        .location(location.isEmpty() ? "N/A" : location)
+                        .dailyWorkingMinutes(totalWorkMinutes)
+                        .dailyWorkingHours(DailyTimeTrackingReportDTO.minutesToHours(totalWorkMinutes))
+                        .idleMinutes(totalIdleMinutes)
+                        .idleHours(DailyTimeTrackingReportDTO.minutesToHours(totalIdleMinutes))
+                        .travelMinutes(totalTravelMinutes)
+                        .travelHours(DailyTimeTrackingReportDTO.minutesToHours(totalTravelMinutes))
+                        .totalMinutes(attendance.getTotalWorkMinutes())
+                        .totalHours(DailyTimeTrackingReportDTO.minutesToHours(attendance.getTotalWorkMinutes()))
+                        .build();
+
+                reports.add(report);
+            }
+        }
+
+        return reports;
+    }
+
+    /**
+     * Generate Employee Daily Work Time Report with weight earned
+     *
+     * @param employeeId Employee ID (required)
+     * @param startDate Report start date
+     * @param endDate Report end date
+     * @return List of EmployeeDailyWorkTimeReportDTO
+     */
+    public List<EmployeeDailyWorkTimeReportDTO> getEmployeeDailyWorkTimeReport(
+            Long employeeId, LocalDate startDate, LocalDate endDate) {
+
+        User employee = userRepository.findById(employeeId)
+                .orElseThrow(() -> new RuntimeException("Employee not found"));
+
+        List<EmployeeDayAttendance> attendances = attendanceRepository
+                .findByEmployeeAndDateBetween(employee, startDate, endDate);
+
+        // Fetch scores for the period
+        List<EmployeeScore> scores = employeeScoreRepository
+                .findByEmployeeIdAndWorkDateBetween(employeeId, startDate, endDate);
+
+        List<EmployeeDailyWorkTimeReportDTO> reports = new ArrayList<>();
+
+        for (EmployeeDayAttendance attendance : attendances) {
+            LocalDate date = attendance.getDate();
+
+            // Calculate total weight earned on this day
+            int totalWeightEarned = scores.stream()
+                    .filter(s -> s.getWorkDate().equals(date))
+                    .mapToInt(EmployeeScore::getWeight)
+                    .sum();
+
+            // Count jobs completed on this day
+            long jobsCompleted = scores.stream()
+                    .filter(s -> s.getWorkDate().equals(date))
+                    .count();
+
+            EmployeeDailyWorkTimeReportDTO report = EmployeeDailyWorkTimeReportDTO.builder()
+                    .employeeId(employee.getId())
+                    .employeeName(employee.getFullName())
+                    .date(date)
+                    .startTime(attendance.getDayStartTime())
+                    .endTime(attendance.getDayEndTime())
+                    .morningOtMinutes(attendance.getMorningOtMinutes())
+                    .morningOtHours(EmployeeDailyWorkTimeReportDTO.minutesToHours(attendance.getMorningOtMinutes()))
+                    .eveningOtMinutes(attendance.getEveningOtMinutes())
+                    .eveningOtHours(EmployeeDailyWorkTimeReportDTO.minutesToHours(attendance.getEveningOtMinutes()))
+                    .totalOtMinutes(attendance.getMorningOtMinutes() + attendance.getEveningOtMinutes())
+                    .totalOtHours(EmployeeDailyWorkTimeReportDTO.minutesToHours(
+                            attendance.getMorningOtMinutes() + attendance.getEveningOtMinutes()))
+                    .workingMinutes(attendance.getTotalWorkMinutes())
+                    .workingHours(EmployeeDailyWorkTimeReportDTO.minutesToHours(attendance.getTotalWorkMinutes()))
+                    .totalWeightEarned(totalWeightEarned)
+                    .jobsCompleted((int) jobsCompleted)
+                    .build();
+
+            reports.add(report);
+        }
+
+        return reports;
     }
 }
