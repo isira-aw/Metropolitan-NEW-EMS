@@ -22,8 +22,7 @@ export default function EmployeeJobCards() {
   const [user, setUser] = useState<any>(null);
 
   // Date filter state
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
   const [dateFilterActive, setDateFilterActive] = useState(false);
 
   useEffect(() => {
@@ -48,10 +47,10 @@ export default function EmployeeJobCards() {
 
       // Apply date filter if active
       let filteredContent = data.content;
-      if (dateFilterActive && startDate && endDate) {
+      if (dateFilterActive && selectedDate) {
         filteredContent = data.content.filter(card => {
           const scheduledDate = card.mainTicket.scheduledDate;
-          return scheduledDate >= startDate && scheduledDate <= endDate;
+          return scheduledDate === selectedDate;
         });
       }
 
@@ -71,8 +70,7 @@ export default function EmployeeJobCards() {
 
   const handleTodayFilter = () => {
     const today = new Date().toISOString().split('T')[0];
-    setStartDate(today);
-    setEndDate(today);
+    setSelectedDate(today);
     setDateFilterActive(true);
     setCurrentPage(0);
 
@@ -80,17 +78,8 @@ export default function EmployeeJobCards() {
     setTimeout(() => loadJobCards(0), 100);
   };
 
-  const handleDateFilter = () => {
-    if (startDate && endDate) {
-      setDateFilterActive(true);
-      setCurrentPage(0);
-      loadJobCards(0);
-    }
-  };
-
   const handleClearFilter = () => {
-    setStartDate('');
-    setEndDate('');
+    setSelectedDate('');
     setDateFilterActive(false);
     setCurrentPage(0);
     loadJobCards(0);
@@ -134,20 +123,18 @@ export default function EmployeeJobCards() {
         <Card className="mb-4">
           <div className="flex flex-wrap gap-4 items-end">
             <div>
-              <label className="block text-sm font-semibold mb-1">Start Date</label>
+              <label className="block text-sm font-semibold mb-1">Select Date</label>
               <input
                 type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="input"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold mb-1">End Date</label>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
+                value={selectedDate}
+                onChange={(e) => {
+                  setSelectedDate(e.target.value);
+                  if (e.target.value) {
+                    setDateFilterActive(true);
+                    setCurrentPage(0);
+                    setTimeout(() => loadJobCards(0), 100);
+                  }
+                }}
                 className="input"
               />
             </div>
@@ -157,13 +144,6 @@ export default function EmployeeJobCards() {
                 className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
               >
                 📅 Today
-              </button>
-              <button
-                onClick={handleDateFilter}
-                disabled={!startDate || !endDate}
-                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Apply Filter
               </button>
               {dateFilterActive && (
                 <button
@@ -175,9 +155,9 @@ export default function EmployeeJobCards() {
               )}
             </div>
           </div>
-          {dateFilterActive && (
+          {dateFilterActive && selectedDate && (
             <div className="mt-3 text-sm text-blue-600">
-              📌 Showing job cards scheduled from {startDate} to {endDate}
+              📌 Showing job cards for {selectedDate}
             </div>
           )}
         </Card>
@@ -221,7 +201,7 @@ export default function EmployeeJobCards() {
             ))
           ) : (
             <div className="col-span-full text-center py-12 text-gray-500">
-              {dateFilterActive ? 'No job cards found for selected date range' : 'No job cards found'}
+              {dateFilterActive ? 'No job cards found for selected date' : 'No job cards found'}
             </div>
           )}
         </div>

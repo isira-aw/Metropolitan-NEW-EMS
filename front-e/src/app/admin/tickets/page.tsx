@@ -19,6 +19,10 @@ export default function AdminTickets() {
   const [currentPage, setCurrentPage] = useState(0);
   const [statusFilter, setStatusFilter] = useState<JobStatus | 'ALL'>('ALL');
   const [showModal, setShowModal] = useState(false);
+
+  // Date filter state
+  const [selectedDate, setSelectedDate] = useState('');
+  const [dateFilterActive, setDateFilterActive] = useState(false);
   const [generators, setGenerators] = useState<Generator[]>([]);
   const [employees, setEmployees] = useState<User[]>([]);
   const [formData, setFormData] = useState<MainTicketRequest>({
@@ -48,9 +52,29 @@ export default function AdminTickets() {
 
   const loadTickets = async (page: number) => {
     try {
-      const data = statusFilter === 'ALL'
-        ? await ticketService.getAll({ page, size: 10 })
-        : await ticketService.getByStatus(statusFilter, { page, size: 10 });
+      let data: PageResponse<MainTicket>;
+
+      if (dateFilterActive && selectedDate) {
+        // Get tickets by date
+        const allTickets = await ticketService.getByDateRange(selectedDate, selectedDate, { page, size: 10 });
+
+        // Apply status filter if not 'ALL'
+        if (statusFilter !== 'ALL') {
+          const filteredContent = allTickets.content.filter(ticket => ticket.status === statusFilter);
+          data = {
+            ...allTickets,
+            content: filteredContent,
+            totalElements: filteredContent.length,
+            totalPages: Math.ceil(filteredContent.length / 10),
+          };
+        } else {
+          data = allTickets;
+        }
+      } else {
+        data = statusFilter === 'ALL'
+          ? await ticketService.getAll({ page, size: 10 })
+          : await ticketService.getByStatus(statusFilter, { page, size: 10 });
+      }
 
       setTickets(data);
       setCurrentPage(page);
@@ -59,6 +83,21 @@ export default function AdminTickets() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleTodayFilter = () => {
+    const today = new Date().toISOString().split('T')[0];
+    setSelectedDate(today);
+    setDateFilterActive(true);
+    setCurrentPage(0);
+    setTimeout(() => loadTickets(0), 100);
+  };
+
+  const handleClearFilter = () => {
+    setSelectedDate('');
+    setDateFilterActive(false);
+    setCurrentPage(0);
+    loadTickets(0);
   };
 
   const loadGenerators = async () => {
@@ -147,6 +186,49 @@ export default function AdminTickets() {
           <button onClick={handleCreate} className="btn-primary">+ Create Ticket</button>
         </div>
 
+        {/* Date Filter Controls */}
+        <Card className="mb-4">
+          <div className="flex flex-wrap gap-4 items-end">
+            <div>
+              <label className="block text-sm font-semibold mb-1">Select Date</label>
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => {
+                  setSelectedDate(e.target.value);
+                  if (e.target.value) {
+                    setDateFilterActive(true);
+                    setCurrentPage(0);
+                    setTimeout(() => loadTickets(0), 100);
+                  }
+                }}
+                className="input"
+              />
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handleTodayFilter}
+                className="btn-primary"
+              >
+                📅 Today
+              </button>
+              {dateFilterActive && (
+                <button
+                  onClick={handleClearFilter}
+                  className="btn-secondary"
+                >
+                  Clear Filter
+                </button>
+              )}
+            </div>
+          </div>
+          {dateFilterActive && selectedDate && (
+            <div className="mt-3 text-sm text-blue-600">
+              📌 Showing tickets for {selectedDate}
+            </div>
+          )}
+        </Card>
+
         {/* Filter Tabs */}
         <div className="flex gap-2 mb-6 flex-wrap">
           <button
@@ -214,7 +296,9 @@ export default function AdminTickets() {
             ))
           ) : (
             <Card>
-              <p className="text-center text-gray-500 py-8">No tickets found</p>
+              <p className="text-center text-gray-500 py-8">
+                {dateFilterActive ? 'No tickets found for selected date' : 'No tickets found'}
+              </p>
             </Card>
           )}
         </div>

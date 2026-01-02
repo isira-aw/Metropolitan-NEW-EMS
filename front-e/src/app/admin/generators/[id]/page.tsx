@@ -24,8 +24,7 @@ export default function AdminGeneratorDetail() {
   const [user, setUser] = useState<any>(null);
 
   // Date filter state
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
   const [dateFilterActive, setDateFilterActive] = useState(false);
 
   useEffect(() => {
@@ -65,9 +64,9 @@ export default function AdminGeneratorDetail() {
     try {
       let data: PageResponse<MainTicket>;
 
-      if (dateFilterActive && startDate && endDate) {
-        // Get all tickets by date range first
-        const allTickets = await ticketService.getByDateRange(startDate, endDate, { page, size: 10 });
+      if (dateFilterActive && selectedDate) {
+        // Get all tickets by date
+        const allTickets = await ticketService.getByDateRange(selectedDate, selectedDate, { page, size: 10 });
         // Filter by generator ID on the client side
         const filteredContent = allTickets.content.filter(ticket => ticket.generator.id === id);
         data = {
@@ -89,8 +88,7 @@ export default function AdminGeneratorDetail() {
 
   const handleTodayFilter = () => {
     const today = new Date().toISOString().split('T')[0];
-    setStartDate(today);
-    setEndDate(today);
+    setSelectedDate(today);
     setDateFilterActive(true);
     setCurrentPage(0);
 
@@ -99,7 +97,7 @@ export default function AdminGeneratorDetail() {
   };
 
   const handleDateFilter = () => {
-    if (startDate && endDate) {
+    if (selectedDate) {
       setDateFilterActive(true);
       setCurrentPage(0);
       loadTickets(0);
@@ -107,8 +105,7 @@ export default function AdminGeneratorDetail() {
   };
 
   const handleClearFilter = () => {
-    setStartDate('');
-    setEndDate('');
+    setSelectedDate('');
     setDateFilterActive(false);
     setCurrentPage(0);
     loadTickets(0);
@@ -177,20 +174,18 @@ export default function AdminGeneratorDetail() {
           <Card className="mb-4">
             <div className="flex flex-wrap gap-4 items-end">
               <div>
-                <label className="block text-sm font-semibold mb-1">Start Date</label>
+                <label className="block text-sm font-semibold mb-1">Select Date</label>
                 <input
                   type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="input"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold mb-1">End Date</label>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
+                  value={selectedDate}
+                  onChange={(e) => {
+                    setSelectedDate(e.target.value);
+                    if (e.target.value) {
+                      setDateFilterActive(true);
+                      setCurrentPage(0);
+                      setTimeout(() => loadTickets(0), 100);
+                    }
+                  }}
                   className="input"
                 />
               </div>
@@ -200,13 +195,6 @@ export default function AdminGeneratorDetail() {
                   className="btn-primary"
                 >
                   📅 Today
-                </button>
-                <button
-                  onClick={handleDateFilter}
-                  disabled={!startDate || !endDate}
-                  className="btn-success disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Apply Filter
                 </button>
                 {dateFilterActive && (
                   <button
@@ -218,9 +206,9 @@ export default function AdminGeneratorDetail() {
                 )}
               </div>
             </div>
-            {dateFilterActive && (
+            {dateFilterActive && selectedDate && (
               <div className="mt-3 text-sm text-blue-600">
-                📌 Showing tickets from {startDate} to {endDate}
+                📌 Showing tickets for {selectedDate}
               </div>
             )}
           </Card>
