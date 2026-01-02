@@ -20,6 +20,7 @@ export default function EmployeeJobCards() {
   const [statusFilter, setStatusFilter] = useState<JobStatus | 'ALL'>('ALL');
   const [pendingCount, setPendingCount] = useState(0);
   const [user, setUser] = useState<any>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Date filter state
   const [selectedDate, setSelectedDate] = useState('');
@@ -94,33 +95,92 @@ export default function EmployeeJobCards() {
   if (loading) return <LoadingSpinner />;
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Navigation */}
-      <nav className="bg-green-600 text-white p-4 shadow-lg">
-        <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold">EMS Employee Portal</h1>
-          <div className="flex items-center gap-6">
-            <button onClick={() => router.push('/employee/dashboard')} className="hover:text-green-200">Dashboard</button>
-            <button onClick={() => router.push('/employee/attendance')} className="hover:text-green-200">Attendance</button>
-            <button className="font-bold">Job Cards {pendingCount > 0 && <span className="bg-red-500 px-2 py-1 rounded-full text-xs ml-1">{pendingCount}</span>}</button>
-            <div className="border-l border-green-400 pl-6 flex items-center gap-4">
-              <span className="text-sm">👤 {user?.fullName}</span>
-              <button onClick={() => authService.logout()} className="btn-secondary text-sm">Logout</button>
+    <div className="min-h-screen bg-slate-50">
+      {/* Mobile-Optimized Navigation */}
+      <nav className="bg-green-600 text-white shadow-lg">
+        <div className="container mx-auto px-4 py-3">
+          {/* Mobile Header */}
+          <div className="flex justify-between items-center">
+            <h1 className="text-lg sm:text-2xl font-bold">EMS Employee</h1>
+
+            {/* Mobile Menu Toggle */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lg:hidden p-2 hover:bg-green-700 rounded-lg transition-colors"
+              aria-label="Toggle menu"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {mobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+
+            {/* Desktop Navigation */}
+            <div className="hidden lg:flex items-center gap-6">
+              <button onClick={() => router.push('/employee/dashboard')} className="hover:text-green-200 transition-colors">Dashboard</button>
+              <button onClick={() => router.push('/employee/attendance')} className="hover:text-green-200 transition-colors">Attendance</button>
+              <button className="font-bold">
+                Job Cards
+                {pendingCount > 0 && (
+                  <span className="bg-red-500 px-2 py-1 rounded-full text-xs ml-2 animate-pulse">{pendingCount}</span>
+                )}
+              </button>
+              <div className="border-l border-green-400 pl-6 flex items-center gap-4">
+                <span className="text-sm">👤 {user?.fullName}</span>
+                <button onClick={() => authService.logout()} className="px-3 py-1.5 bg-white text-green-600 rounded-lg hover:bg-green-50 text-sm font-medium transition-colors">
+                  Logout
+                </button>
+              </div>
             </div>
           </div>
+
+          {/* Mobile Menu Dropdown */}
+          {mobileMenuOpen && (
+            <div className="lg:hidden mt-4 pb-4 space-y-2 border-t border-green-500 pt-4">
+              <button
+                onClick={() => { router.push('/employee/dashboard'); setMobileMenuOpen(false); }}
+                className="block w-full text-left px-4 py-3 hover:bg-green-700 rounded-lg transition-colors"
+              >
+                Dashboard
+              </button>
+              <button
+                onClick={() => { router.push('/employee/attendance'); setMobileMenuOpen(false); }}
+                className="block w-full text-left px-4 py-3 hover:bg-green-700 rounded-lg transition-colors"
+              >
+                Attendance
+              </button>
+              <button className="block w-full text-left px-4 py-3 font-bold bg-green-700 rounded-lg">
+                Job Cards
+                {pendingCount > 0 && (
+                  <span className="bg-red-500 px-2 py-1 rounded-full text-xs ml-2">{pendingCount}</span>
+                )}
+              </button>
+              <div className="border-t border-green-500 pt-3 mt-3 px-4">
+                <p className="text-sm mb-3">👤 {user?.fullName}</p>
+                <button
+                  onClick={() => authService.logout()}
+                  className="w-full px-4 py-2 bg-white text-green-600 rounded-lg hover:bg-green-50 font-medium transition-colors"
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </nav>
 
-      <div className="container mx-auto p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-3xl font-bold">My Job Cards</h2>
-        </div>
+      <div className="container mx-auto px-4 py-6">
+        {/* Page Title - Mobile Optimized */}
+        <h2 className="page-title mb-6">My Job Cards</h2>
 
-        {/* Date Filter Controls */}
+        {/* Date Filter Controls - Mobile Optimized */}
         <Card className="mb-4">
-          <div className="flex flex-wrap gap-4 items-end">
-            <div>
-              <label className="block text-sm font-semibold mb-1">Select Date</label>
+          <div className="space-y-4 sm:space-y-0 sm:flex sm:flex-wrap sm:gap-4 sm:items-end">
+            <div className="flex-1 min-w-[200px]">
+              <label className="input-label">Select Date</label>
               <input
                 type="date"
                 value={selectedDate}
@@ -131,20 +191,20 @@ export default function EmployeeJobCards() {
                     setCurrentPage(0);
                   }
                 }}
-                className="input"
+                className="input-field"
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <button
                 onClick={handleTodayFilter}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                className="btn-primary flex-1 sm:flex-none"
               >
                 📅 Today
               </button>
               {dateFilterActive && (
                 <button
                   onClick={handleClearFilter}
-                  className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+                  className="btn-secondary flex-1 sm:flex-none"
                 >
                   Clear Filter
                 </button>
@@ -152,52 +212,114 @@ export default function EmployeeJobCards() {
             </div>
           </div>
           {dateFilterActive && selectedDate && (
-            <div className="mt-3 text-sm text-blue-600">
+            <div className="mt-3 text-sm text-blue-600 font-medium">
               📌 Showing job cards for {selectedDate}
             </div>
           )}
         </Card>
 
-        {/* Filter Tabs */}
-        <div className="flex gap-2 mb-6 flex-wrap">
-          <button
-            onClick={() => setStatusFilter('ALL')}
-            className={`px-4 py-2 rounded ${statusFilter === 'ALL' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'}`}
-          >
-            All
-          </button>
-          {(['PENDING', 'TRAVELING', 'STARTED', 'ON_HOLD', 'COMPLETED', 'CANCEL'] as JobStatus[]).map((status) => (
+        {/* Filter Tabs - Mobile Optimized with Horizontal Scroll */}
+        <div className="mb-6">
+          <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap">
             <button
-              key={status}
-              onClick={() => setStatusFilter(status)}
-              className={`px-4 py-2 rounded ${statusFilter === status ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'}`}
+              onClick={() => setStatusFilter('ALL')}
+              className={`px-4 py-2.5 rounded-lg font-medium whitespace-nowrap transition-colors ${
+                statusFilter === 'ALL'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+              }`}
             >
-              {status}
+              All
             </button>
-          ))}
+            {(['PENDING', 'TRAVELING', 'STARTED', 'ON_HOLD', 'COMPLETED', 'CANCEL'] as JobStatus[]).map((status) => (
+              <button
+                key={status}
+                onClick={() => setStatusFilter(status)}
+                className={`px-4 py-2.5 rounded-lg font-medium whitespace-nowrap transition-colors ${
+                  statusFilter === status
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+                }`}
+              >
+                {status}
+              </button>
+            ))}
+          </div>
+          {/* Scroll indicator hint for mobile */}
+          <p className="text-xs text-slate-400 mt-2 sm:hidden">← Swipe to see all filters →</p>
         </div>
 
-        {/* Job Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Job Cards Grid - Mobile Optimized */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {jobCards && jobCards.content.length > 0 ? (
             jobCards.content.map((card) => (
-              <Card key={card.id} className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => router.push(`/employee/job-cards/${card.id}`)}>
-                <div className="flex justify-between items-start mb-3">
-                  <h3 className="font-bold text-lg">{card.mainTicket.title}</h3>
-                  <StatusBadge status={card.status} />
+              <Card
+                key={card.id}
+                className="hover:shadow-xl transition-all cursor-pointer active:scale-98 border border-slate-200"
+                onClick={() => router.push(`/employee/job-cards/${card.id}`)}
+              >
+                {/* Card Header */}
+                <div className="flex justify-between items-start gap-3 mb-4">
+                  <h3 className="font-bold text-lg sm:text-xl text-slate-900 leading-tight flex-1">
+                    {card.mainTicket.title}
+                  </h3>
+                  <div className="flex-shrink-0">
+                    <StatusBadge status={card.status} />
+                  </div>
                 </div>
-                <p className="text-sm text-gray-600 mb-2">Ticket: {card.mainTicket.ticketNumber}</p>
-                <p className="text-sm text-gray-600 mb-2">Type: {card.mainTicket.type}</p>
-                <p className="text-sm text-gray-600 mb-2">Weight: {'⭐'.repeat(card.mainTicket.weight)}</p>
-                <div className="border-t pt-3 mt-3">
-                  <p className="text-sm">Work Time: <strong>{formatMinutes(card.workMinutes)}</strong></p>
-                  <p className="text-sm">Approved: <strong>{card.approved ? '✅ Yes' : '❌ No'}</strong></p>
+
+                {/* Card Details */}
+                <div className="space-y-2 mb-4">
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-slate-500 font-medium min-w-[60px]">Ticket:</span>
+                    <span className="text-slate-900 font-semibold">{card.mainTicket.ticketNumber}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-slate-500 font-medium min-w-[60px]">Type:</span>
+                    <span className="text-slate-900">{card.mainTicket.type}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-slate-500 font-medium min-w-[60px]">Priority:</span>
+                    <span className="text-amber-600 text-base">{'⭐'.repeat(card.mainTicket.weight)}</span>
+                  </div>
+                </div>
+
+                {/* Card Footer */}
+                <div className="border-t border-slate-200 pt-4 mt-4">
+                  <div className="flex justify-between items-center gap-4">
+                    <div className="flex-1">
+                      <p className="text-xs text-slate-500 mb-1">Work Time</p>
+                      <p className="text-sm font-bold text-blue-600">{formatMinutes(card.workMinutes)}</p>
+                    </div>
+                    <div className="flex-1 text-right">
+                      <p className="text-xs text-slate-500 mb-1">Status</p>
+                      <p className="text-sm font-bold">
+                        {card.approved ? (
+                          <span className="text-green-600">✅ Approved</span>
+                        ) : (
+                          <span className="text-amber-600">⏳ Pending</span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tap indicator for mobile */}
+                <div className="mt-3 pt-3 border-t border-slate-100 text-center sm:hidden">
+                  <p className="text-xs text-slate-400">Tap to view details →</p>
                 </div>
               </Card>
             ))
           ) : (
-            <div className="col-span-full text-center py-12 text-gray-500">
-              {dateFilterActive ? 'No job cards found for selected date' : 'No job cards found'}
+            <div className="col-span-full empty-state">
+              <div className="empty-state-icon">
+                <svg className="w-16 h-16 sm:w-20 sm:h-20 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <p className="empty-state-text text-base">
+                {dateFilterActive ? 'No job cards found for selected date' : 'No job cards available'}
+              </p>
             </div>
           )}
         </div>

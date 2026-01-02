@@ -15,6 +15,7 @@ export default function EmployeeDashboard() {
   const [loading, setLoading] = useState(true);
   const [dashboard, setDashboard] = useState<EmployeeDashboardResponse | null>(null);
   const [user, setUser] = useState<any>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const role = authService.getRole();
@@ -65,135 +66,234 @@ export default function EmployeeDashboard() {
   if (loading) return <LoadingSpinner />;
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Navigation */}
-      <nav className="bg-green-600 text-white p-4 shadow-lg">
-        <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold">EMS Employee Portal</h1>
-          <div className="flex items-center gap-6">
-            <button onClick={() => router.push('/employee/dashboard')} className="hover:text-green-200">
-              Dashboard
+    <div className="min-h-screen bg-slate-50">
+      {/* Mobile-Optimized Navigation */}
+      <nav className="bg-green-600 text-white shadow-lg">
+        <div className="container mx-auto px-4 py-3">
+          {/* Mobile Header */}
+          <div className="flex justify-between items-center">
+            <h1 className="text-lg sm:text-2xl font-bold">EMS Employee</h1>
+
+            {/* Mobile Menu Toggle */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lg:hidden p-2 hover:bg-green-700 rounded-lg transition-colors"
+              aria-label="Toggle menu"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {mobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
             </button>
-            <button onClick={() => router.push('/employee/attendance')} className="hover:text-green-200">
-              Attendance
-            </button>
-            <button onClick={() => router.push('/employee/job-cards')} className="hover:text-green-200">
-              Job Cards
-            </button>
-            <div className="border-l border-green-400 pl-6 flex items-center gap-4">
-              <span className="text-sm">👤 {user?.fullName}</span>
-              <button onClick={handleLogout} className="btn-secondary text-sm">
-                Logout
-              </button>
+
+            {/* Desktop Navigation */}
+            <div className="hidden lg:flex items-center gap-6">
+              <button className="font-bold">Dashboard</button>
+              <button onClick={() => router.push('/employee/attendance')} className="hover:text-green-200 transition-colors">Attendance</button>
+              <button onClick={() => router.push('/employee/job-cards')} className="hover:text-green-200 transition-colors">Job Cards</button>
+              <div className="border-l border-green-400 pl-6 flex items-center gap-4">
+                <span className="text-sm">👤 {user?.fullName}</span>
+                <button onClick={handleLogout} className="px-3 py-1.5 bg-white text-green-600 rounded-lg hover:bg-green-50 text-sm font-medium transition-colors">
+                  Logout
+                </button>
+              </div>
             </div>
           </div>
+
+          {/* Mobile Menu Dropdown */}
+          {mobileMenuOpen && (
+            <div className="lg:hidden mt-4 pb-4 space-y-2 border-t border-green-500 pt-4">
+              <button className="block w-full text-left px-4 py-3 font-bold bg-green-700 rounded-lg">
+                Dashboard
+              </button>
+              <button
+                onClick={() => { router.push('/employee/attendance'); setMobileMenuOpen(false); }}
+                className="block w-full text-left px-4 py-3 hover:bg-green-700 rounded-lg transition-colors"
+              >
+                Attendance
+              </button>
+              <button
+                onClick={() => { router.push('/employee/job-cards'); setMobileMenuOpen(false); }}
+                className="block w-full text-left px-4 py-3 hover:bg-green-700 rounded-lg transition-colors"
+              >
+                Job Cards
+              </button>
+              <div className="border-t border-green-500 pt-3 mt-3 px-4">
+                <p className="text-sm mb-3">👤 {user?.fullName}</p>
+                <button
+                  onClick={handleLogout}
+                  className="w-full px-4 py-2 bg-white text-green-600 rounded-lg hover:bg-green-50 font-medium transition-colors"
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </nav>
 
-      <div className="container mx-auto p-6">
-        <h2 className="text-3xl font-bold mb-6">My Dashboard</h2>
+      <div className="container mx-auto px-4 py-6">
+        <h2 className="page-title mb-6">My Dashboard</h2>
 
-        {/* Day Status Card */}
+        {/* Day Status Card - Mobile Optimized */}
         <Card className="mb-6 bg-gradient-to-r from-blue-50 to-green-50 border-l-4 border-green-600">
-          <div className="flex justify-between items-center">
-            <div>
-              <h3 className="text-xl font-semibold mb-2">Today's Attendance</h3>
-              <p className="text-gray-700">
-                Status: <strong>{dashboard?.currentStatus}</strong>
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+            <div className="flex-1">
+              <h3 className="section-title mb-2">Today's Attendance</h3>
+              <p className="text-slate-700 text-sm sm:text-base">
+                Status: <strong className="text-slate-900">{dashboard?.currentStatus}</strong>
               </p>
-              {dashboard?.dayStarted && <p className="text-sm text-gray-600 mt-1">Day is active</p>}
+              {dashboard?.dayStarted && (
+                <p className="text-sm text-green-600 font-medium mt-1">✓ Day is active</p>
+              )}
             </div>
             <div className="flex gap-3">
               {!dashboard?.dayStarted ? (
-                <button onClick={handleStartDay} className="btn-success">
+                <button onClick={handleStartDay} className="btn-success w-full sm:w-auto py-3 sm:py-2">
                   ▶️ Start Day
                 </button>
               ) : !dashboard?.dayEnded ? (
-                <button onClick={handleEndDay} className="btn-danger">
+                <button onClick={handleEndDay} className="btn-danger w-full sm:w-auto py-3 sm:py-2">
                   ⏹️ End Day
                 </button>
               ) : (
-                <span className="text-green-700 font-semibold">✅ Day Completed</span>
+                <span className="text-green-700 font-semibold text-center w-full sm:w-auto py-3 sm:py-0">
+                  ✅ Day Completed
+                </span>
               )}
             </div>
           </div>
         </Card>
 
-        {/* Statistics Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-          <div className="stat-card border-blue-600">
-            <h4 className="text-sm text-gray-600 mb-2">Pending Jobs</h4>
-            <p className="text-3xl font-bold text-blue-600">{dashboard?.pendingJobCardsCount || 0}</p>
+        {/* Statistics Grid - Mobile Optimized */}
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6">
+          <div className="stat-card border-blue-600 hover:shadow-lg transition-shadow">
+            <h4 className="text-xs sm:text-sm text-slate-600 mb-2 font-medium">Pending Jobs</h4>
+            <p className="text-2xl sm:text-3xl font-bold text-blue-600">{dashboard?.pendingJobCardsCount || 0}</p>
           </div>
 
-          <div className="stat-card border-yellow-600">
-            <h4 className="text-sm text-gray-600 mb-2">In Progress</h4>
-            <p className="text-3xl font-bold text-yellow-600">{dashboard?.inProgressJobCardsCount || 0}</p>
+          <div className="stat-card border-yellow-600 hover:shadow-lg transition-shadow">
+            <h4 className="text-xs sm:text-sm text-slate-600 mb-2 font-medium">In Progress</h4>
+            <p className="text-2xl sm:text-3xl font-bold text-yellow-600">{dashboard?.inProgressJobCardsCount || 0}</p>
           </div>
 
-          <div className="stat-card border-green-600">
-            <h4 className="text-sm text-gray-600 mb-2">Completed Jobs</h4>
-            <p className="text-3xl font-bold text-green-600">{dashboard?.completedJobCardsCount || 0}</p>
+          <div className="stat-card border-green-600 hover:shadow-lg transition-shadow">
+            <h4 className="text-xs sm:text-sm text-slate-600 mb-2 font-medium">Completed</h4>
+            <p className="text-2xl sm:text-3xl font-bold text-green-600">{dashboard?.completedJobCardsCount || 0}</p>
           </div>
 
-          <div className="stat-card border-purple-600">
-            <h4 className="text-sm text-gray-600 mb-2">Total Jobs</h4>
-            <p className="text-3xl font-bold text-purple-600">{dashboard?.totalJobCardsCount || 0}</p>
+          <div className="stat-card border-purple-600 hover:shadow-lg transition-shadow">
+            <h4 className="text-xs sm:text-sm text-slate-600 mb-2 font-medium">Total Jobs</h4>
+            <p className="text-2xl sm:text-3xl font-bold text-purple-600">{dashboard?.totalJobCardsCount || 0}</p>
           </div>
         </div>
 
-        {/* Work Time Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <Card title="Total Work Time">
-            <p className="text-2xl font-bold text-blue-600">{formatMinutes(dashboard?.totalWorkMinutes || 0)}</p>
+        {/* Work Time Statistics - Mobile Optimized */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6">
+          <Card>
+            <h3 className="text-sm font-medium text-slate-600 mb-2">Total Work Time</h3>
+            <p className="text-2xl sm:text-3xl font-bold text-blue-600">
+              {formatMinutes(dashboard?.totalWorkMinutes || 0)}
+            </p>
           </Card>
 
-          <Card title="Total Overtime">
-            <p className="text-2xl font-bold text-orange-600">{formatMinutes(dashboard?.totalOTMinutes || 0)}</p>
-            <div className="mt-2 text-sm text-gray-600">
-              <p>Morning OT: {formatMinutes(dashboard?.morningOTMinutes || 0)}</p>
-              <p>Evening OT: {formatMinutes(dashboard?.eveningOTMinutes || 0)}</p>
+          <Card>
+            <h3 className="text-sm font-medium text-slate-600 mb-2">Total Overtime</h3>
+            <p className="text-2xl sm:text-3xl font-bold text-orange-600">
+              {formatMinutes(dashboard?.totalOTMinutes || 0)}
+            </p>
+            <div className="mt-3 pt-3 border-t border-slate-200 space-y-1">
+              <p className="text-xs sm:text-sm text-slate-600">
+                <span className="font-medium">Morning:</span> {formatMinutes(dashboard?.morningOTMinutes || 0)}
+              </p>
+              <p className="text-xs sm:text-sm text-slate-600">
+                <span className="font-medium">Evening:</span> {formatMinutes(dashboard?.eveningOTMinutes || 0)}
+              </p>
             </div>
           </Card>
 
-          <Card title="Performance Score">
-            <p className="text-2xl font-bold text-purple-600">
+          <Card className="sm:col-span-2 lg:col-span-1">
+            <h3 className="text-sm font-medium text-slate-600 mb-2">Performance Score</h3>
+            <p className="text-2xl sm:text-3xl font-bold text-purple-600">
               {dashboard?.averageScore ? dashboard.averageScore.toFixed(2) : 'N/A'} / 10
             </p>
-            <p className="text-sm text-gray-600 mt-2">Based on {dashboard?.totalScores || 0} evaluations</p>
+            <p className="text-xs sm:text-sm text-slate-600 mt-2">
+              Based on {dashboard?.totalScores || 0} evaluations
+            </p>
           </Card>
         </div>
 
-        {/* Recent Job Cards */}
-        <Card title="Recent Job Cards">
+        {/* Recent Job Cards - Mobile Optimized */}
+        <Card>
+          <h3 className="section-title mb-4">Recent Job Cards</h3>
           {dashboard?.recentJobCards && dashboard.recentJobCards.length > 0 ? (
             <div className="space-y-3">
               {dashboard.recentJobCards.map((card) => (
                 <div
                   key={card.id}
-                  className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
+                  className="p-4 bg-slate-50 rounded-lg hover:bg-slate-100 active:bg-slate-200 cursor-pointer transition-all border border-slate-200 hover:border-blue-300"
                   onClick={() => router.push(`/employee/job-cards/${card.id}`)}
                 >
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <p className="font-semibold text-lg">{card.mainTicket.title}</p>
-                      <p className="text-sm text-gray-600">Ticket: {card.mainTicket.ticketNumber}</p>
-                      <p className="text-sm text-gray-600">Type: {card.mainTicket.type}</p>
+                  {/* Mini Card Header */}
+                  <div className="flex justify-between items-start gap-3 mb-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-base sm:text-lg text-slate-900 truncate mb-1">
+                        {card.mainTicket.title}
+                      </p>
+                      <div className="space-y-1">
+                        <p className="text-xs sm:text-sm text-slate-600">
+                          <span className="font-medium">Ticket:</span> {card.mainTicket.ticketNumber}
+                        </p>
+                        <p className="text-xs sm:text-sm text-slate-600">
+                          <span className="font-medium">Type:</span> {card.mainTicket.type}
+                        </p>
+                      </div>
                     </div>
-                    <StatusBadge status={card.status} />
+                    <div className="flex-shrink-0">
+                      <StatusBadge status={card.status} />
+                    </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <p>Work: {formatMinutes(card.workMinutes)}</p>
-                    <p>Approved: {card.approved ? '✅ Yes' : '❌ No'}</p>
+
+                  {/* Mini Card Stats */}
+                  <div className="flex items-center justify-between gap-4 pt-3 border-t border-slate-200">
+                    <div className="flex-1">
+                      <p className="text-xs text-slate-500 mb-0.5">Work Time</p>
+                      <p className="text-sm font-bold text-blue-600">{formatMinutes(card.workMinutes)}</p>
+                    </div>
+                    <div className="flex-1 text-right">
+                      <p className="text-xs text-slate-500 mb-0.5">Approval</p>
+                      <p className="text-sm font-bold">
+                        {card.approved ? (
+                          <span className="text-green-600">✅ Yes</span>
+                        ) : (
+                          <span className="text-amber-600">⏳ No</span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Mobile tap indicator */}
+                  <div className="mt-2 pt-2 border-t border-slate-100 sm:hidden">
+                    <p className="text-xs text-slate-400 text-center">Tap for details →</p>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-gray-500">No recent job cards</p>
+            <div className="empty-state py-8">
+              <div className="empty-state-icon">
+                <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <p className="empty-state-text">No recent job cards</p>
+            </div>
           )}
 
-          <button onClick={() => router.push('/employee/job-cards')} className="btn-primary w-full mt-4">
+          <button onClick={() => router.push('/employee/job-cards')} className="btn-primary w-full mt-4 py-3 text-base">
             View All Job Cards →
           </button>
         </Card>
