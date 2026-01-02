@@ -160,8 +160,8 @@ export interface MiniJobCard {
 
 export interface StatusUpdateRequest {
   newStatus: JobStatus;
-  latitude?: number;
-  longitude?: number;
+  latitude: number;
+  longitude: number;
 }
 
 export interface JobStatusLog {
@@ -170,8 +170,8 @@ export interface JobStatusLog {
   employeeEmail: string;
   prevStatus?: JobStatus;
   newStatus: JobStatus;
-  latitude?: number;
-  longitude?: number;
+  latitude: number;
+  longitude: number;
   loggedAt: string;
 }
 

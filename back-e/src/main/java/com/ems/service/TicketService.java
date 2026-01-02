@@ -124,7 +124,10 @@ public class TicketService {
         }
         
         validateStatusTransition(miniJobCard.getStatus(), request.getNewStatus());
-        
+
+        // Validate location data
+        validateLocationData(request.getLatitude(), request.getLongitude());
+
         LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Colombo"));
         
         JobStatusLog log = new JobStatusLog();
@@ -205,9 +208,30 @@ public class TicketService {
             case ON_HOLD -> next == JobStatus.STARTED || next == JobStatus.CANCEL;
             case COMPLETED, CANCEL -> false;
         };
-        
+
         if (!valid) {
             throw new RuntimeException("Invalid status transition from " + current + " to " + next);
+        }
+    }
+
+    private void validateLocationData(Double latitude, Double longitude) {
+        if (latitude == null || longitude == null) {
+            throw new RuntimeException("Location is required. Please enable location services on your device.");
+        }
+
+        // Validate latitude range (-90 to 90)
+        if (latitude < -90 || latitude > 90) {
+            throw new RuntimeException("Invalid latitude value. Please ensure location services are working properly.");
+        }
+
+        // Validate longitude range (-180 to 180)
+        if (longitude < -180 || longitude > 180) {
+            throw new RuntimeException("Invalid longitude value. Please ensure location services are working properly.");
+        }
+
+        // Check for default/zero values that might indicate location not properly captured
+        if (latitude == 0.0 && longitude == 0.0) {
+            throw new RuntimeException("Invalid location detected. Please ensure location services are enabled and try again.");
         }
     }
     

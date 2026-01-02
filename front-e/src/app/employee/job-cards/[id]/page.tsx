@@ -23,6 +23,7 @@ export default function JobCardDetail() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
+  const [gettingLocation, setGettingLocation] = useState(false);
 
   useEffect(() => {
     const role = authService.getRole();
@@ -56,14 +57,70 @@ export default function JobCardDetail() {
     }
   };
 
+  const getCurrentLocation = (): Promise<{ latitude: number; longitude: number }> => {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error('Geolocation is not supported by your browser'));
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+        },
+        (error) => {
+          let errorMessage = 'Unable to retrieve your location. ';
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage += 'Please enable location permissions in your device settings.';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage += 'Location information is unavailable.';
+              break;
+            case error.TIMEOUT:
+              errorMessage += 'The request to get your location timed out.';
+              break;
+            default:
+              errorMessage += 'An unknown error occurred.';
+          }
+          reject(new Error(errorMessage));
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
+        }
+      );
+    });
+  };
+
   const updateStatus = async (newStatus: JobStatus) => {
+    setGettingLocation(true);
     try {
-      await jobCardService.updateStatus(id, { newStatus });
+      // Get current location first
+      const location = await getCurrentLocation();
+
+      // Update status with location
+      await jobCardService.updateStatus(id, {
+        newStatus,
+        latitude: location.latitude,
+        longitude: location.longitude,
+      });
+
       loadJobCard();
       loadLogs();
       alert(`Status updated to ${newStatus}`);
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Error updating status');
+      if (error.message?.includes('location')) {
+        alert(error.message);
+      } else {
+        alert(error.response?.data?.message || 'Error updating status');
+      }
+    } finally {
+      setGettingLocation(false);
     }
   };
 
@@ -211,6 +268,11 @@ export default function JobCardDetail() {
               {jobCard.status !== 'COMPLETED' && jobCard.status !== 'CANCEL' && (
                 <div>
                   <h3 className="font-semibold mb-3">Update Status:</h3>
+                  {gettingLocation && (
+                    <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm text-blue-700">📍 Getting your current location...</p>
+                    </div>
+                  )}
                   <div className="flex gap-2 flex-wrap">
                     {(['TRAVELING', 'STARTED', 'ON_HOLD', 'COMPLETED', 'CANCEL'] as JobStatus[]).map(
                       (status) =>
@@ -218,10 +280,11 @@ export default function JobCardDetail() {
                           <button
                             key={status}
                             onClick={() => updateStatus(status)}
+                            disabled={gettingLocation}
                             className={
                               status === 'CANCEL'
-                                ? 'bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700'
-                                : 'btn-primary'
+                                ? 'bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed'
+                                : 'btn-primary disabled:opacity-50 disabled:cursor-not-allowed'
                             }
                           >
                             {status}
@@ -229,6 +292,9 @@ export default function JobCardDetail() {
                         )
                     )}
                   </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    ⚠️ Location services must be enabled. Your location will be recorded with each status update.
+                  </p>
                 </div>
               )}
 
@@ -298,6 +364,21 @@ export default function JobCardDetail() {
                       <p className="font-semibold">{log.newStatus}</p>
                       <p className="text-sm text-gray-600">{formatDateTime(log.loggedAt)}</p>
                       {log.prevStatus && <p className="text-xs text-gray-500">From: {log.prevStatus}</p>}
+                      {log.latitude && log.longitude && (
+                        <div className="mt-2 text-xs text-gray-600">
+                          <p className="flex items-center gap-1">
+                            📍 Location: {log.latitude.toFixed(6)}, {log.longitude.toFixed(6)}
+                          </p>
+                          <a
+                            href={`https://www.google.com/maps?q=${log.latitude},${log.longitude}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline inline-flex items-center gap-1 mt-1"
+                          >
+                            View on Map →
+                          </a>
+                        </div>
+                      )}
                     </div>
                   ))
                 ) : (

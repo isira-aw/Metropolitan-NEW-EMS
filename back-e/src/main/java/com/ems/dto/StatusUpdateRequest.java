@@ -8,7 +8,10 @@ import lombok.Data;
 public class StatusUpdateRequest {
     @NotNull(message = "New status is required")
     private JobStatus newStatus;
-    
+
+    @NotNull(message = "Latitude is required - please enable location services")
     private Double latitude;
+
+    @NotNull(message = "Longitude is required - please enable location services")
     private Double longitude;
 }
