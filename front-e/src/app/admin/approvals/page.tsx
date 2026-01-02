@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { approvalService } from '@/lib/services/admin.service';
-import { jobCardService } from '@/lib/services/employee.service';
 import { authService } from '@/lib/services/auth.service';
 import { MiniJobCard, PageResponse } from '@/types';
 import AdminNav from '@/components/layouts/AdminNav';
@@ -156,7 +155,7 @@ export default function AdminApprovals() {
                       <div className="mb-3">
                         <p className="text-xs font-semibold text-gray-700 mb-1">Review Image:</p>
                         <img
-                          src={jobCardService.getImageUrl(card.imageUrl)}
+                          src={card.imageUrl}
                           alt="Job review"
                           className="rounded-lg shadow-sm border border-gray-200"
                           style={{ maxHeight: '200px', maxWidth: '100%' }}

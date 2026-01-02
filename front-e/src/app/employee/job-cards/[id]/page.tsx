@@ -171,7 +171,7 @@ export default function JobCardDetail() {
                 {jobCard.imageUrl && (
                   <div className="mb-4">
                     <img
-                      src={jobCardService.getImageUrl(jobCard.imageUrl)}
+                      src={jobCard.imageUrl}
                       alt="Job card review"
                       className="max-w-full h-auto rounded-lg shadow-md"
                       style={{ maxHeight: '400px' }}

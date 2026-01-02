@@ -89,11 +89,11 @@ export const jobCardService = {
     return response.data;
   },
 
-  async uploadImage(id: number, file: File): Promise<{ message: string; imageUrl: string }> {
+  async uploadImage(id: number, file: File): Promise<{ message: string; success: string }> {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await apiClient.post<{ message: string; imageUrl: string }>(
+    const response = await apiClient.post<{ message: string; success: string }>(
       `/employee/job-cards/${id}/upload-image`,
       formData,
       {
@@ -103,10 +103,6 @@ export const jobCardService = {
       }
     );
     return response.data;
-  },
-
-  getImageUrl(filename: string): string {
-    return `${process.env.NEXT_PUBLIC_API_URL}/employee/job-cards/images/${filename}`;
   },
 };
 
