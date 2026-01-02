@@ -97,9 +97,9 @@ export default function JobCardDetail() {
 
   const canUpdateStatus = (status: JobStatus) => {
     const currentStatus = jobCard.status;
-    if (currentStatus === 'PENDING') return ['TRAVELING', 'STARTED','CANCEL'].includes(status);
-    if (currentStatus === 'TRAVELING') return ['STARTED','CANCEL'].includes(status);
-    if (currentStatus === 'STARTED') return ['COMPLETED', 'ON_HOLD','CANCEL'].includes(status);
+    if (currentStatus === 'PENDING') return ['TRAVELING', 'CANCEL'].includes(status);
+    if (currentStatus === 'TRAVELING') return ['STARTED', 'CANCEL'].includes(status);
+    if (currentStatus === 'STARTED') return ['COMPLETED', 'ON_HOLD', 'CANCEL'].includes(status);
     if (currentStatus === 'ON_HOLD') return ['STARTED'].includes(status);
     return false;
   };
@@ -212,20 +212,26 @@ export default function JobCardDetail() {
                 <div>
                   <h3 className="font-semibold mb-3">Update Status:</h3>
                   <div className="flex gap-2 flex-wrap">
-                    {(['TRAVELING', 'STARTED', 'ON_HOLD', 'COMPLETED','CANCEL'] as JobStatus[]).map((status) => (
-                      canUpdateStatus(status) && (
-                        <button
-                          key={status}
-                          onClick={() => updateStatus(status)}
-                          className="btn-primary"
-                        >
-                          {status}
-                        </button>
-                      )
-                    ))}
+                    {(['TRAVELING', 'STARTED', 'ON_HOLD', 'COMPLETED', 'CANCEL'] as JobStatus[]).map(
+                      (status) =>
+                        canUpdateStatus(status) && (
+                          <button
+                            key={status}
+                            onClick={() => updateStatus(status)}
+                            className={
+                              status === 'CANCEL'
+                                ? 'bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700'
+                                : 'btn-primary'
+                            }
+                          >
+                            {status}
+                          </button>
+                        )
+                    )}
                   </div>
                 </div>
               )}
+
 
               {/* Image Upload Section */}
               <div className="mt-6 border-t pt-6">
