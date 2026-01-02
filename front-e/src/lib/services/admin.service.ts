@@ -21,6 +21,7 @@ import {
   PageResponse,
   PageRequest,
   JobStatus,
+  UserRole,
 } from '@/types';
 
 // ===========================
@@ -33,7 +34,7 @@ export const userService = {
     return response.data;
   },
 
-  async getAll(params: PageRequest = {}): Promise<PageResponse<User>> {
+  async getAll(p0: number, p1: number, EMPLOYEE: UserRole, params: PageRequest = {}): Promise<PageResponse<User>> {
     const response = await apiClient.get<PageResponse<User>>('/admin/users', {
       params: { page: 0, size: 10, sortBy: 'createdAt', sortDir: 'desc', ...params },
     });
