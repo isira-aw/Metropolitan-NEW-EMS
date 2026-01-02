@@ -270,6 +270,41 @@ export interface OTReportResponse {
   totalOtMinutes: number;
 }
 
+export interface DailyTimeTrackingReportDTO {
+  employeeId: number;
+  employeeName: string;
+  date: string;
+  startTime?: string;
+  endTime?: string;
+  location: string;
+  dailyWorkingMinutes: number;
+  dailyWorkingHours: number;
+  idleMinutes: number;
+  idleHours: number;
+  travelMinutes: number;
+  travelHours: number;
+  totalMinutes: number;
+  totalHours: number;
+}
+
+export interface EmployeeDailyWorkTimeReportDTO {
+  employeeId: number;
+  employeeName: string;
+  date: string;
+  startTime?: string;
+  endTime?: string;
+  morningOtMinutes: number;
+  morningOtHours: number;
+  eveningOtMinutes: number;
+  eveningOtHours: number;
+  totalOtMinutes: number;
+  totalOtHours: number;
+  workingMinutes: number;
+  workingHours: number;
+  totalWeightEarned: number;
+  jobsCompleted: number;
+}
+
 export interface DashboardStats {
   totalEmployees: number;
   activeEmployees: number;
