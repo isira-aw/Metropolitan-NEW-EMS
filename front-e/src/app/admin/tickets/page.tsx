@@ -141,7 +141,7 @@ export default function AdminTickets() {
     try {
       // Load current assignments
       const assignments = await ticketService.getAssignments(ticket.id);
-      const employeeIds = assignments.map((a: TicketAssignment) => a.user.id);
+      const employeeIds = assignments.map((a: TicketAssignment) => a.employee.id);
 
       setEditMode(true);
       setEditingTicketId(ticket.id);
