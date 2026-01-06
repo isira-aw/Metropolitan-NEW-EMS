@@ -561,7 +561,71 @@ public class TicketService {
         ticket.setScheduledDate(request.getScheduledDate());
         ticket.setScheduledTime(request.getScheduledTime());
 
-        return mainTicketRepository.save(ticket);
+        ticket = mainTicketRepository.save(ticket);
+
+        // Update employee assignments if provided
+        if (request.getEmployeeIds() != null && !request.getEmployeeIds().isEmpty()) {
+            // Get current assignments
+            List<TicketAssignment> currentAssignments = ticketAssignmentRepository.findByMainTicketId(id);
+            Set<Long> currentEmployeeIds = currentAssignments.stream()
+                    .map(ta -> ta.getEmployee().getId())
+                    .collect(Collectors.toSet());
+
+            Set<Long> requestedEmployeeIds = new HashSet<>(request.getEmployeeIds());
+
+            // Remove assignments for employees not in the new list (only if PENDING or CANCEL)
+            for (TicketAssignment assignment : currentAssignments) {
+                Long empId = assignment.getEmployee().getId();
+                if (!requestedEmployeeIds.contains(empId)) {
+                    // Find the mini job card for this employee
+                    List<MiniJobCard> cards = miniJobCardRepository.findByMainTicketId(id);
+                    MiniJobCard card = cards.stream()
+                            .filter(c -> c.getEmployee().getId().equals(empId))
+                            .findFirst()
+                            .orElse(null);
+
+                    if (card != null) {
+                        if (card.getStatus() == JobStatus.PENDING || card.getStatus() == JobStatus.CANCEL) {
+                            // Safe to remove
+                            miniJobCardRepository.delete(card);
+                            ticketAssignmentRepository.delete(assignment);
+                        } else {
+                            throw new RuntimeException("Cannot unassign employee " + assignment.getEmployee().getFullName() +
+                                    " - job card status is " + card.getStatus());
+                        }
+                    }
+                }
+            }
+
+            // Add new assignments
+            for (Long employeeId : requestedEmployeeIds) {
+                if (!currentEmployeeIds.contains(employeeId)) {
+                    User employee = userRepository.findById(employeeId)
+                            .orElseThrow(() -> new RuntimeException("Employee not found: " + employeeId));
+
+                    if (employee.getRole() != UserRole.EMPLOYEE) {
+                        throw new RuntimeException("User " + employee.getUsername() + " is not an employee");
+                    }
+
+                    // Create assignment
+                    TicketAssignment assignment = new TicketAssignment();
+                    assignment.setMainTicket(ticket);
+                    assignment.setEmployee(employee);
+                    ticketAssignmentRepository.save(assignment);
+
+                    // Create mini job card
+                    MiniJobCard miniJobCard = new MiniJobCard();
+                    miniJobCard.setMainTicket(ticket);
+                    miniJobCard.setEmployee(employee);
+                    miniJobCard.setStatus(JobStatus.PENDING);
+                    miniJobCard.setApproved(false);
+                    miniJobCard.setWorkMinutes(0);
+                    miniJobCardRepository.save(miniJobCard);
+                }
+            }
+        }
+
+        return ticket;
     }
 
     @Transactional
