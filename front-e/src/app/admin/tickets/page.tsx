@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ticketService, generatorService, userService } from '@/lib/services/admin.service';
 import { authService } from '@/lib/services/auth.service';
-import { MainTicket, MainTicketRequest, PageResponse, Generator, User, JobCardType, JobStatus } from '@/types';
+import { MainTicket, MainTicketRequest, PageResponse, Generator, User, JobCardType, JobStatus, TicketAssignment } from '@/types';
 import AdminNav from '@/components/layouts/AdminNav';
 import Card from '@/components/ui/Card';
 import StatusBadge from '@/components/ui/StatusBadge';
@@ -19,6 +19,8 @@ export default function AdminTickets() {
   const [currentPage, setCurrentPage] = useState(0);
   const [statusFilter, setStatusFilter] = useState<JobStatus | 'ALL'>('ALL');
   const [showModal, setShowModal] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editingTicketId, setEditingTicketId] = useState<number | null>(null);
 
   // Date filter state
   const [selectedDate, setSelectedDate] = useState('');
@@ -120,6 +122,8 @@ export default function AdminTickets() {
   const handleCreate = () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
+    setEditMode(false);
+    setEditingTicketId(null);
     setFormData({
       generatorId: generators.length > 0 ? generators[0].id : 0,
       title: '',
@@ -133,6 +137,30 @@ export default function AdminTickets() {
     setShowModal(true);
   };
 
+  const handleEdit = async (ticket: MainTicket) => {
+    try {
+      // Load current assignments
+      const assignments = await ticketService.getAssignments(ticket.id);
+      const employeeIds = assignments.map((a: TicketAssignment) => a.employee.id);
+
+      setEditMode(true);
+      setEditingTicketId(ticket.id);
+      setFormData({
+        generatorId: ticket.generator.id,
+        title: ticket.title,
+        description: ticket.description || '',
+        type: ticket.type,
+        weight: ticket.weight,
+        scheduledDate: ticket.scheduledDate,
+        scheduledTime: ticket.scheduledTime,
+        employeeIds: employeeIds,
+      });
+      setShowModal(true);
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Error loading ticket details');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.employeeIds.length === 0) {
@@ -144,12 +172,19 @@ export default function AdminTickets() {
       return;
     }
     try {
-      await ticketService.create(formData);
-      alert('Ticket created successfully!');
+      if (editMode && editingTicketId) {
+        await ticketService.update(editingTicketId, formData);
+        alert('Ticket updated successfully!');
+      } else {
+        await ticketService.create(formData);
+        alert('Ticket created successfully!');
+      }
       setShowModal(false);
+      setEditMode(false);
+      setEditingTicketId(null);
       loadTickets(currentPage);
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Error creating ticket');
+      alert(error.response?.data?.message || `Error ${editMode ? 'updating' : 'creating'} ticket`);
     }
   };
 
@@ -280,14 +315,19 @@ export default function AdminTickets() {
 
                 {ticket.description && <p className="text-sm text-gray-600 mb-3">{ticket.description}</p>}
 
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <button onClick={() => router.push(`/admin/tickets/${ticket.id}`)} className="btn-primary text-sm">
                     View Details
                   </button>
                   {ticket.status !== 'CANCEL' && ticket.status !== 'COMPLETED' && (
-                    <button onClick={() => handleCancel(ticket.id)} className="btn-danger text-sm">
-                      Cancel Ticket
-                    </button>
+                    <>
+                      <button onClick={() => handleEdit(ticket)} className="btn-secondary text-sm">
+                        Edit
+                      </button>
+                      <button onClick={() => handleCancel(ticket.id)} className="btn-danger text-sm">
+                        Cancel Ticket
+                      </button>
+                    </>
                   )}
                 </div>
               </Card>
@@ -304,11 +344,11 @@ export default function AdminTickets() {
         {tickets && <Pagination currentPage={currentPage} totalPages={tickets.totalPages} onPageChange={loadTickets} />}
       </div>
 
-      {/* Create Modal */}
+      {/* Create/Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl my-8">
-            <h3 className="text-xl font-bold mb-4">Create Ticket</h3>
+            <h3 className="text-xl font-bold mb-4">{editMode ? 'Edit Ticket' : 'Create Ticket'}</h3>
             <form onSubmit={handleSubmit}>
               <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
                 <div>
@@ -397,7 +437,9 @@ export default function AdminTickets() {
               </div>
 
               <div className="flex gap-3 mt-6">
-                <button type="submit" className="btn-primary flex-1">Create Ticket</button>
+                <button type="submit" className="btn-primary flex-1">
+                  {editMode ? 'Update Ticket' : 'Create Ticket'}
+                </button>
                 <button type="button" onClick={() => setShowModal(false)} className="btn-secondary flex-1">Cancel</button>
               </div>
             </form>
