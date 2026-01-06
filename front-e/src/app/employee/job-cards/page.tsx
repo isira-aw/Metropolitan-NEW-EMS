@@ -10,6 +10,7 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import Pagination from '@/components/ui/Pagination';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { formatDateTime, formatMinutes } from '@/lib/utils/format';
+import { User, Calendar, MapPin, Star, CheckCircle, Clock } from 'lucide-react';
 
 export default function EmployeeJobCards() {
   const router = useRouter();
@@ -95,9 +96,9 @@ export default function EmployeeJobCards() {
   if (loading) return <LoadingSpinner />;
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-light-bg">
       {/* Mobile-Optimized Navigation */}
-      <nav className="bg-green-600 text-white shadow-lg">
+      <nav className="bg-corporate-blue text-white shadow-lg">
         <div className="container mx-auto px-4 py-3">
           {/* Mobile Header */}
           <div className="flex justify-between items-center">
@@ -106,7 +107,7 @@ export default function EmployeeJobCards() {
             {/* Mobile Menu Toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 hover:bg-green-700 rounded-lg transition-colors"
+              className="lg:hidden p-2 hover:bg-[#0F3A7A] rounded-lg transition-colors"
               aria-label="Toggle menu"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -120,18 +121,21 @@ export default function EmployeeJobCards() {
 
             {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center gap-6">
-              <button onClick={() => router.push('/employee/dashboard')} className="hover:text-green-200 transition-colors">Dashboard</button>
+              <button onClick={() => router.push('/employee/dashboard')} className="hover:text-[#A0BFE0] transition-colors">Dashboard</button>
               <button className="font-bold">
                 Job Cards
                 {pendingCount > 0 && (
                   <span className="bg-red-500 px-2 py-1 rounded-full text-xs ml-2 animate-pulse">{pendingCount}</span>
                 )}
               </button>
-              <button onClick={() => router.push('/employee/attendance')} className="hover:text-green-200 transition-colors">Attendance</button>
-              
-              <div className="border-l border-green-400 pl-6 flex items-center gap-4">
-                <span className="text-sm">👤 {user?.fullName}</span>
-                <button onClick={() => authService.logout()} className="px-3 py-1.5 bg-white text-green-600 rounded-lg hover:bg-green-50 text-sm font-medium transition-colors">
+              <button onClick={() => router.push('/employee/attendance')} className="hover:text-[#A0BFE0] transition-colors">Attendance</button>
+
+              <div className="border-l border-soft-blue pl-6 flex items-center gap-4">
+                <span className="text-sm flex items-center gap-2">
+                  <User size={18} />
+                  {user?.fullName}
+                </span>
+                <button onClick={() => authService.logout()} className="px-3 py-1.5 bg-white text-corporate-blue rounded-lg hover:bg-[#E8F0FB] text-sm font-medium transition-colors">
                   Logout
                 </button>
               </div>
@@ -140,14 +144,14 @@ export default function EmployeeJobCards() {
 
           {/* Mobile Menu Dropdown */}
           {mobileMenuOpen && (
-            <div className="lg:hidden mt-4 pb-4 space-y-2 border-t border-green-500 pt-4">
+            <div className="lg:hidden mt-4 pb-4 space-y-2 border-t border-soft-blue pt-4">
               <button
                 onClick={() => { router.push('/employee/dashboard'); setMobileMenuOpen(false); }}
-                className="block w-full text-left px-4 py-3 hover:bg-green-700 rounded-lg transition-colors"
+                className="block w-full text-left px-4 py-3 hover:bg-soft-blue rounded-lg transition-colors"
               >
                 Dashboard
               </button>
-                            <button className="block w-full text-left px-4 py-3 font-bold bg-green-700 rounded-lg">
+              <button className="block w-full text-left px-4 py-3 font-bold bg-[#0F3A7A] rounded-lg">
                 Job Cards
                 {pendingCount > 0 && (
                   <span className="bg-red-500 px-2 py-1 rounded-full text-xs ml-2">{pendingCount}</span>
@@ -155,16 +159,19 @@ export default function EmployeeJobCards() {
               </button>
               <button
                 onClick={() => { router.push('/employee/attendance'); setMobileMenuOpen(false); }}
-                className="block w-full text-left px-4 py-3 hover:bg-green-700 rounded-lg transition-colors"
+                className="block w-full text-left px-4 py-3 hover:bg-soft-blue rounded-lg transition-colors"
               >
                 Attendance
               </button>
 
-              <div className="border-t border-green-500 pt-3 mt-3 px-4">
-                <p className="text-sm mb-3">👤 {user?.fullName}</p>
+              <div className="border-t border-soft-blue pt-3 mt-3 px-4">
+                <p className="text-sm mb-3 flex items-center gap-2">
+                  <User size={18} />
+                  {user?.fullName}
+                </p>
                 <button
                   onClick={() => authService.logout()}
-                  className="w-full px-4 py-2 bg-white text-green-600 rounded-lg hover:bg-green-50 font-medium transition-colors"
+                  className="w-full px-4 py-2 bg-white text-corporate-blue rounded-lg hover:bg-[#E8F0FB] font-medium transition-colors"
                 >
                   Logout
                 </button>
@@ -199,9 +206,10 @@ export default function EmployeeJobCards() {
             <div className="flex gap-2 flex-wrap">
               <button
                 onClick={handleTodayFilter}
-                className="btn-primary flex-1 sm:flex-none"
+                className="btn-primary flex-1 sm:flex-none flex items-center justify-center gap-2"
               >
-                📅 Today
+                <Calendar size={18} />
+                Today
               </button>
               {dateFilterActive && (
                 <button
@@ -214,8 +222,9 @@ export default function EmployeeJobCards() {
             </div>
           </div>
           {dateFilterActive && selectedDate && (
-            <div className="mt-3 text-sm text-blue-600 font-medium">
-              📌 Showing job cards for {selectedDate}
+            <div className="mt-3 text-sm text-corporate-blue font-medium flex items-center gap-2">
+              <MapPin size={16} />
+              Showing job cards for {selectedDate}
             </div>
           )}
         </Card>
@@ -227,8 +236,8 @@ export default function EmployeeJobCards() {
               onClick={() => setStatusFilter('ALL')}
               className={`px-4 py-2.5 rounded-lg font-medium whitespace-nowrap transition-colors ${
                 statusFilter === 'ALL'
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+                  ? 'bg-corporate-blue text-white shadow-md'
+                  : 'bg-white text-pure-black hover:bg-[#E8F0FB] border border-slate-200'
               }`}
             >
               All
@@ -239,8 +248,8 @@ export default function EmployeeJobCards() {
                 onClick={() => setStatusFilter(status)}
                 className={`px-4 py-2.5 rounded-lg font-medium whitespace-nowrap transition-colors ${
                   statusFilter === status
-                    ? 'bg-blue-600 text-white shadow-md'
-                    : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+                    ? 'bg-corporate-blue text-white shadow-md'
+                    : 'bg-white text-pure-black hover:bg-[#E8F0FB] border border-slate-200'
                 }`}
               >
                 {status}
@@ -248,7 +257,7 @@ export default function EmployeeJobCards() {
             ))}
           </div>
           {/* Scroll indicator hint for mobile */}
-          <p className="text-xs text-slate-400 mt-2 sm:hidden">← Swipe to see all filters →</p>
+          <p className="text-xs text-slate-500 mt-2 sm:hidden">← Swipe to see all filters →</p>
         </div>
 
         {/* Job Cards Grid - Mobile Optimized */}
@@ -257,12 +266,12 @@ export default function EmployeeJobCards() {
             jobCards.content.map((card) => (
               <Card
                 key={card.id}
-                className="hover:shadow-xl transition-all cursor-pointer active:scale-98 border border-slate-200"
+                className="hover:shadow-xl transition-all cursor-pointer active:scale-98 border border-slate-200 hover:border-corporate-blue"
                 onClick={() => router.push(`/employee/job-cards/${card.id}`)}
               >
                 {/* Card Header */}
-                <div className="flex justify-between items-start gap-3 mb-4">
-                  <h3 className="font-bold text-lg sm:text-xl text-slate-900 leading-tight flex-1">
+                <div className="flex flex-col sm:flex-row justify-between items-start gap-3 mb-4">
+                  <h3 className="font-bold text-lg sm:text-xl text-pure-black leading-tight flex-1">
                     {card.mainTicket.title}
                   </h3>
                   <div className="flex-shrink-0">
@@ -274,15 +283,19 @@ export default function EmployeeJobCards() {
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center gap-2 text-sm">
                     <span className="text-slate-500 font-medium min-w-[60px]">Ticket:</span>
-                    <span className="text-slate-900 font-semibold">{card.mainTicket.ticketNumber}</span>
+                    <span className="text-pure-black font-semibold">{card.mainTicket.ticketNumber}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <span className="text-slate-500 font-medium min-w-[60px]">Type:</span>
-                    <span className="text-slate-900">{card.mainTicket.type}</span>
+                    <span className="text-pure-black">{card.mainTicket.type}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <span className="text-slate-500 font-medium min-w-[60px]">Priority:</span>
-                    <span className="text-amber-600 text-base">{'⭐'.repeat(card.mainTicket.weight)}</span>
+                    <span className="flex items-center gap-1">
+                      {Array.from({ length: card.mainTicket.weight }).map((_, i) => (
+                        <Star key={i} size={14} className="text-yellow-500 fill-yellow-500" />
+                      ))}
+                    </span>
                   </div>
                 </div>
 
@@ -291,15 +304,21 @@ export default function EmployeeJobCards() {
                   <div className="flex justify-between items-center gap-4">
                     <div className="flex-1">
                       <p className="text-xs text-slate-500 mb-1">Work Time</p>
-                      <p className="text-sm font-bold text-blue-600">{formatMinutes(card.workMinutes)}</p>
+                      <p className="text-sm font-bold text-corporate-blue">{formatMinutes(card.workMinutes)}</p>
                     </div>
                     <div className="flex-1 text-right">
                       <p className="text-xs text-slate-500 mb-1">Status</p>
-                      <p className="text-sm font-bold">
+                      <p className="text-sm font-bold flex items-center justify-end gap-1">
                         {card.approved ? (
-                          <span className="text-green-600">✅ Approved</span>
+                          <>
+                            <CheckCircle size={16} className="text-corporate-blue" />
+                            <span className="text-corporate-blue">Approved</span>
+                          </>
                         ) : (
-                          <span className="text-amber-600">⏳ Pending</span>
+                          <>
+                            <Clock size={16} className="text-soft-blue" />
+                            <span className="text-soft-blue">Pending</span>
+                          </>
                         )}
                       </p>
                     </div>
@@ -308,7 +327,7 @@ export default function EmployeeJobCards() {
 
                 {/* Tap indicator for mobile */}
                 <div className="mt-3 pt-3 border-t border-slate-100 text-center sm:hidden">
-                  <p className="text-xs text-slate-400">Tap to view details →</p>
+                  <p className="text-xs text-slate-500">Tap to view details →</p>
                 </div>
               </Card>
             ))
