@@ -8,14 +8,22 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Primary background - Dark slate/navy
+        // Corporate Color Theme
+        'corporate-blue': '#144A92',    // Primary - Buttons, Navbar, Links
+        'soft-blue': '#3F6FB5',         // Secondary - Hover, Cards, Highlights
+        'pure-black': '#000000',        // Text - All main text
+        'light-bg': '#F4F6F8',          // Background - Pages, Tables
+
+        // Maintain backward compatibility
         primary: {
-          bg: '#0F172A',
+          DEFAULT: '#144A92',
+          hover: '#0F3A7A',
+          light: '#3F6FB5',
         },
-        // Using default Tailwind colors for most cases:
-        // - slate: for text colors (slate-900, slate-600, slate-400)
-        // - blue: for primary actions (blue-600, blue-700)
-        // - red: for error states (red-50, red-200, red-700)
+        secondary: {
+          DEFAULT: '#3F6FB5',
+          hover: '#2E5A9E',
+        },
       },
       boxShadow: {
         // Custom shadow for modals

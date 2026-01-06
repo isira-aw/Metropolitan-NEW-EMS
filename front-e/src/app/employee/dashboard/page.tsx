@@ -9,6 +9,7 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import Card from '@/components/ui/Card';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { formatMinutes, formatDateTime } from '@/lib/utils/format';
+import { User, Play, Square, CheckCircle, Clock } from 'lucide-react';
 
 export default function EmployeeDashboard() {
   const router = useRouter();
@@ -66,9 +67,9 @@ export default function EmployeeDashboard() {
   if (loading) return <LoadingSpinner />;
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-light-bg">
       {/* Mobile-Optimized Navigation */}
-      <nav className="bg-green-600 text-white shadow-lg">
+      <nav className="bg-corporate-blue text-white shadow-lg">
         <div className="container mx-auto px-4 py-3">
           {/* Mobile Header */}
           <div className="flex justify-between items-center">
@@ -77,7 +78,7 @@ export default function EmployeeDashboard() {
             {/* Mobile Menu Toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 hover:bg-green-700 rounded-lg transition-colors"
+              className="lg:hidden p-2 hover:bg-[#0F3A7A] rounded-lg transition-colors"
               aria-label="Toggle menu"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -93,11 +94,14 @@ export default function EmployeeDashboard() {
             <div className="hidden lg:flex items-center gap-6">
               <button className="font-bold">Dashboard</button>
 
-              <button onClick={() => router.push('/employee/job-cards')} className="hover:text-green-200 transition-colors">Job Cards</button>
-              <button onClick={() => router.push('/employee/attendance')} className="hover:text-green-200 transition-colors">Attendance</button>
-              <div className="border-l border-green-400 pl-6 flex items-center gap-4">
-                <span className="text-sm">👤 {user?.fullName}</span>
-                <button onClick={handleLogout} className="px-3 py-1.5 bg-white text-green-600 rounded-lg hover:bg-green-50 text-sm font-medium transition-colors">
+              <button onClick={() => router.push('/employee/job-cards')} className="hover:text-[#A0BFE0] transition-colors">Job Cards</button>
+              <button onClick={() => router.push('/employee/attendance')} className="hover:text-[#A0BFE0] transition-colors">Attendance</button>
+              <div className="border-l border-soft-blue pl-6 flex items-center gap-4">
+                <span className="text-sm flex items-center gap-2">
+                  <User size={18} />
+                  {user?.fullName}
+                </span>
+                <button onClick={handleLogout} className="px-3 py-1.5 bg-white text-corporate-blue rounded-lg hover:bg-[#E8F0FB] text-sm font-medium transition-colors">
                   Logout
                 </button>
               </div>
@@ -106,28 +110,31 @@ export default function EmployeeDashboard() {
 
           {/* Mobile Menu Dropdown */}
           {mobileMenuOpen && (
-            <div className="lg:hidden mt-4 pb-4 space-y-2 border-t border-green-500 pt-4">
-              <button className="block w-full text-left px-4 py-3 font-bold bg-green-700 rounded-lg">
+            <div className="lg:hidden mt-4 pb-4 space-y-2 border-t border-soft-blue pt-4">
+              <button className="block w-full text-left px-4 py-3 font-bold bg-[#0F3A7A] rounded-lg">
                 Dashboard
               </button>
               <button
                 onClick={() => { router.push('/employee/job-cards'); setMobileMenuOpen(false); }}
-                className="block w-full text-left px-4 py-3 hover:bg-green-700 rounded-lg transition-colors"
+                className="block w-full text-left px-4 py-3 hover:bg-soft-blue rounded-lg transition-colors"
               >
                 Job Cards
               </button>
               <button
                 onClick={() => { router.push('/employee/attendance'); setMobileMenuOpen(false); }}
-                className="block w-full text-left px-4 py-3 hover:bg-green-700 rounded-lg transition-colors"
+                className="block w-full text-left px-4 py-3 hover:bg-soft-blue rounded-lg transition-colors"
               >
                 Attendance
               </button>
 
-              <div className="border-t border-green-500 pt-3 mt-3 px-4">
-                <p className="text-sm mb-3">👤 {user?.fullName}</p>
+              <div className="border-t border-soft-blue pt-3 mt-3 px-4">
+                <p className="text-sm mb-3 flex items-center gap-2">
+                  <User size={18} />
+                  {user?.fullName}
+                </p>
                 <button
                   onClick={handleLogout}
-                  className="w-full px-4 py-2 bg-white text-green-600 rounded-lg hover:bg-green-50 font-medium transition-colors"
+                  className="w-full px-4 py-2 bg-white text-corporate-blue rounded-lg hover:bg-[#E8F0FB] font-medium transition-colors"
                 >
                   Logout
                 </button>
@@ -141,29 +148,35 @@ export default function EmployeeDashboard() {
         <h2 className="page-title mb-6">My Dashboard</h2>
 
         {/* Day Status Card - Mobile Optimized */}
-        <Card className="mb-6 bg-gradient-to-r from-blue-50 to-green-50 border-l-4 border-green-600">
+        <Card className="mb-6 bg-gradient-to-r from-[#E8F0FB] to-[#F4F6F8] border-l-4 border-corporate-blue">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
             <div className="flex-1">
               <h3 className="section-title mb-2">Today's Attendance</h3>
               <p className="text-slate-700 text-sm sm:text-base">
-                Status: <strong className="text-slate-900">{dashboard?.currentStatus}</strong>
+                Status: <strong className="text-pure-black">{dashboard?.currentStatus}</strong>
               </p>
               {dashboard?.dayStarted && (
-                <p className="text-sm text-green-600 font-medium mt-1">✓ Day is active</p>
+                <p className="text-sm text-corporate-blue font-medium mt-1 flex items-center gap-2">
+                  <CheckCircle size={16} />
+                  Day is active
+                </p>
               )}
             </div>
             <div className="flex gap-3">
               {!dashboard?.dayStarted ? (
-                <button onClick={handleStartDay} className="btn-success w-full sm:w-auto py-3 sm:py-2">
-                  ▶️ Start Day
+                <button onClick={handleStartDay} className="btn-success w-full sm:w-auto py-3 sm:py-2 flex items-center justify-center gap-2">
+                  <Play size={18} />
+                  Start Day
                 </button>
               ) : !dashboard?.dayEnded ? (
-                <button onClick={handleEndDay} className="btn-danger w-full sm:w-auto py-3 sm:py-2">
-                  ⏹️ End Day
+                <button onClick={handleEndDay} className="btn-danger w-full sm:w-auto py-3 sm:py-2 flex items-center justify-center gap-2">
+                  <Square size={18} />
+                  End Day
                 </button>
               ) : (
-                <span className="text-green-700 font-semibold text-center w-full sm:w-auto py-3 sm:py-0">
-                  ✅ Day Completed
+                <span className="text-corporate-blue font-semibold text-center w-full sm:w-auto py-3 sm:py-0 flex items-center justify-center gap-2">
+                  <CheckCircle size={20} />
+                  Day Completed
                 </span>
               )}
             </div>
@@ -172,24 +185,24 @@ export default function EmployeeDashboard() {
 
         {/* Statistics Grid - Mobile Optimized */}
         <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6">
-          <div className="stat-card border-blue-600 hover:shadow-lg transition-shadow">
+          <div className="stat-card border-corporate-blue hover:shadow-lg transition-shadow">
             <h4 className="text-xs sm:text-sm text-slate-600 mb-2 font-medium">Pending Jobs</h4>
-            <p className="text-2xl sm:text-3xl font-bold text-blue-600">{dashboard?.pendingJobCardsCount || 0}</p>
+            <p className="text-2xl sm:text-3xl font-bold text-corporate-blue">{dashboard?.pendingJobCardsCount || 0}</p>
           </div>
 
-          <div className="stat-card border-yellow-600 hover:shadow-lg transition-shadow">
+          <div className="stat-card border-soft-blue hover:shadow-lg transition-shadow">
             <h4 className="text-xs sm:text-sm text-slate-600 mb-2 font-medium">In Progress</h4>
-            <p className="text-2xl sm:text-3xl font-bold text-yellow-600">{dashboard?.inProgressJobCardsCount || 0}</p>
+            <p className="text-2xl sm:text-3xl font-bold text-soft-blue">{dashboard?.inProgressJobCardsCount || 0}</p>
           </div>
 
-          <div className="stat-card border-green-600 hover:shadow-lg transition-shadow">
+          <div className="stat-card border-corporate-blue hover:shadow-lg transition-shadow">
             <h4 className="text-xs sm:text-sm text-slate-600 mb-2 font-medium">Completed</h4>
-            <p className="text-2xl sm:text-3xl font-bold text-green-600">{dashboard?.completedJobCardsCount || 0}</p>
+            <p className="text-2xl sm:text-3xl font-bold text-corporate-blue">{dashboard?.completedJobCardsCount || 0}</p>
           </div>
 
-          <div className="stat-card border-purple-600 hover:shadow-lg transition-shadow">
+          <div className="stat-card border-soft-blue hover:shadow-lg transition-shadow">
             <h4 className="text-xs sm:text-sm text-slate-600 mb-2 font-medium">Total Jobs</h4>
-            <p className="text-2xl sm:text-3xl font-bold text-purple-600">{dashboard?.totalJobCardsCount || 0}</p>
+            <p className="text-2xl sm:text-3xl font-bold text-soft-blue">{dashboard?.totalJobCardsCount || 0}</p>
           </div>
         </div>
 
@@ -197,14 +210,14 @@ export default function EmployeeDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6">
           <Card>
             <h3 className="text-sm font-medium text-slate-600 mb-2">Total Work Time</h3>
-            <p className="text-2xl sm:text-3xl font-bold text-blue-600">
+            <p className="text-2xl sm:text-3xl font-bold text-corporate-blue">
               {formatMinutes(dashboard?.totalWorkMinutes || 0)}
             </p>
           </Card>
 
           <Card>
             <h3 className="text-sm font-medium text-slate-600 mb-2">Total Overtime</h3>
-            <p className="text-2xl sm:text-3xl font-bold text-orange-600">
+            <p className="text-2xl sm:text-3xl font-bold text-soft-blue">
               {formatMinutes(dashboard?.totalOTMinutes || 0)}
             </p>
             <div className="mt-3 pt-3 border-t border-slate-200 space-y-1">
@@ -219,7 +232,7 @@ export default function EmployeeDashboard() {
 
           <Card className="sm:col-span-2 lg:col-span-1">
             <h3 className="text-sm font-medium text-slate-600 mb-2">Performance Score</h3>
-            <p className="text-2xl sm:text-3xl font-bold text-purple-600">
+            <p className="text-2xl sm:text-3xl font-bold text-corporate-blue">
               {dashboard?.averageScore ? dashboard.averageScore.toFixed(2) : 'N/A'} / 10
             </p>
             <p className="text-xs sm:text-sm text-slate-600 mt-2">
@@ -240,9 +253,9 @@ export default function EmployeeDashboard() {
                   onClick={() => router.push(`/employee/job-cards/${card.id}`)}
                 >
                   {/* Mini Card Header */}
-                  <div className="flex justify-between items-start gap-3 mb-3">
+                  <div className="flex flex-col sm:flex-row justify-between items-start gap-3 mb-3">
                     <div className="flex-1 min-w-0">
-                      <p className="font-bold text-base sm:text-lg text-slate-900 truncate mb-1">
+                      <p className="font-bold text-base sm:text-lg text-pure-black truncate mb-1">
                         {card.mainTicket.title}
                       </p>
                       <div className="space-y-1">
@@ -263,15 +276,21 @@ export default function EmployeeDashboard() {
                   <div className="flex items-center justify-between gap-4 pt-3 border-t border-slate-200">
                     <div className="flex-1">
                       <p className="text-xs text-slate-500 mb-0.5">Work Time</p>
-                      <p className="text-sm font-bold text-blue-600">{formatMinutes(card.workMinutes)}</p>
+                      <p className="text-sm font-bold text-corporate-blue">{formatMinutes(card.workMinutes)}</p>
                     </div>
                     <div className="flex-1 text-right">
                       <p className="text-xs text-slate-500 mb-0.5">Approval</p>
-                      <p className="text-sm font-bold">
+                      <p className="text-sm font-bold flex items-center justify-end gap-1">
                         {card.approved ? (
-                          <span className="text-green-600">✅ Yes</span>
+                          <>
+                            <CheckCircle size={16} className="text-corporate-blue" />
+                            <span className="text-corporate-blue">Yes</span>
+                          </>
                         ) : (
-                          <span className="text-amber-600">⏳ No</span>
+                          <>
+                            <Clock size={16} className="text-soft-blue" />
+                            <span className="text-soft-blue">No</span>
+                          </>
                         )}
                       </p>
                     </div>
@@ -279,7 +298,7 @@ export default function EmployeeDashboard() {
 
                   {/* Mobile tap indicator */}
                   <div className="mt-2 pt-2 border-t border-slate-100 sm:hidden">
-                    <p className="text-xs text-slate-400 text-center">Tap for details →</p>
+                    <p className="text-xs text-slate-500 text-center">Tap for details →</p>
                   </div>
                 </div>
               ))}

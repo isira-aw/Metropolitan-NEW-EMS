@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { authService } from '@/lib/services/auth.service';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, User } from 'lucide-react';
 
 export default function AdminNav({
   currentPage,
@@ -25,7 +25,7 @@ export default function AdminNav({
   ];
 
   return (
-    <nav className="bg-blue-600 text-white shadow-lg">
+    <nav className="bg-corporate-blue text-white shadow-lg">
       <div className="max-w-7xl mx-auto px-4">
         {/* Top Bar */}
         <div className="flex justify-between items-center h-16">
@@ -42,18 +42,21 @@ export default function AdminNav({
                 className={`transition-colors ${
                   item.name === currentPage
                     ? 'font-bold text-white'
-                    : 'hover:text-blue-200'
+                    : 'hover:text-[#A0BFE0]'
                 }`}
               >
                 {item.name}
               </button>
             ))}
 
-            <div className="border-l border-blue-400 pl-6 flex items-center gap-4">
-              <span className="text-sm">👤 {user?.fullName}</span>
+            <div className="border-l border-soft-blue pl-6 flex items-center gap-4">
+              <span className="text-sm flex items-center gap-2">
+                <User size={18} />
+                {user?.fullName}
+              </span>
               <button
                 onClick={() => authService.logout()}
-                className="bg-white text-blue-600 px-3 py-1 rounded-md text-sm hover:bg-blue-50"
+                className="bg-white text-corporate-blue px-3 py-1 rounded-md text-sm hover:bg-[#E8F0FB]"
               >
                 Logout
               </button>
@@ -82,19 +85,22 @@ export default function AdminNav({
                 }}
                 className={`block w-full text-left px-2 py-2 rounded-md ${
                   item.name === currentPage
-                    ? 'bg-blue-700 font-bold'
-                    : 'hover:bg-blue-500'
+                    ? 'bg-[#0F3A7A] font-bold'
+                    : 'hover:bg-soft-blue'
                 }`}
               >
                 {item.name}
               </button>
             ))}
 
-            <div className="border-t border-blue-400 pt-3 mt-3 space-y-2">
-              <p className="text-sm px-2">👤 {user?.fullName}</p>
+            <div className="border-t border-soft-blue pt-3 mt-3 space-y-2">
+              <p className="text-sm px-2 flex items-center gap-2">
+                <User size={18} />
+                {user?.fullName}
+              </p>
               <button
                 onClick={() => authService.logout()}
-                className="w-full bg-white text-blue-600 py-2 rounded-md text-sm"
+                className="w-full bg-white text-corporate-blue py-2 rounded-md text-sm hover:bg-[#E8F0FB]"
               >
                 Logout
               </button>
