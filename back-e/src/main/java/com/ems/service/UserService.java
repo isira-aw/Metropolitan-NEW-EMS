@@ -1,5 +1,6 @@
 package com.ems.service;
 
+import com.ems.dto.UserPutRequest;
 import com.ems.dto.UserRequest;
 import com.ems.entity.User;
 import com.ems.entity.UserRole;
@@ -68,7 +69,7 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
-    public User updateUser(Long id, UserRequest request) {
+    public User updateUser(Long id, UserPutRequest request) {
         User user = getUserById(id);
 
         user.setFullName(request.getFullName());
@@ -77,9 +78,9 @@ public class UserService {
         user.setActive(request.getActive());
         user.setRole(request.getRole());
 
-        if (request.getPassword() != null && !request.getPassword().isEmpty()) {
-            user.setPassword(passwordEncoder.encode(request.getPassword()));
-        }
+//        if (request.getPassword() != null && !request.getPassword().isEmpty()) {
+//            user.setPassword(passwordEncoder.encode(request.getPassword()));
+//        }
 
         return userRepository.save(user);
     }
