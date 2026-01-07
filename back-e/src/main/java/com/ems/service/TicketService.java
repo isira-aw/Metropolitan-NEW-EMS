@@ -115,6 +115,14 @@ public class TicketService {
             throw new RuntimeException("Unauthorized: This job card doesn't belong to you");
         }
 
+        // Employee Status Update Restriction: Only allow updating status for tickets scheduled for today
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Colombo"));
+        LocalDate ticketScheduledDate = miniJobCard.getMainTicket().getScheduledDate();
+        if (!ticketScheduledDate.equals(today)) {
+            throw new RuntimeException("Cannot update status for tickets not scheduled for today. This ticket is scheduled for " +
+                    ticketScheduledDate + ". Only tickets scheduled for today (" + today + ") can be updated.");
+        }
+
         if (!attendanceService.hasDayStarted(employee)) {
             throw new RuntimeException("Please start your day first");
         }
@@ -642,12 +650,7 @@ public class TicketService {
         MainTicket ticket = mainTicketRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Ticket not found"));
 
-        // Ticket Edit Limitation: Only allow editing tickets scheduled for current day
-        LocalDate today = LocalDate.now(ZoneId.of("Asia/Colombo"));
-        if (!ticket.getScheduledDate().equals(today)) {
-            throw new RuntimeException("Cannot edit tickets from past or future dates. Only tickets scheduled for today (" +
-                    today + ") can be edited. This ticket is scheduled for " + ticket.getScheduledDate() + ".");
-        }
+        // Note: Admins can edit tickets from any date (no date restriction for admins)
 
         Generator generator = generatorRepository.findById(request.getGeneratorId())
                 .orElseThrow(() -> new RuntimeException("Generator not found"));
