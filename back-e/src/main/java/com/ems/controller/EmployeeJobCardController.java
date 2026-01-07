@@ -181,7 +181,7 @@ public class EmployeeJobCardController {
     @GetMapping("/pending/count")
     public ResponseEntity<Long> getPendingCount(Authentication auth) {
         String username = auth.getName();
-        Long count = ticketService.getPendingJobCardsCount(username);
+        Long count = ticketService.getTodayPendingJobCards(username);
         return ResponseEntity.ok(count);
     }
 
