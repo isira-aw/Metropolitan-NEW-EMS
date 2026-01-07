@@ -16,16 +16,15 @@ export default function EmployeeJobCards() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [jobCards, setJobCards] = useState<PageResponse<MiniJobCard> | null>(null);
-  const [allJobCards, setAllJobCards] = useState<MiniJobCard[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [statusFilter, setStatusFilter] = useState<JobStatus | 'ALL'>('ALL');
   const [pendingCount, setPendingCount] = useState(0);
   const [user, setUser] = useState<any>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Date filter state
-  const [selectedDate, setSelectedDate] = useState('');
-  const [dateFilterActive, setDateFilterActive] = useState(false);
+  // Date filter state - Default to today's date
+  const getTodayDate = () => new Date().toISOString().split('T')[0];
+  const [selectedDate, setSelectedDate] = useState(getTodayDate());
 
   useEffect(() => {
     const role = authService.getRole();
@@ -37,31 +36,17 @@ export default function EmployeeJobCards() {
     setUser(authService.getStoredUser());
     loadJobCards(0);
     loadPendingCount();
-  }, [router, statusFilter, dateFilterActive, selectedDate]);
+  }, [router, statusFilter, selectedDate]);
 
   const loadJobCards = async (page: number) => {
     try {
-      const data = statusFilter === 'ALL'
-        ? await jobCardService.getAll({ page, size: 10 })
-        : await jobCardService.getByStatus(statusFilter, { page, size: 10 });
+      // Always use date filtering - default to today if not selected
+      const dateToUse = selectedDate || getTodayDate();
+      const statusToUse = statusFilter === 'ALL' ? undefined : statusFilter;
 
-      setAllJobCards(data.content);
+      const data = await jobCardService.getByDate(dateToUse, statusToUse, { page, size: 10 });
 
-      // Apply date filter if active
-      let filteredContent = data.content;
-      if (dateFilterActive && selectedDate) {
-        filteredContent = data.content.filter(card => {
-          const scheduledDate = card.mainTicket.scheduledDate;
-          return scheduledDate === selectedDate;
-        });
-      }
-
-      setJobCards({
-        ...data,
-        content: filteredContent,
-        totalElements: filteredContent.length,
-        totalPages: Math.ceil(filteredContent.length / 10),
-      });
+      setJobCards(data);
       setCurrentPage(page);
     } catch (error) {
       console.error('Error loading job cards:', error);
@@ -71,17 +56,9 @@ export default function EmployeeJobCards() {
   };
 
   const handleTodayFilter = () => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayDate();
     setSelectedDate(today);
-    setDateFilterActive(true);
     setCurrentPage(0);
-  };
-
-  const handleClearFilter = () => {
-    setSelectedDate('');
-    setDateFilterActive(false);
-    setCurrentPage(0);
-    loadJobCards(0);
   };
 
   const loadPendingCount = async () => {
@@ -185,20 +162,17 @@ export default function EmployeeJobCards() {
         {/* Page Title - Mobile Optimized */}
         <h2 className="page-title mb-6">My Job Cards</h2>
 
-        {/* Date Filter Controls - Mobile Optimized */}
-        <Card className="mb-4">
+        {/* Date Navigation - Mobile Optimized */}
+        <Card className="mb-4 bg-gradient-to-r from-[#E8F0FB] to-[#F4F6F8] border-l-4 border-corporate-blue">
           <div className="space-y-4 sm:space-y-0 sm:flex sm:flex-wrap sm:gap-4 sm:items-end">
             <div className="flex-1 min-w-[200px]">
-              <label className="input-label">Select Date</label>
+              <label className="input-label font-semibold">Select Date to View</label>
               <input
                 type="date"
                 value={selectedDate}
                 onChange={(e) => {
                   setSelectedDate(e.target.value);
-                  if (e.target.value) {
-                    setDateFilterActive(true);
-                    setCurrentPage(0);
-                  }
+                  setCurrentPage(0);
                 }}
                 className="input-field"
               />
@@ -211,22 +185,15 @@ export default function EmployeeJobCards() {
                 <Calendar size={18} />
                 Today
               </button>
-              {dateFilterActive && (
-                <button
-                  onClick={handleClearFilter}
-                  className="btn-secondary flex-1 sm:flex-none"
-                >
-                  Clear Filter
-                </button>
-              )}
             </div>
           </div>
-          {dateFilterActive && selectedDate && (
-            <div className="mt-3 text-sm text-corporate-blue font-medium flex items-center gap-2">
-              <MapPin size={16} />
-              Showing job cards for {selectedDate}
+          <div className="mt-3 pt-3 border-t border-slate-200">
+            <div className="text-sm text-corporate-blue font-medium flex items-center gap-2">
+              <Calendar size={16} />
+              Viewing job cards for: <span className="font-bold">{selectedDate}</span>
             </div>
-          )}
+            <p className="text-xs text-slate-600 mt-1">You can only view one day at a time. Use the date selector to navigate between dates.</p>
+          </div>
         </Card>
 
         {/* Filter Tabs - Mobile Optimized with Horizontal Scroll */}
@@ -339,7 +306,10 @@ export default function EmployeeJobCards() {
                 </svg>
               </div>
               <p className="empty-state-text text-base">
-                {dateFilterActive ? 'No job cards found for selected date' : 'No job cards available'}
+                No job cards scheduled for {selectedDate}
+              </p>
+              <p className="text-sm text-slate-500 mt-2">
+                Try selecting a different date or check back later.
               </p>
             </div>
           )}
