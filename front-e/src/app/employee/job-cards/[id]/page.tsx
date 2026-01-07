@@ -115,11 +115,12 @@ export default function JobCardDetail() {
       loadLogs();
       alert(`Status updated to ${newStatus}`);
     } catch (error: any) {
+      // Show location errors (from browser geolocation API)
       if (error.message?.includes('location')) {
         alert(error.message);
-      } else {
-        alert(error.response?.data?.message || 'Error updating status');
       }
+      // Backend errors are handled by global error handler in apiClient
+      console.error('Error updating status:', error);
     } finally {
       setGettingLocation(false);
     }
@@ -144,7 +145,8 @@ export default function JobCardDetail() {
       setSelectedFile(null);
       loadJobCard(); // Reload to get the updated imageUrl
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Error uploading image');
+      // Error is already handled by global error handler in apiClient
+      console.error('Error uploading image:', error);
     } finally {
       setUploading(false);
     }

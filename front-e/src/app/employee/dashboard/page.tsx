@@ -46,7 +46,8 @@ export default function EmployeeDashboard() {
       loadDashboard();
       alert('Day started successfully!');
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Error starting day');
+      // Error is already handled by global error handler in apiClient
+      console.error('Error starting day:', error);
     }
   };
 
@@ -56,7 +57,8 @@ export default function EmployeeDashboard() {
       loadDashboard();
       alert('Day ended successfully!');
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Error ending day');
+      // Error is already handled by global error handler in apiClient
+      console.error('Error ending day:', error);
     }
   };
 

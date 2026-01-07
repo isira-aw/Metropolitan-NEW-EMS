@@ -37,7 +37,7 @@ apiClient.interceptors.response.use(
           });
           localStorage.setItem('accessToken', response.data.accessToken);
           localStorage.setItem('refreshToken', response.data.refreshToken);
-          
+
           // Retry original request
           error.config.headers.Authorization = `Bearer ${response.data.accessToken}`;
           return axios.request(error.config);
@@ -48,6 +48,25 @@ apiClient.interceptors.response.use(
         }
       }
     }
+
+    // Global error popup handling
+    // Display backend error messages in a popup window
+    // Components can opt-out by adding { skipGlobalError: true } to config
+    const skipGlobalError = error.config?.skipGlobalError;
+
+    if (!skipGlobalError) {
+      if (error.response?.data?.message) {
+        // Don't show alert for silent failures (like getToday which handles its own errors)
+        const isSilentRequest = error.config?.url?.includes('/employee/attendance/today');
+        if (!isSilentRequest) {
+          alert(error.response.data.message);
+        }
+      } else if (error.message && !error.response) {
+        // Network or other errors (only if there's no response from server)
+        alert('Network error: ' + error.message);
+      }
+    }
+
     return Promise.reject(error);
   }
 );

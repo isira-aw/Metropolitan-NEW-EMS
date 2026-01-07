@@ -107,23 +107,42 @@ public class TicketService {
     public MiniJobCard updateJobStatus(Long miniJobCardId, StatusUpdateRequest request, String employeeUsername) {
         MiniJobCard miniJobCard = miniJobCardRepository.findById(miniJobCardId)
                 .orElseThrow(() -> new RuntimeException("Mini job card not found"));
-        
+
         User employee = userRepository.findByUsername(employeeUsername)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
-        
+
         if (!miniJobCard.getEmployee().getId().equals(employee.getId())) {
             throw new RuntimeException("Unauthorized: This job card doesn't belong to you");
         }
-        
+
         if (!attendanceService.hasDayStarted(employee)) {
             throw new RuntimeException("Please start your day first");
         }
-        
+
         if (attendanceService.hasDayEnded(employee)) {
             throw new RuntimeException("Cannot update status after day has ended");
         }
-        
+
         validateStatusTransition(miniJobCard.getStatus(), request.getNewStatus());
+
+        // Single Active Ticket Rule: Only one ticket can be active at a time
+        // Check if employee is trying to activate this ticket (change to TRAVELING, STARTED, or ON_HOLD)
+        if (request.getNewStatus() == JobStatus.TRAVELING ||
+            request.getNewStatus() == JobStatus.STARTED ||
+            request.getNewStatus() == JobStatus.ON_HOLD) {
+
+            // Check if there's already another active ticket
+            List<MiniJobCard> allEmployeeCards = miniJobCardRepository.findByEmployee(employee, Pageable.unpaged()).getContent();
+            boolean hasActiveTicket = allEmployeeCards.stream()
+                    .filter(card -> !card.getId().equals(miniJobCardId)) // Exclude current ticket
+                    .anyMatch(card -> card.getStatus() == JobStatus.TRAVELING ||
+                                     card.getStatus() == JobStatus.STARTED ||
+                                     card.getStatus() == JobStatus.ON_HOLD);
+
+            if (hasActiveTicket) {
+                throw new RuntimeException("You already have an active ticket in progress. Please complete or cancel it before starting another ticket.");
+            }
+        }
 
         // Validate location data
         validateLocationData(request.getLatitude(), request.getLongitude());
@@ -314,7 +333,27 @@ public class TicketService {
     public Page<MiniJobCard> getJobCardsByEmployee(String username, Pageable pageable) {
         User employee = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
-        return miniJobCardRepository.findByEmployee(employee, pageable);
+
+        // Get all job cards and sort by scheduled date and time (priority ordering)
+        List<MiniJobCard> allCards = miniJobCardRepository.findByEmployee(employee, Pageable.unpaged()).getContent();
+        List<MiniJobCard> sortedCards = allCards.stream()
+                .sorted((a, b) -> {
+                    // Sort by scheduled date first, then by scheduled time
+                    int dateCompare = a.getMainTicket().getScheduledDate()
+                            .compareTo(b.getMainTicket().getScheduledDate());
+                    if (dateCompare != 0) {
+                        return dateCompare;
+                    }
+                    return a.getMainTicket().getScheduledTime()
+                            .compareTo(b.getMainTicket().getScheduledTime());
+                })
+                .collect(Collectors.toList());
+
+        // Apply pagination to sorted list
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), sortedCards.size());
+        List<MiniJobCard> pageContent = start >= sortedCards.size() ? List.of() : sortedCards.subList(start, end);
+        return new PageImpl<>(pageContent, pageable, sortedCards.size());
     }
 
     public MiniJobCard getJobCardByIdForEmployee(Long id, String username) {
@@ -336,7 +375,27 @@ public class TicketService {
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
 
         JobStatus jobStatus = JobStatus.valueOf(status.toUpperCase());
-        return miniJobCardRepository.findByEmployeeAndStatus(employee, jobStatus, pageable);
+
+        // Get all job cards with the specified status and sort by scheduled date and time (priority ordering)
+        List<MiniJobCard> allCards = miniJobCardRepository.findByEmployeeAndStatus(employee, jobStatus, Pageable.unpaged()).getContent();
+        List<MiniJobCard> sortedCards = allCards.stream()
+                .sorted((a, b) -> {
+                    // Sort by scheduled date first, then by scheduled time
+                    int dateCompare = a.getMainTicket().getScheduledDate()
+                            .compareTo(b.getMainTicket().getScheduledDate());
+                    if (dateCompare != 0) {
+                        return dateCompare;
+                    }
+                    return a.getMainTicket().getScheduledTime()
+                            .compareTo(b.getMainTicket().getScheduledTime());
+                })
+                .collect(Collectors.toList());
+
+        // Apply pagination to sorted list
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), sortedCards.size());
+        List<MiniJobCard> pageContent = start >= sortedCards.size() ? List.of() : sortedCards.subList(start, end);
+        return new PageImpl<>(pageContent, pageable, sortedCards.size());
     }
 
     public Long getPendingJobCardsCount(String username) {
@@ -549,6 +608,13 @@ public class TicketService {
     public MainTicket updateMainTicket(Long id, MainTicketRequest request, String updatedBy) {
         MainTicket ticket = mainTicketRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Ticket not found"));
+
+        // Ticket Edit Limitation: Only allow editing tickets scheduled for current day
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Colombo"));
+        if (!ticket.getScheduledDate().equals(today)) {
+            throw new RuntimeException("Cannot edit tickets from past or future dates. Only tickets scheduled for today (" +
+                    today + ") can be edited. This ticket is scheduled for " + ticket.getScheduledDate() + ".");
+        }
 
         Generator generator = generatorRepository.findById(request.getGeneratorId())
                 .orElseThrow(() -> new RuntimeException("Generator not found"));
