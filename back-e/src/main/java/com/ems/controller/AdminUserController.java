@@ -1,5 +1,6 @@
 package com.ems.controller;
 
+import com.ems.dto.UserPutRequest;
 import com.ems.dto.UserRequest;
 import com.ems.entity.User;
 import com.ems.service.UserService;
@@ -132,8 +133,7 @@ public class AdminUserController {
     @PutMapping("/{id}")
     public ResponseEntity<User> updateUser(
             @PathVariable Long id,
-            @Valid @RequestBody UserRequest request) {
-
+            @Valid @RequestBody UserPutRequest request) {
         User user = userService.updateUser(id, request);
         return ResponseEntity.ok(user);
     }
