@@ -415,3 +415,59 @@ export interface PageResponse<T> {
   numberOfElements: number;
   empty: boolean;
 }
+
+// ===========================
+// ACTIVITY LOG TYPES
+// ===========================
+
+export enum ActivityType {
+  DAY_START = 'DAY_START',
+  DAY_END = 'DAY_END',
+  STATUS_UPDATE = 'STATUS_UPDATE',
+  JOB_APPROVED = 'JOB_APPROVED',
+  JOB_REJECTED = 'JOB_REJECTED',
+  JOB_ASSIGNED = 'JOB_ASSIGNED',
+  JOB_CREATED = 'JOB_CREATED',
+  USER_CREATED = 'USER_CREATED',
+  USER_UPDATED = 'USER_UPDATED',
+  USER_ACTIVATED = 'USER_ACTIVATED',
+  USER_DEACTIVATED = 'USER_DEACTIVATED',
+  TICKET_CREATED = 'TICKET_CREATED',
+  TICKET_UPDATED = 'TICKET_UPDATED',
+  OTHER = 'OTHER',
+}
+
+export interface ActivityLogResponse {
+  id: number;
+  employeeId?: number;
+  employeeFullName?: string;
+  employeeEmail?: string;
+  performerId?: number;
+  performerFullName?: string;
+  performerEmail?: string;
+  activityType: ActivityType;
+  activityDescription: string;
+  miniJobCardId?: number;
+  mainTicketId?: number;
+  ticketNumber?: string;
+  generatorId?: number;
+  generatorName?: string;
+  generatorLocationName?: string;
+  oldStatus?: JobStatus;
+  newStatus?: JobStatus;
+  latitude?: number;
+  longitude?: number;
+  locationMapUrl?: string;
+  details?: string;
+  timestamp: string;
+  formattedDate: string;
+  formattedTime: string;
+}
+
+export interface ActivityLogFilterRequest {
+  employeeId?: number | null;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  size?: number;
+}

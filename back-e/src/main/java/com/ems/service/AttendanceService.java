@@ -32,7 +32,10 @@ public class AttendanceService {
 
     @Autowired
     private MiniJobCardRepository miniJobCardRepository;
-    
+
+    @Autowired
+    private LogService logService;
+
     private static final LocalTime MORNING_OT_CUTOFF = LocalTime.of(8, 30);
     private static final LocalTime EVENING_OT_CUTOFF = LocalTime.of(17, 30);
     
@@ -61,8 +64,13 @@ public class AttendanceService {
             long morningOtMinutes = Duration.between(now.toLocalTime(), MORNING_OT_CUTOFF).toMinutes();
             attendance.setMorningOtMinutes((int) morningOtMinutes);
         }
-        
-        return attendanceRepository.save(attendance);
+
+        EmployeeDayAttendance saved = attendanceRepository.save(attendance);
+
+        // Log day start activity
+        logService.logDayStart(employee, null, null);
+
+        return saved;
     }
     
     public EmployeeDayAttendance endDay(String username) {
@@ -104,7 +112,12 @@ public class AttendanceService {
             attendance.setEveningOtMinutes((int) eveningOtMinutes);
         }
 
-        return attendanceRepository.save(attendance);
+        EmployeeDayAttendance saved = attendanceRepository.save(attendance);
+
+        // Log day end activity
+        logService.logDayEnd(employee, null, null);
+
+        return saved;
     }
     
     public boolean hasDayStarted(User employee) {

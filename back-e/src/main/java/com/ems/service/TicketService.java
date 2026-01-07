@@ -45,7 +45,10 @@ public class TicketService {
     
     @Autowired
     private EmployeeScoreRepository employeeScoreRepository;
-    
+
+    @Autowired
+    private LogService logService;
+
     @Transactional
     public MainTicket createMainTicket(MainTicketRequest request, String createdBy) {
         Generator generator = generatorRepository.findById(request.getGeneratorId())
@@ -166,7 +169,11 @@ public class TicketService {
         log.setLongitude(request.getLongitude());
         log.setLoggedAt(now);
         jobStatusLogRepository.save(log);
-        
+
+        // Log status update to activity log
+        logService.logStatusUpdate(employee, miniJobCard, miniJobCard.getStatus(), request.getNewStatus(),
+                request.getLatitude(), request.getLongitude());
+
         miniJobCard.setStatus(request.getNewStatus());
         
         if (request.getNewStatus() == JobStatus.STARTED && miniJobCard.getStartTime() == null) {
@@ -798,6 +805,11 @@ public class TicketService {
         MiniJobCard saved = miniJobCardRepository.save(miniJobCard);
 
         updateMainTicketStatus(miniJobCard.getMainTicket().getId());
+
+        // Log approval activity
+        User approver = userRepository.findByUsername(approvedBy).orElse(null);
+        logService.logJobApproval(approver != null ? approver : miniJobCard.getEmployee(),
+                miniJobCard.getEmployee(), miniJobCard);
 
         // Automatically create EmployeeScore when approving
         // Only create if score doesn't already exist and endTime is set

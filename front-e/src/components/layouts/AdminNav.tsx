@@ -22,6 +22,7 @@ export default function AdminNav({
     { name: 'Tickets', path: '/admin/tickets' },
     { name: 'Approvals', path: '/admin/approvals' },
     { name: 'Reports', path: '/admin/reports' },
+    { name: 'Logs', path: '/admin/logs' },
   ];
 
   return (
