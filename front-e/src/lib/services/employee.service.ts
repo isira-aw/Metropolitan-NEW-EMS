@@ -84,6 +84,13 @@ export const jobCardService = {
     return response.data;
   },
 
+  async getByDate(date: string, status?: string, params: PageRequest = {}): Promise<PageResponse<MiniJobCard>> {
+    const response = await apiClient.get<PageResponse<MiniJobCard>>('/employee/job-cards/by-date', {
+      params: { date, status, page: 0, size: 10, ...params },
+    });
+    return response.data;
+  },
+
   async getPendingCount(): Promise<number> {
     const response = await apiClient.get<number>('/employee/job-cards/pending/count');
     return response.data;

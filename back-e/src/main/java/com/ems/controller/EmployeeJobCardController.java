@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.validation.Valid;
+import java.time.LocalDate;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -140,6 +142,32 @@ public class EmployeeJobCardController {
         String username = auth.getName();
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<MiniJobCard> jobCards = ticketService.getJobCardsByEmployeeAndStatus(username, status, pageable);
+        return ResponseEntity.ok(jobCards);
+    }
+
+    /**
+     * Get job cards by scheduled date
+     * Returns only job cards scheduled for a specific date
+     * Sorted by scheduled time in ascending order
+     *
+     * @param date Scheduled date to filter by
+     * @param status Optional status filter
+     * @param auth Spring Security authentication
+     * @param page Page number (default 0)
+     * @param size Page size (default 10)
+     * @return Page of filtered MiniJobCard records
+     */
+    @GetMapping("/by-date")
+    public ResponseEntity<Page<MiniJobCard>> getJobCardsByDate(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(required = false) String status,
+            Authentication auth,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        String username = auth.getName();
+        Pageable pageable = PageRequest.of(page, size);
+        Page<MiniJobCard> jobCards = ticketService.getJobCardsByEmployeeAndDate(username, date, status, pageable);
         return ResponseEntity.ok(jobCards);
     }
 

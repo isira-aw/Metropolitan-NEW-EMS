@@ -398,6 +398,39 @@ public class TicketService {
         return new PageImpl<>(pageContent, pageable, sortedCards.size());
     }
 
+    public Page<MiniJobCard> getJobCardsByEmployeeAndDate(String username, LocalDate date, String status, Pageable pageable) {
+        User employee = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Employee not found"));
+
+        // Get all job cards for the employee
+        List<MiniJobCard> allCards = miniJobCardRepository.findByEmployee(employee, Pageable.unpaged()).getContent();
+
+        // Filter by scheduled date
+        List<MiniJobCard> filteredCards = allCards.stream()
+                .filter(card -> card.getMainTicket().getScheduledDate().equals(date))
+                .collect(Collectors.toList());
+
+        // Apply status filter if provided
+        if (status != null && !status.isEmpty() && !status.equalsIgnoreCase("ALL")) {
+            JobStatus jobStatus = JobStatus.valueOf(status.toUpperCase());
+            filteredCards = filteredCards.stream()
+                    .filter(card -> card.getStatus() == jobStatus)
+                    .collect(Collectors.toList());
+        }
+
+        // Sort by scheduled time (ascending order)
+        List<MiniJobCard> sortedCards = filteredCards.stream()
+                .sorted((a, b) -> a.getMainTicket().getScheduledTime()
+                        .compareTo(b.getMainTicket().getScheduledTime()))
+                .collect(Collectors.toList());
+
+        // Apply pagination to sorted list
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), sortedCards.size());
+        List<MiniJobCard> pageContent = start >= sortedCards.size() ? List.of() : sortedCards.subList(start, end);
+        return new PageImpl<>(pageContent, pageable, sortedCards.size());
+    }
+
     public Long getPendingJobCardsCount(String username) {
         User employee = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
