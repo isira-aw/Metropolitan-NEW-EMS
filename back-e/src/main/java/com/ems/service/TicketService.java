@@ -439,14 +439,16 @@ public class TicketService {
         return new PageImpl<>(pageContent, pageable, sortedCards.size());
     }
 
-    public Long getPendingJobCardsCount(String username) {
+
+    public long getTodayPendingJobCards(String username) {
         User employee = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
 
-        List<MiniJobCard> allCards = miniJobCardRepository.findByEmployee(employee, Pageable.unpaged()).getContent();
-        return allCards.stream()
-                .filter(card -> card.getStatus() == JobStatus.PENDING)
-                .count();
+        return miniJobCardRepository.countByEmployeeAndMainTicket_ScheduledDateAndStatus(
+                employee,
+                LocalDate.now(),
+                JobStatus.PENDING
+        );
     }
 
     public EmployeeDashboardResponse getEmployeeDashboard(String username) {

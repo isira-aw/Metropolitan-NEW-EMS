@@ -192,7 +192,6 @@ export default function EmployeeJobCards() {
               <Calendar size={16} />
               Viewing job cards for: <span className="font-bold">{selectedDate}</span>
             </div>
-            <p className="text-xs text-slate-600 mt-1">You can only view one day at a time. Use the date selector to navigate between dates.</p>
           </div>
         </Card>
 
