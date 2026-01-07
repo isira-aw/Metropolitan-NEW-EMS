@@ -22,6 +22,8 @@ import {
   PageRequest,
   JobStatus,
   UserRole,
+  ActivityLogResponse,
+  ActivityLogFilterRequest,
 } from '@/types';
 
 // ===========================
@@ -409,6 +411,48 @@ export const reportService = {
         params: { startDate, endDate },
       }
     );
+    return response.data;
+  },
+};
+
+// ===========================
+// LOGS ENDPOINTS
+// ===========================
+
+export const logsService = {
+  async getAll(filters: ActivityLogFilterRequest = {}): Promise<PageResponse<ActivityLogResponse>> {
+    const response = await apiClient.get<PageResponse<ActivityLogResponse>>('/admin/logs', {
+      params: {
+        employeeId: filters.employeeId,
+        startDate: filters.startDate,
+        endDate: filters.endDate,
+        page: filters.page || 0,
+        size: filters.size || 20,
+      },
+    });
+    return response.data;
+  },
+
+  async getByEmployee(employeeId: number, params: PageRequest = {}): Promise<PageResponse<ActivityLogResponse>> {
+    const response = await apiClient.get<PageResponse<ActivityLogResponse>>('/admin/logs', {
+      params: {
+        employeeId,
+        page: params.page || 0,
+        size: params.size || 20,
+      },
+    });
+    return response.data;
+  },
+
+  async getByDateRange(startDate: string, endDate: string, params: PageRequest = {}): Promise<PageResponse<ActivityLogResponse>> {
+    const response = await apiClient.get<PageResponse<ActivityLogResponse>>('/admin/logs', {
+      params: {
+        startDate,
+        endDate,
+        page: params.page || 0,
+        size: params.size || 20,
+      },
+    });
     return response.data;
   },
 };
