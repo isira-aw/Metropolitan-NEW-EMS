@@ -460,11 +460,11 @@ public class ReportService {
                 if (attendance.getTotalWorkMinutes() != null) {
                     totalWorkMinutesThisMonth += attendance.getTotalWorkMinutes();
                 }
-                if (attendance.getMorningOTMinutes() != null) {
-                    totalOTMinutesThisMonth += attendance.getMorningOTMinutes();
+                if (attendance.getMorningOtMinutes() != null) {
+                    totalOTMinutesThisMonth += attendance.getMorningOtMinutes();
                 }
-                if (attendance.getEveningOTMinutes() != null) {
-                    totalOTMinutesThisMonth += attendance.getEveningOTMinutes();
+                if (attendance.getEveningOtMinutes() != null) {
+                    totalOTMinutesThisMonth += attendance.getEveningOtMinutes();
                 }
             }
         }
