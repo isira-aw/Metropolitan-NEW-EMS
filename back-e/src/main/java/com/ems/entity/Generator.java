@@ -31,11 +31,11 @@ public class Generator {
     private String locationName;
     
     private String ownerEmail;
-    
-    private Double latitude;
-    
-    private Double longitude;
-    
+
+    private String whatsAppNumber;
+
+    private String landlineNumber;
+
     @Column(length = 1000)
     private String note;
     

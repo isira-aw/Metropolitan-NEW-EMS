@@ -135,8 +135,11 @@ export default function AdminGeneratorDetail() {
             </div>
             <div>
               <p><strong>Owner Email:</strong> {generator.ownerEmail || 'N/A'}</p>
-              {generator.latitude && generator.longitude && (
-                <p><strong>Coordinates:</strong> {generator.latitude}, {generator.longitude}</p>
+              {generator.whatsAppNumber && (
+                <p><strong>WhatsApp:</strong> {generator.whatsAppNumber}</p>
+              )}
+              {generator.landlineNumber && (
+                <p><strong>Landline:</strong> {generator.landlineNumber}</p>
               )}
               {generator.note && (
                 <p className="mt-2"><strong>Note:</strong> {generator.note}</p>

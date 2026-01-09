@@ -17,7 +17,7 @@ public class GeneratorRequest {
     private String locationName;
     
     private String ownerEmail;
-    private Double latitude;
-    private Double longitude;
+    private String whatsAppNumber;
+    private String landlineNumber;
     private String note;
 }
