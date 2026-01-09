@@ -22,11 +22,18 @@ export default function AdminTickets() {
   const [editMode, setEditMode] = useState(false);
   const [editingTicketId, setEditingTicketId] = useState<number | null>(null);
 
-  // Date filter state
-  const [selectedDate, setSelectedDate] = useState('');
-  const [dateFilterActive, setDateFilterActive] = useState(false);
+  // Date filter state - default to current date
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [dateFilterActive, setDateFilterActive] = useState(true);
   const [generators, setGenerators] = useState<Generator[]>([]);
   const [employees, setEmployees] = useState<User[]>([]);
+
+  // New filters for Generator and Employee
+  const [generatorFilter, setGeneratorFilter] = useState<number | 'ALL'>('ALL');
+  const [employeeFilter, setEmployeeFilter] = useState<number | 'ALL'>('ALL');
+
+  // Store ticket assignments (employee names for each ticket)
+  const [ticketAssignments, setTicketAssignments] = useState<Record<number, User[]>>({});
   const [formData, setFormData] = useState<MainTicketRequest>({
     generatorId: 0,
     title: '',
@@ -50,7 +57,7 @@ export default function AdminTickets() {
     loadTickets(0);
     loadGenerators();
     loadEmployees();
-  }, [router, statusFilter, dateFilterActive, selectedDate]);
+  }, [router, statusFilter, dateFilterActive, selectedDate, generatorFilter, employeeFilter]);
 
   const loadTickets = async (page: number) => {
     try {
@@ -76,6 +83,49 @@ export default function AdminTickets() {
         data = statusFilter === 'ALL'
           ? await ticketService.getAll({ page, size: 10 })
           : await ticketService.getByStatus(statusFilter, { page, size: 10 });
+      }
+
+      // Apply generator filter
+      if (generatorFilter !== 'ALL') {
+        data.content = data.content.filter(ticket => ticket.generator.id === generatorFilter);
+        data.totalElements = data.content.length;
+        data.totalPages = Math.ceil(data.content.length / 10);
+      }
+
+      // Load employee assignments for each ticket and apply employee filter
+      const assignments: Record<number, User[]> = {};
+      const filteredTickets: MainTicket[] = [];
+
+      for (const ticket of data.content) {
+        try {
+          const ticketAssignments = await ticketService.getAssignments(ticket.id);
+          const assignedEmployees = ticketAssignments.map((a: TicketAssignment) => a.employee);
+          assignments[ticket.id] = assignedEmployees;
+
+          // Apply employee filter
+          if (employeeFilter !== 'ALL') {
+            if (assignedEmployees.some(emp => emp.id === employeeFilter)) {
+              filteredTickets.push(ticket);
+            }
+          } else {
+            filteredTickets.push(ticket);
+          }
+        } catch (error) {
+          console.error(`Error loading assignments for ticket ${ticket.id}:`, error);
+          assignments[ticket.id] = [];
+          if (employeeFilter === 'ALL') {
+            filteredTickets.push(ticket);
+          }
+        }
+      }
+
+      setTicketAssignments(assignments);
+
+      // Update data with filtered tickets if employee filter is active
+      if (employeeFilter !== 'ALL') {
+        data.content = filteredTickets;
+        data.totalElements = filteredTickets.length;
+        data.totalPages = Math.ceil(filteredTickets.length / 10);
       }
 
       setTickets(data);
@@ -220,9 +270,9 @@ export default function AdminTickets() {
           <button onClick={handleCreate} className="btn-primary">+ Create Ticket</button>
         </div>
 
-        {/* Date Filter Controls */}
+        {/* Filter Controls */}
         <Card className="mb-4">
-          <div className="flex flex-wrap gap-4 items-end">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
             <div>
               <label className="block text-sm font-semibold mb-1">Select Date</label>
               <input
@@ -238,6 +288,42 @@ export default function AdminTickets() {
                 className="input"
               />
             </div>
+            <div>
+              <label className="block text-sm font-semibold mb-1">Generator</label>
+              <select
+                value={generatorFilter}
+                onChange={(e) => {
+                  setGeneratorFilter(e.target.value === 'ALL' ? 'ALL' : parseInt(e.target.value));
+                  setCurrentPage(0);
+                }}
+                className="input"
+              >
+                <option value="ALL">All Generators</option>
+                {generators.map((gen) => (
+                  <option key={gen.id} value={gen.id}>
+                    {gen.name} - {gen.locationName}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-1">Employee</label>
+              <select
+                value={employeeFilter}
+                onChange={(e) => {
+                  setEmployeeFilter(e.target.value === 'ALL' ? 'ALL' : parseInt(e.target.value));
+                  setCurrentPage(0);
+                }}
+                className="input"
+              >
+                <option value="ALL">All Employees</option>
+                {employees.map((emp) => (
+                  <option key={emp.id} value={emp.id}>
+                    {emp.fullName}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="flex gap-2">
               <button
                 onClick={handleTodayFilter}
@@ -250,16 +336,26 @@ export default function AdminTickets() {
                   onClick={handleClearFilter}
                   className="btn-secondary"
                 >
-                  Clear Filter
+                  Clear Date
                 </button>
               )}
             </div>
           </div>
-          {dateFilterActive && selectedDate && (
-            <div className="mt-3 text-sm text-blue-600">
-              📌 Showing tickets for {selectedDate}
-            </div>
-          )}
+          <div className="mt-3 flex flex-wrap gap-2 text-sm">
+            {dateFilterActive && selectedDate && (
+              <span className="text-blue-600">📌 Date: {selectedDate}</span>
+            )}
+            {generatorFilter !== 'ALL' && (
+              <span className="text-blue-600">
+                🔧 Generator: {generators.find(g => g.id === generatorFilter)?.name}
+              </span>
+            )}
+            {employeeFilter !== 'ALL' && (
+              <span className="text-blue-600">
+                👤 Employee: {employees.find(e => e.id === employeeFilter)?.fullName}
+              </span>
+            )}
+          </div>
         </Card>
 
         {/* Filter Tabs */}
@@ -312,6 +408,20 @@ export default function AdminTickets() {
                     <p className="font-semibold">{formatDate(ticket.scheduledDate)} at {ticket.scheduledTime}</p>
                   </div>
                 </div>
+
+                {/* Employee Names */}
+                {ticketAssignments[ticket.id] && ticketAssignments[ticket.id].length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-xs text-gray-600 mb-1">Assigned Employees</p>
+                    <div className="flex flex-wrap gap-2">
+                      {ticketAssignments[ticket.id].map((employee) => (
+                        <span key={employee.id} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                          {employee.fullName}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {ticket.description && <p className="text-sm text-gray-600 mb-3">{ticket.description}</p>}
 
