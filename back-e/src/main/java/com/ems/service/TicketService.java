@@ -136,16 +136,17 @@ public class TicketService {
 
         validateStatusTransition(miniJobCard.getStatus(), request.getNewStatus());
 
-        // Single Active Ticket Rule: Only one ticket can be active at a time
+        // Single Active Ticket Rule: Only one ticket can be active at a time per day
         // Check if employee is trying to activate this ticket (change to TRAVELING, STARTED, or ON_HOLD)
         if (request.getNewStatus() == JobStatus.TRAVELING ||
             request.getNewStatus() == JobStatus.STARTED ||
             request.getNewStatus() == JobStatus.ON_HOLD) {
 
-            // Check if there's already another active ticket
+            // Check if there's already another active ticket scheduled for TODAY
             List<MiniJobCard> allEmployeeCards = miniJobCardRepository.findByEmployee(employee, Pageable.unpaged()).getContent();
             boolean hasActiveTicket = allEmployeeCards.stream()
                     .filter(card -> !card.getId().equals(miniJobCardId)) // Exclude current ticket
+                    .filter(card -> card.getMainTicket().getScheduledDate().equals(today)) // Only check tickets scheduled for today
                     .anyMatch(card -> card.getStatus() == JobStatus.TRAVELING ||
                                      card.getStatus() == JobStatus.STARTED ||
                                      card.getStatus() == JobStatus.ON_HOLD);
