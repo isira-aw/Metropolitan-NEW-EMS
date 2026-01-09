@@ -33,6 +33,14 @@ export default function AdminTickets() {
 
   // Store ticket assignments (employee names for each ticket)
   const [ticketAssignments, setTicketAssignments] = useState<Record<number, User[]>>({});
+
+  // Modal search states
+  const [modalGeneratorSearch, setModalGeneratorSearch] = useState('');
+  const [modalEmployeeSearch, setModalEmployeeSearch] = useState('');
+  const [modalGenerators, setModalGenerators] = useState<Generator[]>([]);
+  const [modalEmployees, setModalEmployees] = useState<User[]>([]);
+  const [selectedGenerator, setSelectedGenerator] = useState<Generator | null>(null);
+  const [showGeneratorDropdown, setShowGeneratorDropdown] = useState(false);
   const [formData, setFormData] = useState<MainTicketRequest>({
     generatorId: 0,
     title: '',
@@ -157,13 +165,61 @@ export default function AdminTickets() {
     }
   };
 
+  // Search generators for modal (triggered after 3 characters)
+  const searchModalGenerators = async (searchTerm: string) => {
+    if (searchTerm.length < 3) {
+      setModalGenerators([]);
+      return;
+    }
+    try {
+      const data = await generatorService.searchByName(searchTerm, { page: 0, size: 20 });
+      setModalGenerators(data.content);
+    } catch (error) {
+      console.error('Error searching generators:', error);
+      setModalGenerators([]);
+    }
+  };
+
+  // Search employees for modal (triggered after 3 characters)
+  const searchModalEmployees = async (searchTerm: string) => {
+    if (searchTerm.length < 3) {
+      setModalEmployees([]);
+      return;
+    }
+    try {
+      const data = await userService.search(searchTerm, { page: 0, size: 20 });
+      // Filter only employees
+      const employeesOnly = data.content.filter(user => user.role === 'EMPLOYEE' && user.active);
+      setModalEmployees(employeesOnly);
+    } catch (error) {
+      console.error('Error searching employees:', error);
+      setModalEmployees([]);
+    }
+  };
+
+  // Effect to trigger generator search
+  useEffect(() => {
+    const delaySearch = setTimeout(() => {
+      searchModalGenerators(modalGeneratorSearch);
+    }, 300);
+    return () => clearTimeout(delaySearch);
+  }, [modalGeneratorSearch]);
+
+  // Effect to trigger employee search
+  useEffect(() => {
+    const delaySearch = setTimeout(() => {
+      searchModalEmployees(modalEmployeeSearch);
+    }, 300);
+    return () => clearTimeout(delaySearch);
+  }, [modalEmployeeSearch]);
+
   const handleCreate = () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     setEditMode(false);
     setEditingTicketId(null);
     setFormData({
-      generatorId: generators.length > 0 ? generators[0].id : 0,
+      generatorId: 0,
       title: '',
       description: '',
       type: JobCardType.SERVICE,
@@ -172,6 +228,12 @@ export default function AdminTickets() {
       scheduledTime: '09:00:00',
       employeeIds: [],
     });
+    setSelectedGenerator(null);
+    setModalGeneratorSearch('');
+    setModalEmployeeSearch('');
+    setModalGenerators([]);
+    setModalEmployees([]);
+    setShowGeneratorDropdown(false);
     setShowModal(true);
   };
 
@@ -193,6 +255,12 @@ export default function AdminTickets() {
         scheduledTime: ticket.scheduledTime,
         employeeIds: employeeIds,
       });
+      setSelectedGenerator(ticket.generator);
+      setModalGeneratorSearch('');
+      setModalEmployeeSearch('');
+      setModalGenerators([]);
+      setModalEmployees([]);
+      setShowGeneratorDropdown(false);
       setShowModal(true);
     } catch (error: any) {
       alert(error.response?.data?.message || 'Error loading ticket details');
@@ -201,6 +269,10 @@ export default function AdminTickets() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedGenerator && formData.generatorId === 0) {
+      alert('Please select a generator!');
+      return;
+    }
     if (formData.employeeIds.length === 0) {
       alert('Please assign at least one employee!');
       return;
@@ -442,15 +514,48 @@ export default function AdminTickets() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
+                  <div className="relative">
                     <label className="block text-sm font-medium mb-1">Generator *</label>
-                    <select value={formData.generatorId} onChange={(e) => setFormData({ ...formData, generatorId: parseInt(e.target.value) })} className="input-field">
-                      {generators.map((gen) => (
-                        <option key={gen.id} value={gen.id}>
-                          {gen.name} - {gen.locationName}
-                        </option>
-                      ))}
-                    </select>
+                    <input
+                      type="text"
+                      required={!selectedGenerator}
+                      value={selectedGenerator ? `${selectedGenerator.name} - ${selectedGenerator.locationName}` : modalGeneratorSearch}
+                      onChange={(e) => {
+                        if (selectedGenerator) {
+                          setSelectedGenerator(null);
+                          setFormData({ ...formData, generatorId: 0 });
+                        }
+                        setModalGeneratorSearch(e.target.value);
+                        setShowGeneratorDropdown(true);
+                      }}
+                      onFocus={() => setShowGeneratorDropdown(true)}
+                      placeholder="Type at least 3 characters to search..."
+                      className="input-field"
+                    />
+                    {showGeneratorDropdown && modalGeneratorSearch.length >= 3 && modalGenerators.length > 0 && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border rounded shadow-lg max-h-48 overflow-y-auto">
+                        {modalGenerators.map((gen) => (
+                          <div
+                            key={gen.id}
+                            onClick={() => {
+                              setSelectedGenerator(gen);
+                              setFormData({ ...formData, generatorId: gen.id });
+                              setModalGeneratorSearch('');
+                              setShowGeneratorDropdown(false);
+                            }}
+                            className="p-2 hover:bg-blue-50 cursor-pointer"
+                          >
+                            <div className="font-medium">{gen.name}</div>
+                            <div className="text-sm text-gray-600">{gen.locationName}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {modalGeneratorSearch.length > 0 && modalGeneratorSearch.length < 3 && (
+                      <div className="text-xs text-gray-500 mt-1">
+                        Type {3 - modalGeneratorSearch.length} more character{3 - modalGeneratorSearch.length === 1 ? '' : 's'} to search
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -494,25 +599,56 @@ export default function AdminTickets() {
                   <label className="block text-sm font-medium mb-2">
                     Assign Employees * (Select 1-5 employees)
                   </label>
+                  <input
+                    type="text"
+                    value={modalEmployeeSearch}
+                    onChange={(e) => setModalEmployeeSearch(e.target.value)}
+                    placeholder="Type at least 3 characters to search employees..."
+                    className="input-field mb-2"
+                  />
+                  {modalEmployeeSearch.length > 0 && modalEmployeeSearch.length < 3 && (
+                    <div className="text-xs text-gray-500 mb-2">
+                      Type {3 - modalEmployeeSearch.length} more character{3 - modalEmployeeSearch.length === 1 ? '' : 's'} to search
+                    </div>
+                  )}
                   <div className="border rounded p-3 max-h-48 overflow-y-auto">
-                    {employees.length > 0 ? (
-                      employees.map((emp) => (
-                        <label key={emp.id} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={formData.employeeIds.includes(emp.id)}
-                            onChange={() => toggleEmployee(emp.id)}
-                          />
-                          <span>{emp.fullName} ({emp.username})</span>
-                        </label>
-                      ))
+                    {modalEmployeeSearch.length >= 3 ? (
+                      modalEmployees.length > 0 ? (
+                        modalEmployees.map((emp) => (
+                          <label key={emp.id} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={formData.employeeIds.includes(emp.id)}
+                              onChange={() => toggleEmployee(emp.id)}
+                            />
+                            <span>{emp.fullName} ({emp.username})</span>
+                          </label>
+                        ))
+                      ) : (
+                        <p className="text-gray-500 text-sm">No employees found</p>
+                      )
                     ) : (
-                      <p className="text-gray-500 text-sm">No active employees available</p>
+                      <p className="text-gray-500 text-sm text-center">Search for employees to assign</p>
                     )}
                   </div>
                   <p className="text-xs text-gray-600 mt-1">
                     Selected: {formData.employeeIds.length} / 5
                   </p>
+                  {formData.employeeIds.length > 0 && (
+                    <div className="mt-2">
+                      <p className="text-xs font-medium mb-1">Selected Employees:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {formData.employeeIds.map((empId) => {
+                          const emp = modalEmployees.find(e => e.id === empId) || employees.find(e => e.id === empId);
+                          return emp ? (
+                            <span key={empId} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm">
+                              {emp.fullName}
+                            </span>
+                          ) : null;
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
