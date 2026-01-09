@@ -529,7 +529,7 @@ export default function AdminTickets() {
                         setShowGeneratorDropdown(true);
                       }}
                       onFocus={() => setShowGeneratorDropdown(true)}
-                      placeholder="Type at least 3 characters to search..."
+                      placeholder="Search Generator by Name"
                       className="input-field"
                     />
                     {showGeneratorDropdown && modalGeneratorSearch.length >= 3 && modalGenerators.length > 0 && (
