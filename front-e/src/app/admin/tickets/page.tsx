@@ -22,14 +22,13 @@ export default function AdminTickets() {
   const [editMode, setEditMode] = useState(false);
   const [editingTicketId, setEditingTicketId] = useState<number | null>(null);
 
-  // Date filter state - default to current date
+  // Date filter state - always set to current date
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [dateFilterActive, setDateFilterActive] = useState(true);
   const [generators, setGenerators] = useState<Generator[]>([]);
   const [employees, setEmployees] = useState<User[]>([]);
 
-  // New filters for Generator and Employee
-  const [generatorFilter, setGeneratorFilter] = useState<number | 'ALL'>('ALL');
+  // New filters for Generator (search by name) and Employee
+  const [generatorSearchTerm, setGeneratorSearchTerm] = useState('');
   const [employeeFilter, setEmployeeFilter] = useState<number | 'ALL'>('ALL');
 
   // Store ticket assignments (employee names for each ticket)
@@ -57,37 +56,34 @@ export default function AdminTickets() {
     loadTickets(0);
     loadGenerators();
     loadEmployees();
-  }, [router, statusFilter, dateFilterActive, selectedDate, generatorFilter, employeeFilter]);
+  }, [router, statusFilter, selectedDate, generatorSearchTerm, employeeFilter]);
 
   const loadTickets = async (page: number) => {
     try {
       let data: PageResponse<MainTicket>;
 
-      if (dateFilterActive && selectedDate) {
-        // Get tickets by date
-        const allTickets = await ticketService.getByDateRange(selectedDate, selectedDate, { page, size: 10 });
+      // Always get tickets by date (current date)
+      const allTickets = await ticketService.getByDateRange(selectedDate, selectedDate, { page, size: 10 });
 
-        // Apply status filter if not 'ALL'
-        if (statusFilter !== 'ALL') {
-          const filteredContent = allTickets.content.filter(ticket => ticket.status === statusFilter);
-          data = {
-            ...allTickets,
-            content: filteredContent,
-            totalElements: filteredContent.length,
-            totalPages: Math.ceil(filteredContent.length / 10),
-          };
-        } else {
-          data = allTickets;
-        }
+      // Apply status filter if not 'ALL'
+      if (statusFilter !== 'ALL') {
+        const filteredContent = allTickets.content.filter(ticket => ticket.status === statusFilter);
+        data = {
+          ...allTickets,
+          content: filteredContent,
+          totalElements: filteredContent.length,
+          totalPages: Math.ceil(filteredContent.length / 10),
+        };
       } else {
-        data = statusFilter === 'ALL'
-          ? await ticketService.getAll({ page, size: 10 })
-          : await ticketService.getByStatus(statusFilter, { page, size: 10 });
+        data = allTickets;
       }
 
-      // Apply generator filter
-      if (generatorFilter !== 'ALL') {
-        data.content = data.content.filter(ticket => ticket.generator.id === generatorFilter);
+      // Apply generator filter (search by name)
+      if (generatorSearchTerm.trim() !== '') {
+        const searchLower = generatorSearchTerm.toLowerCase();
+        data.content = data.content.filter(ticket =>
+          ticket.generator.name.toLowerCase().includes(searchLower)
+        );
         data.totalElements = data.content.length;
         data.totalPages = Math.ceil(data.content.length / 10);
       }
@@ -140,15 +136,7 @@ export default function AdminTickets() {
   const handleTodayFilter = () => {
     const today = new Date().toISOString().split('T')[0];
     setSelectedDate(today);
-    setDateFilterActive(true);
     setCurrentPage(0);
-  };
-
-  const handleClearFilter = () => {
-    setSelectedDate('');
-    setDateFilterActive(false);
-    setCurrentPage(0);
-    loadTickets(0);
   };
 
   const loadGenerators = async () => {
@@ -280,31 +268,23 @@ export default function AdminTickets() {
                 value={selectedDate}
                 onChange={(e) => {
                   setSelectedDate(e.target.value);
-                  if (e.target.value) {
-                    setDateFilterActive(true);
-                    setCurrentPage(0);
-                  }
+                  setCurrentPage(0);
                 }}
                 className="input"
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold mb-1">Generator</label>
-              <select
-                value={generatorFilter}
+              <label className="block text-sm font-semibold mb-1">Search Generator by Name</label>
+              <input
+                type="text"
+                value={generatorSearchTerm}
                 onChange={(e) => {
-                  setGeneratorFilter(e.target.value === 'ALL' ? 'ALL' : parseInt(e.target.value));
+                  setGeneratorSearchTerm(e.target.value);
                   setCurrentPage(0);
                 }}
+                placeholder="Enter generator name..."
                 className="input"
-              >
-                <option value="ALL">All Generators</option>
-                {generators.map((gen) => (
-                  <option key={gen.id} value={gen.id}>
-                    {gen.name} - {gen.locationName}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
             <div>
               <label className="block text-sm font-semibold mb-1">Employee</label>
@@ -331,23 +311,13 @@ export default function AdminTickets() {
               >
                 📅 Today
               </button>
-              {dateFilterActive && (
-                <button
-                  onClick={handleClearFilter}
-                  className="btn-secondary"
-                >
-                  Clear Date
-                </button>
-              )}
             </div>
           </div>
           <div className="mt-3 flex flex-wrap gap-2 text-sm">
-            {dateFilterActive && selectedDate && (
-              <span className="text-blue-600">📌 Date: {selectedDate}</span>
-            )}
-            {generatorFilter !== 'ALL' && (
+            <span className="text-blue-600">📌 Date: {selectedDate}</span>
+            {generatorSearchTerm.trim() !== '' && (
               <span className="text-blue-600">
-                🔧 Generator: {generators.find(g => g.id === generatorFilter)?.name}
+                🔧 Generator Search: "{generatorSearchTerm}"
               </span>
             )}
             {employeeFilter !== 'ALL' && (
@@ -445,7 +415,7 @@ export default function AdminTickets() {
           ) : (
             <Card>
               <p className="text-center text-gray-500 py-8">
-                {dateFilterActive ? 'No tickets found for selected date' : 'No tickets found'}
+                No tickets found for {selectedDate}
               </p>
             </Card>
           )}
