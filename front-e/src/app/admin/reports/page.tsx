@@ -135,7 +135,7 @@ export default function AdminReports() {
   if (loading) return <LoadingSpinner />;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-100">
       <AdminNav currentPage="Reports" user={user} />
 
       <div className="container mx-auto p-6 max-w-7xl">
