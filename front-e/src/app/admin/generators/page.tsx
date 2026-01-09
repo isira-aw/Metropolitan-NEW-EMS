@@ -25,8 +25,8 @@ export default function AdminGenerators() {
     capacity: '',
     locationName: '',
     ownerEmail: '',
-    latitude: undefined,
-    longitude: undefined,
+    whatsAppNumber: '',
+    landlineNumber: '',
     note: '',
   });
   const [user, setUser] = useState<any>(null);
@@ -70,8 +70,8 @@ export default function AdminGenerators() {
       capacity: '',
       locationName: '',
       ownerEmail: '',
-      latitude: undefined,
-      longitude: undefined,
+      whatsAppNumber: '',
+      landlineNumber: '',
       note: '',
     });
     setShowModal(true);
@@ -85,8 +85,8 @@ export default function AdminGenerators() {
       capacity: gen.capacity || '',
       locationName: gen.locationName,
       ownerEmail: gen.ownerEmail || '',
-      latitude: gen.latitude,
-      longitude: gen.longitude,
+      whatsAppNumber: gen.whatsAppNumber || '',
+      landlineNumber: gen.landlineNumber || '',
       note: gen.note || '',
     });
     setShowModal(true);
@@ -203,12 +203,12 @@ export default function AdminGenerators() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-1">Latitude</label>
-                    <input type="number" step="any" value={formData.latitude || ''} onChange={(e) => setFormData({ ...formData, latitude: e.target.value ? parseFloat(e.target.value) : undefined })} className="input-field" />
+                    <label className="block text-sm font-medium mb-1">WhatsApp Number</label>
+                    <input type="text" value={formData.whatsAppNumber || ''} onChange={(e) => setFormData({ ...formData, whatsAppNumber: e.target.value })} className="input-field" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">Longitude</label>
-                    <input type="number" step="any" value={formData.longitude || ''} onChange={(e) => setFormData({ ...formData, longitude: e.target.value ? parseFloat(e.target.value) : undefined })} className="input-field" />
+                    <label className="block text-sm font-medium mb-1">Landline Number</label>
+                    <input type="text" value={formData.landlineNumber || ''} onChange={(e) => setFormData({ ...formData, landlineNumber: e.target.value })} className="input-field" />
                   </div>
                 </div>
                 <div>

@@ -31,8 +31,8 @@ public class GeneratorService {
         generator.setCapacity(request.getCapacity());
         generator.setLocationName(request.getLocationName());
         generator.setOwnerEmail(request.getOwnerEmail());
-        generator.setLatitude(request.getLatitude());
-        generator.setLongitude(request.getLongitude());
+        generator.setWhatsAppNumber(request.getWhatsAppNumber());
+        generator.setLandlineNumber(request.getLandlineNumber());
         generator.setNote(request.getNote());
         
         return generatorRepository.save(generator);
@@ -55,8 +55,8 @@ public class GeneratorService {
         generator.setCapacity(request.getCapacity());
         generator.setLocationName(request.getLocationName());
         generator.setOwnerEmail(request.getOwnerEmail());
-        generator.setLatitude(request.getLatitude());
-        generator.setLongitude(request.getLongitude());
+        generator.setWhatsAppNumber(request.getWhatsAppNumber());
+        generator.setLandlineNumber(request.getLandlineNumber());
         generator.setNote(request.getNote());
         
         return generatorRepository.save(generator);

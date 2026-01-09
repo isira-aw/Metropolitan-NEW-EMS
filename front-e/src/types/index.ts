@@ -78,8 +78,8 @@ export interface Generator {
   capacity?: string;
   locationName: string;
   ownerEmail?: string;
-  latitude?: number;
-  longitude?: number;
+  whatsAppNumber?: string;
+  landlineNumber?: string;
   note?: string;
   createdAt: string;
 }
@@ -90,8 +90,8 @@ export interface GeneratorRequest {
   capacity?: string;
   locationName: string;
   ownerEmail?: string;
-  latitude?: number;
-  longitude?: number;
+  whatsAppNumber?: string;
+  landlineNumber?: string;
   note?: string;
 }
 
