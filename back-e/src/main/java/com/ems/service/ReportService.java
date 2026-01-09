@@ -421,34 +421,64 @@ public class ReportService {
         List<User> allEmployees = userRepository.findByRole(UserRole.EMPLOYEE,
                 org.springframework.data.domain.Pageable.unpaged()).getContent();
 
-        long activeTickets = allTickets.stream()
-                .filter(t -> t.getStatus() == JobStatus.STARTED || t.getStatus() == JobStatus.TRAVELING)
+        // Calculate employee counts
+        long totalEmployees = allEmployees.size();
+        long activeEmployees = allEmployees.stream()
+                .filter(emp -> emp.getActive() != null && emp.getActive())
                 .count();
 
-        long activeJobs = allJobCards.stream()
-                .filter(c -> c.getStatus() == JobStatus.STARTED || c.getStatus() == JobStatus.TRAVELING)
+        // Calculate generator count
+        long totalGenerators = generatorRepository.findAll().size();
+
+        // Calculate ticket counts
+        long totalTickets = allTickets.size();
+        long pendingTickets = allTickets.stream()
+                .filter(t -> t.getStatus() == JobStatus.PENDING)
+                .count();
+        long completedTickets = allTickets.stream()
+                .filter(t -> t.getStatus() == JobStatus.COMPLETED)
                 .count();
 
+        // Calculate pending approvals
         long pendingApprovals = allJobCards.stream()
                 .filter(c -> c.getStatus() == JobStatus.COMPLETED && !c.getApproved())
                 .count();
 
-        // Count employees currently working (day started but not ended today)
+        // Calculate monthly work and OT minutes
         LocalDate today = LocalDate.now(java.time.ZoneId.of("Asia/Colombo"));
-        long employeesWorking = allEmployees.stream()
-                .filter(emp -> {
-                    var attendance = attendanceRepository.findByEmployeeAndDate(emp, today);
-                    return attendance.isPresent() && attendance.get().getDayEndTime() == null;
-                })
-                .count();
+        LocalDate firstDayOfMonth = today.withDayOfMonth(1);
+        LocalDate lastDayOfMonth = today.withDayOfMonth(today.lengthOfMonth());
+
+        long totalWorkMinutesThisMonth = 0;
+        long totalOTMinutesThisMonth = 0;
+
+        for (User employee : allEmployees) {
+            List<EmployeeDayAttendance> monthlyAttendance =
+                attendanceRepository.findByEmployeeAndDateBetween(employee, firstDayOfMonth, lastDayOfMonth);
+
+            for (EmployeeDayAttendance attendance : monthlyAttendance) {
+                if (attendance.getTotalWorkMinutes() != null) {
+                    totalWorkMinutesThisMonth += attendance.getTotalWorkMinutes();
+                }
+                if (attendance.getMorningOTMinutes() != null) {
+                    totalOTMinutesThisMonth += attendance.getMorningOTMinutes();
+                }
+                if (attendance.getEveningOTMinutes() != null) {
+                    totalOTMinutesThisMonth += attendance.getEveningOTMinutes();
+                }
+            }
+        }
 
         Map<String, Object> stats = new HashMap<>();
-        stats.put("activeTickets", activeTickets);
-        stats.put("activeJobs", activeJobs);
+        stats.put("totalEmployees", totalEmployees);
+        stats.put("activeEmployees", activeEmployees);
+        stats.put("totalGenerators", totalGenerators);
+        stats.put("totalTickets", totalTickets);
+        stats.put("pendingTickets", pendingTickets);
+        stats.put("completedTickets", completedTickets);
         stats.put("pendingApprovals", pendingApprovals);
-        stats.put("employeesWorking", employeesWorking);
-        stats.put("totalEmployees", allEmployees.size());
-        stats.put("timestamp", java.time.LocalDateTime.now());
+        stats.put("totalWorkMinutesThisMonth", totalWorkMinutesThisMonth);
+        stats.put("totalOTMinutesThisMonth", totalOTMinutesThisMonth);
 
         return stats;
     }
