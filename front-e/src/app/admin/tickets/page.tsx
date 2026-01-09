@@ -22,11 +22,25 @@ export default function AdminTickets() {
   const [editMode, setEditMode] = useState(false);
   const [editingTicketId, setEditingTicketId] = useState<number | null>(null);
 
-  // Date filter state
-  const [selectedDate, setSelectedDate] = useState('');
-  const [dateFilterActive, setDateFilterActive] = useState(false);
+  // Date filter state - always set to current date
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [generators, setGenerators] = useState<Generator[]>([]);
   const [employees, setEmployees] = useState<User[]>([]);
+
+  // New filters for Generator (search by name) and Employee
+  const [generatorSearchTerm, setGeneratorSearchTerm] = useState('');
+  const [employeeFilter, setEmployeeFilter] = useState<number | 'ALL'>('ALL');
+
+  // Store ticket assignments (employee names for each ticket)
+  const [ticketAssignments, setTicketAssignments] = useState<Record<number, User[]>>({});
+
+  // Modal search states
+  const [modalGeneratorSearch, setModalGeneratorSearch] = useState('');
+  const [modalEmployeeSearch, setModalEmployeeSearch] = useState('');
+  const [modalGenerators, setModalGenerators] = useState<Generator[]>([]);
+  const [modalEmployees, setModalEmployees] = useState<User[]>([]);
+  const [selectedGenerator, setSelectedGenerator] = useState<Generator | null>(null);
+  const [showGeneratorDropdown, setShowGeneratorDropdown] = useState(false);
   const [formData, setFormData] = useState<MainTicketRequest>({
     generatorId: 0,
     title: '',
@@ -50,32 +64,72 @@ export default function AdminTickets() {
     loadTickets(0);
     loadGenerators();
     loadEmployees();
-  }, [router, statusFilter, dateFilterActive, selectedDate]);
+  }, [router, statusFilter, selectedDate, generatorSearchTerm, employeeFilter]);
 
   const loadTickets = async (page: number) => {
     try {
       let data: PageResponse<MainTicket>;
 
-      if (dateFilterActive && selectedDate) {
-        // Get tickets by date
-        const allTickets = await ticketService.getByDateRange(selectedDate, selectedDate, { page, size: 10 });
+      // Always get tickets by date (current date)
+      const allTickets = await ticketService.getByDateRange(selectedDate, selectedDate, { page, size: 10 });
 
-        // Apply status filter if not 'ALL'
-        if (statusFilter !== 'ALL') {
-          const filteredContent = allTickets.content.filter(ticket => ticket.status === statusFilter);
-          data = {
-            ...allTickets,
-            content: filteredContent,
-            totalElements: filteredContent.length,
-            totalPages: Math.ceil(filteredContent.length / 10),
-          };
-        } else {
-          data = allTickets;
-        }
+      // Apply status filter if not 'ALL'
+      if (statusFilter !== 'ALL') {
+        const filteredContent = allTickets.content.filter(ticket => ticket.status === statusFilter);
+        data = {
+          ...allTickets,
+          content: filteredContent,
+          totalElements: filteredContent.length,
+          totalPages: Math.ceil(filteredContent.length / 10),
+        };
       } else {
-        data = statusFilter === 'ALL'
-          ? await ticketService.getAll({ page, size: 10 })
-          : await ticketService.getByStatus(statusFilter, { page, size: 10 });
+        data = allTickets;
+      }
+
+      // Apply generator filter (search by name)
+      if (generatorSearchTerm.trim() !== '') {
+        const searchLower = generatorSearchTerm.toLowerCase();
+        data.content = data.content.filter(ticket =>
+          ticket.generator.name.toLowerCase().includes(searchLower)
+        );
+        data.totalElements = data.content.length;
+        data.totalPages = Math.ceil(data.content.length / 10);
+      }
+
+      // Load employee assignments for each ticket and apply employee filter
+      const assignments: Record<number, User[]> = {};
+      const filteredTickets: MainTicket[] = [];
+
+      for (const ticket of data.content) {
+        try {
+          const ticketAssignments = await ticketService.getAssignments(ticket.id);
+          const assignedEmployees = ticketAssignments.map((a: TicketAssignment) => a.employee);
+          assignments[ticket.id] = assignedEmployees;
+
+          // Apply employee filter
+          if (employeeFilter !== 'ALL') {
+            if (assignedEmployees.some(emp => emp.id === employeeFilter)) {
+              filteredTickets.push(ticket);
+            }
+          } else {
+            filteredTickets.push(ticket);
+          }
+        } catch (error) {
+          console.error(`Error loading assignments for ticket ${ticket.id}:`, error);
+          assignments[ticket.id] = [];
+          if (employeeFilter === 'ALL') {
+            filteredTickets.push(ticket);
+          }
+        }
+      }
+
+      setTicketAssignments(assignments);
+
+      // Update data with filtered tickets if employee filter is active
+      if (employeeFilter !== 'ALL') {
+        data.content = filteredTickets;
+        data.totalElements = filteredTickets.length;
+        data.totalPages = Math.ceil(filteredTickets.length / 10);
       }
 
       setTickets(data);
@@ -90,15 +144,7 @@ export default function AdminTickets() {
   const handleTodayFilter = () => {
     const today = new Date().toISOString().split('T')[0];
     setSelectedDate(today);
-    setDateFilterActive(true);
     setCurrentPage(0);
-  };
-
-  const handleClearFilter = () => {
-    setSelectedDate('');
-    setDateFilterActive(false);
-    setCurrentPage(0);
-    loadTickets(0);
   };
 
   const loadGenerators = async () => {
@@ -119,13 +165,61 @@ export default function AdminTickets() {
     }
   };
 
+  // Search generators for modal (triggered after 3 characters)
+  const searchModalGenerators = async (searchTerm: string) => {
+    if (searchTerm.length < 3) {
+      setModalGenerators([]);
+      return;
+    }
+    try {
+      const data = await generatorService.searchByName(searchTerm, { page: 0, size: 20 });
+      setModalGenerators(data.content);
+    } catch (error) {
+      console.error('Error searching generators:', error);
+      setModalGenerators([]);
+    }
+  };
+
+  // Search employees for modal (triggered after 3 characters)
+  const searchModalEmployees = async (searchTerm: string) => {
+    if (searchTerm.length < 3) {
+      setModalEmployees([]);
+      return;
+    }
+    try {
+      const data = await userService.search(searchTerm, { page: 0, size: 20 });
+      // Filter only employees
+      const employeesOnly = data.content.filter(user => user.role === 'EMPLOYEE' && user.active);
+      setModalEmployees(employeesOnly);
+    } catch (error) {
+      console.error('Error searching employees:', error);
+      setModalEmployees([]);
+    }
+  };
+
+  // Effect to trigger generator search
+  useEffect(() => {
+    const delaySearch = setTimeout(() => {
+      searchModalGenerators(modalGeneratorSearch);
+    }, 300);
+    return () => clearTimeout(delaySearch);
+  }, [modalGeneratorSearch]);
+
+  // Effect to trigger employee search
+  useEffect(() => {
+    const delaySearch = setTimeout(() => {
+      searchModalEmployees(modalEmployeeSearch);
+    }, 300);
+    return () => clearTimeout(delaySearch);
+  }, [modalEmployeeSearch]);
+
   const handleCreate = () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     setEditMode(false);
     setEditingTicketId(null);
     setFormData({
-      generatorId: generators.length > 0 ? generators[0].id : 0,
+      generatorId: 0,
       title: '',
       description: '',
       type: JobCardType.SERVICE,
@@ -134,6 +228,12 @@ export default function AdminTickets() {
       scheduledTime: '09:00:00',
       employeeIds: [],
     });
+    setSelectedGenerator(null);
+    setModalGeneratorSearch('');
+    setModalEmployeeSearch('');
+    setModalGenerators([]);
+    setModalEmployees([]);
+    setShowGeneratorDropdown(false);
     setShowModal(true);
   };
 
@@ -155,6 +255,12 @@ export default function AdminTickets() {
         scheduledTime: ticket.scheduledTime,
         employeeIds: employeeIds,
       });
+      setSelectedGenerator(ticket.generator);
+      setModalGeneratorSearch('');
+      setModalEmployeeSearch('');
+      setModalGenerators([]);
+      setModalEmployees([]);
+      setShowGeneratorDropdown(false);
       setShowModal(true);
     } catch (error: any) {
       alert(error.response?.data?.message || 'Error loading ticket details');
@@ -163,6 +269,10 @@ export default function AdminTickets() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedGenerator && formData.generatorId === 0) {
+      alert('Please select a generator!');
+      return;
+    }
     if (formData.employeeIds.length === 0) {
       alert('Please assign at least one employee!');
       return;
@@ -220,9 +330,9 @@ export default function AdminTickets() {
           <button onClick={handleCreate} className="btn-primary">+ Create Ticket</button>
         </div>
 
-        {/* Date Filter Controls */}
+        {/* Filter Controls */}
         <Card className="mb-4">
-          <div className="flex flex-wrap gap-4 items-end">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
             <div>
               <label className="block text-sm font-semibold mb-1">Select Date</label>
               <input
@@ -230,13 +340,41 @@ export default function AdminTickets() {
                 value={selectedDate}
                 onChange={(e) => {
                   setSelectedDate(e.target.value);
-                  if (e.target.value) {
-                    setDateFilterActive(true);
-                    setCurrentPage(0);
-                  }
+                  setCurrentPage(0);
                 }}
                 className="input"
               />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-1">Search Generator by Name</label>
+              <input
+                type="text"
+                value={generatorSearchTerm}
+                onChange={(e) => {
+                  setGeneratorSearchTerm(e.target.value);
+                  setCurrentPage(0);
+                }}
+                placeholder="Enter generator name..."
+                className="input"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-1">Employee</label>
+              <select
+                value={employeeFilter}
+                onChange={(e) => {
+                  setEmployeeFilter(e.target.value === 'ALL' ? 'ALL' : parseInt(e.target.value));
+                  setCurrentPage(0);
+                }}
+                className="input"
+              >
+                <option value="ALL">All Employees</option>
+                {employees.map((emp) => (
+                  <option key={emp.id} value={emp.id}>
+                    {emp.fullName}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="flex gap-2">
               <button
@@ -245,21 +383,21 @@ export default function AdminTickets() {
               >
                 📅 Today
               </button>
-              {dateFilterActive && (
-                <button
-                  onClick={handleClearFilter}
-                  className="btn-secondary"
-                >
-                  Clear Filter
-                </button>
-              )}
             </div>
           </div>
-          {dateFilterActive && selectedDate && (
-            <div className="mt-3 text-sm text-blue-600">
-              📌 Showing tickets for {selectedDate}
-            </div>
-          )}
+          <div className="mt-3 flex flex-wrap gap-2 text-sm">
+            <span className="text-blue-600">📌 Date: {selectedDate}</span>
+            {generatorSearchTerm.trim() !== '' && (
+              <span className="text-blue-600">
+                🔧 Generator Search: "{generatorSearchTerm}"
+              </span>
+            )}
+            {employeeFilter !== 'ALL' && (
+              <span className="text-blue-600">
+                👤 Employee: {employees.find(e => e.id === employeeFilter)?.fullName}
+              </span>
+            )}
+          </div>
         </Card>
 
         {/* Filter Tabs */}
@@ -313,6 +451,20 @@ export default function AdminTickets() {
                   </div>
                 </div>
 
+                {/* Employee Names */}
+                {ticketAssignments[ticket.id] && ticketAssignments[ticket.id].length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-xs text-gray-600 mb-1">Assigned Employees</p>
+                    <div className="flex flex-wrap gap-2">
+                      {ticketAssignments[ticket.id].map((employee) => (
+                        <span key={employee.id} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                          {employee.fullName}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {ticket.description && <p className="text-sm text-gray-600 mb-3">{ticket.description}</p>}
 
                 <div className="flex gap-2 flex-wrap">
@@ -335,7 +487,7 @@ export default function AdminTickets() {
           ) : (
             <Card>
               <p className="text-center text-gray-500 py-8">
-                {dateFilterActive ? 'No tickets found for selected date' : 'No tickets found'}
+                No tickets found for {selectedDate}
               </p>
             </Card>
           )}
@@ -362,15 +514,48 @@ export default function AdminTickets() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
+                  <div className="relative">
                     <label className="block text-sm font-medium mb-1">Generator *</label>
-                    <select value={formData.generatorId} onChange={(e) => setFormData({ ...formData, generatorId: parseInt(e.target.value) })} className="input-field">
-                      {generators.map((gen) => (
-                        <option key={gen.id} value={gen.id}>
-                          {gen.name} - {gen.locationName}
-                        </option>
-                      ))}
-                    </select>
+                    <input
+                      type="text"
+                      required={!selectedGenerator}
+                      value={selectedGenerator ? `${selectedGenerator.name} - ${selectedGenerator.locationName}` : modalGeneratorSearch}
+                      onChange={(e) => {
+                        if (selectedGenerator) {
+                          setSelectedGenerator(null);
+                          setFormData({ ...formData, generatorId: 0 });
+                        }
+                        setModalGeneratorSearch(e.target.value);
+                        setShowGeneratorDropdown(true);
+                      }}
+                      onFocus={() => setShowGeneratorDropdown(true)}
+                      placeholder="Search Generator by Name"
+                      className="input-field"
+                    />
+                    {showGeneratorDropdown && modalGeneratorSearch.length >= 3 && modalGenerators.length > 0 && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border rounded shadow-lg max-h-48 overflow-y-auto">
+                        {modalGenerators.map((gen) => (
+                          <div
+                            key={gen.id}
+                            onClick={() => {
+                              setSelectedGenerator(gen);
+                              setFormData({ ...formData, generatorId: gen.id });
+                              setModalGeneratorSearch('');
+                              setShowGeneratorDropdown(false);
+                            }}
+                            className="p-2 hover:bg-blue-50 cursor-pointer"
+                          >
+                            <div className="font-medium">{gen.name}</div>
+                            <div className="text-sm text-gray-600">{gen.locationName}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {modalGeneratorSearch.length > 0 && modalGeneratorSearch.length < 3 && (
+                      <div className="text-xs text-gray-500 mt-1">
+                        Type {3 - modalGeneratorSearch.length} more character{3 - modalGeneratorSearch.length === 1 ? '' : 's'} to search
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -414,25 +599,56 @@ export default function AdminTickets() {
                   <label className="block text-sm font-medium mb-2">
                     Assign Employees * (Select 1-5 employees)
                   </label>
+                  <input
+                    type="text"
+                    value={modalEmployeeSearch}
+                    onChange={(e) => setModalEmployeeSearch(e.target.value)}
+                    placeholder="Type at least 3 characters to search employees..."
+                    className="input-field mb-2"
+                  />
+                  {modalEmployeeSearch.length > 0 && modalEmployeeSearch.length < 3 && (
+                    <div className="text-xs text-gray-500 mb-2">
+                      Type {3 - modalEmployeeSearch.length} more character{3 - modalEmployeeSearch.length === 1 ? '' : 's'} to search
+                    </div>
+                  )}
                   <div className="border rounded p-3 max-h-48 overflow-y-auto">
-                    {employees.length > 0 ? (
-                      employees.map((emp) => (
-                        <label key={emp.id} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={formData.employeeIds.includes(emp.id)}
-                            onChange={() => toggleEmployee(emp.id)}
-                          />
-                          <span>{emp.fullName} ({emp.username})</span>
-                        </label>
-                      ))
+                    {modalEmployeeSearch.length >= 3 ? (
+                      modalEmployees.length > 0 ? (
+                        modalEmployees.map((emp) => (
+                          <label key={emp.id} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={formData.employeeIds.includes(emp.id)}
+                              onChange={() => toggleEmployee(emp.id)}
+                            />
+                            <span>{emp.fullName} ({emp.username})</span>
+                          </label>
+                        ))
+                      ) : (
+                        <p className="text-gray-500 text-sm">No employees found</p>
+                      )
                     ) : (
-                      <p className="text-gray-500 text-sm">No active employees available</p>
+                      <p className="text-gray-500 text-sm text-center">Search for employees to assign</p>
                     )}
                   </div>
                   <p className="text-xs text-gray-600 mt-1">
                     Selected: {formData.employeeIds.length} / 5
                   </p>
+                  {formData.employeeIds.length > 0 && (
+                    <div className="mt-2">
+                      <p className="text-xs font-medium mb-1">Selected Employees:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {formData.employeeIds.map((empId) => {
+                          const emp = modalEmployees.find(e => e.id === empId) || employees.find(e => e.id === empId);
+                          return emp ? (
+                            <span key={empId} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm">
+                              {emp.fullName}
+                            </span>
+                          ) : null;
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
