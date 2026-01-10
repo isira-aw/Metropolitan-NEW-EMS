@@ -51,7 +51,7 @@ public class PasswordResetService {
         User user = userOptional.get();
 
         // Check if user is active
-        if (!user.isActive()) {
+        if (Boolean.FALSE.equals(user.getActive())) {
             log.warn("Password reset requested for inactive user: {}", user.getUsername());
             // Still return success to prevent user enumeration
             return;
