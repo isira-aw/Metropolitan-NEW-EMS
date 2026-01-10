@@ -10,7 +10,7 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import Pagination from '@/components/ui/Pagination';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { formatDateTime, formatMinutes } from '@/lib/utils/format';
-import { Check, X, Star, Eye, Layers, User as UserIcon, Clock, Hash } from 'lucide-react';
+import { Check, X, Star, Eye, Layers, User as UserIcon, Clock, Hash, Calendar } from 'lucide-react';
 
 export default function AdminApprovals() {
   const router = useRouter();
@@ -19,21 +19,60 @@ export default function AdminApprovals() {
   const [currentPage, setCurrentPage] = useState(0);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
+  const getTodayDate = () => {
+    // Get current date in Sri Lanka timezone (Asia/Colombo, UTC+5:30)
+    const sriLankaDate = new Date().toLocaleString('en-US', {
+      timeZone: 'Asia/Colombo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+    // Convert from MM/DD/YYYY to YYYY-MM-DD
+    const [month, day, year] = sriLankaDate.split('/');
+    return `${year}-${month}-${day}`;
+  };
+  const [selectedDate, setSelectedDate] = useState(getTodayDate());
+
   useEffect(() => {
     loadPending(0);
-  }, []);
+  }, [selectedDate]);
 
   const loadPending = async (page: number) => {
     try {
       setLoading(true);
-      const data = await approvalService.getPending({ page, size: 10 });
-      setPending(data);
+      const data = await approvalService.getPending({ page: 0, size: 1000 });
+
+      // Filter by selected date based on start time
+      const filteredContent = data.content.filter((card) => {
+        if (!card.startTime) return false;
+        const cardDate = new Date(card.startTime).toISOString().split('T')[0];
+        return cardDate === selectedDate;
+      });
+
+      // Paginate filtered results
+      const pageSize = 10;
+      const startIndex = page * pageSize;
+      const endIndex = startIndex + pageSize;
+      const paginatedContent = filteredContent.slice(startIndex, endIndex);
+
+      setPending({
+        content: paginatedContent,
+        totalElements: filteredContent.length,
+        totalPages: Math.ceil(filteredContent.length / pageSize),
+        size: pageSize,
+        number: page,
+      });
       setCurrentPage(page);
     } catch (error) {
       console.error('Error loading pending approvals:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleTodayFilter = () => {
+    setSelectedDate(getTodayDate());
+    setCurrentPage(0);
   };
 
   const handleApprove = async (id: number) => {
@@ -106,10 +145,10 @@ export default function AdminApprovals() {
             <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase">Approvals Queue</h2>
             <p className="text-xs font-black text-slate-400 uppercase tracking-widest italic mt-1">Review and Score Technician Job Cards</p>
           </div>
-          
+
           {selectedIds.length > 0 && (
-            <button 
-              onClick={handleBulkApprove} 
+            <button
+              onClick={handleBulkApprove}
               className="flex items-center gap-3 bg-corporate-blue text-white px-8 py-4 rounded-2xl font-black uppercase text-sm hover:bg-slate-900 transition-all shadow-xl hover:-translate-y-1"
             >
               <Check size={20} strokeWidth={3} />
@@ -117,6 +156,35 @@ export default function AdminApprovals() {
             </button>
           )}
         </div>
+
+        {/* Date Filter */}
+        <Card className="p-6 border-slate-100 shadow-2xl rounded-[2.5rem] bg-white">
+          <div className="flex items-end gap-4">
+            <div className="flex-1 space-y-3">
+              <label className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                <Calendar size={16} className="text-corporate-blue" /> Filter by Date
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => { setSelectedDate(e.target.value); setCurrentPage(0); }}
+                  className="flex-1 bg-slate-50 border-none rounded-xl py-3 px-4 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-corporate-blue"
+                />
+                <button
+                  onClick={handleTodayFilter}
+                  className="bg-slate-900 text-white px-6 py-3 rounded-xl text-xs font-black uppercase hover:bg-corporate-blue transition-colors active:scale-95 whitespace-nowrap"
+                >
+                  Today
+                </button>
+              </div>
+            </div>
+            <div className="bg-slate-100 px-6 py-3 rounded-xl border border-slate-200 text-right">
+              <p className="text-[10px] font-black text-slate-400 uppercase">Results</p>
+              <p className="text-lg font-black text-slate-700">{pending?.totalElements || 0}</p>
+            </div>
+          </div>
+        </Card>
 
         {/* Pending Cards List */}
         <div className="space-y-6">
