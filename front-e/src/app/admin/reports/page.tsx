@@ -420,6 +420,6 @@ export default function AdminReports() {
           </Card>
         )}
       </div>
-    </div>
+    </AdminLayout>
   );
 }

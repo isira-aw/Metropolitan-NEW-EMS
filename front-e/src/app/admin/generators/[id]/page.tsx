@@ -264,6 +264,6 @@ export default function AdminGeneratorDetail() {
           )}
         </div>
       </div>
-    </div>
+    </AdminLayout>
   );
 }

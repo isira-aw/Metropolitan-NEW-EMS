@@ -335,6 +335,6 @@ Thank you for choosing Metropolitan EMS.`;
           />
         )}
       </div>
-    </div>
+    </AdminLayout>
   );
 }

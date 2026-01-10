@@ -237,6 +237,6 @@ export default function EmployeeDashboard() {
           </button>
         </Card>
       </div>
-    </div>
+    </EmployeeLayout>
   );
 }

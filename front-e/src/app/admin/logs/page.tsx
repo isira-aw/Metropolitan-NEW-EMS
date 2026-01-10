@@ -101,10 +101,9 @@ export default function AdminLogs() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <AdminNav currentPage="Logs" user={user} />
-      <div className="container mx-auto p-6 max-w-7xl">
-        <h2 className="text-3xl font-bold mb-6 text-gray-800">Activity Logs</h2>
+    <AdminLayout>
+      <div className="max-w-7xl mx-auto">
+        <h2 className="text-3xl font-bold mb-6 text-pure-black">Activity Logs</h2>
 
           {/* Filters */}
           <Card className="mb-6">
@@ -305,6 +304,6 @@ export default function AdminLogs() {
             )}
           </Card>
         </div>
-      </div>
+      </AdminLayout>
   );
 }

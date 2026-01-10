@@ -232,6 +232,6 @@ export default function EmployeeJobCards() {
           />
         )}
       </div>
-    </div>
+    </EmployeeLayout>
   );
 }

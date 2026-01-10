@@ -176,6 +176,6 @@ export default function EmployeeAttendance() {
           )}
         </Card>
       </div>
-    </div>
+    </EmployeeLayout>
   );
 }

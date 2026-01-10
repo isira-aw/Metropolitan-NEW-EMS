@@ -653,6 +653,6 @@ export default function AdminTickets() {
           </div>
         </div>
       )}
-    </div>
+    </AdminLayout>
   );
 }

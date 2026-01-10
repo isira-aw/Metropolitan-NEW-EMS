@@ -199,6 +199,6 @@ export default function AdminApprovals() {
 
         {pending && <Pagination currentPage={currentPage} totalPages={pending.totalPages} onPageChange={loadPending} />}
       </div>
-    </div>
+    </AdminLayout>
   );
 }
