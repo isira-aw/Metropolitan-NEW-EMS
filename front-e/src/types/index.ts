@@ -278,13 +278,9 @@ export interface DailyTimeTrackingReportDTO {
   endTime?: string;
   location: string;
   dailyWorkingMinutes: number;
-  dailyWorkingHours: number;
   idleMinutes: number;
-  idleHours: number;
   travelMinutes: number;
-  travelHours: number;
   totalMinutes: number;
-  totalHours: number;
 }
 
 export interface EmployeeDailyWorkTimeReportDTO {
@@ -294,13 +290,9 @@ export interface EmployeeDailyWorkTimeReportDTO {
   startTime?: string;
   endTime?: string;
   morningOtMinutes: number;
-  morningOtHours: number;
   eveningOtMinutes: number;
-  eveningOtHours: number;
   totalOtMinutes: number;
-  totalOtHours: number;
   workingMinutes: number;
-  workingHours: number;
   totalWeightEarned: number;
   jobsCompleted: number;
 }
@@ -336,11 +328,9 @@ export interface DailyWorkRecord {
   checkInTime?: string;
   checkOutTime?: string;
   totalWorkMinutes: number;
-  totalWorkHours: number;
   morningOtMinutes: number;
   eveningOtMinutes: number;
   totalOtMinutes: number;
-  totalOtHours: number;
   jobs: JobDetail[];
   dailyScore?: number;
   dailyTotalWeight?: number;
@@ -361,7 +351,6 @@ export interface JobDetail {
   startTime?: string;
   endTime?: string;
   workMinutes: number;
-  workHours: number;
   weight: number; // Weight is the score (1-5) - consolidated
   score?: number; // Same as weight
   weightedScore?: number; // Same as weight (since weight = score)
@@ -372,9 +361,7 @@ export interface JobDetail {
 export interface SummaryStatistics {
   totalDaysWorked: number;
   totalWorkMinutes: number;
-  totalWorkHours: number;
   totalOtMinutes: number;
-  totalOtHours: number;
   totalJobsCompleted: number;
   totalJobsScored: number;
   totalJobsPending: number;

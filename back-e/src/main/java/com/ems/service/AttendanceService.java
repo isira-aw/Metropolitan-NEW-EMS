@@ -112,6 +112,25 @@ public class AttendanceService {
             attendance.setEveningOtMinutes((int) eveningOtMinutes);
         }
 
+        // Calculate regular working hours (8:30 AM - 5:30 PM only, excluding OT)
+        // Only count time between official working hours
+        LocalTime actualStartTime = attendance.getDayStartTime().toLocalTime();
+        LocalTime actualEndTime = now.toLocalTime();
+
+        // Work start is the later of actual start and 8:30 AM
+        LocalTime workStart = actualStartTime.isAfter(MORNING_OT_CUTOFF) ? actualStartTime : MORNING_OT_CUTOFF;
+
+        // Work end is the earlier of actual end and 5:30 PM
+        LocalTime workEnd = actualEndTime.isBefore(EVENING_OT_CUTOFF) ? actualEndTime : EVENING_OT_CUTOFF;
+
+        // Calculate total regular working minutes (only if work period is valid)
+        if (workEnd.isAfter(workStart)) {
+            long regularWorkMinutes = Duration.between(workStart, workEnd).toMinutes();
+            attendance.setTotalWorkMinutes((int) regularWorkMinutes);
+        } else {
+            attendance.setTotalWorkMinutes(0);
+        }
+
         EmployeeDayAttendance saved = attendanceRepository.save(attendance);
 
         // Log day end activity
