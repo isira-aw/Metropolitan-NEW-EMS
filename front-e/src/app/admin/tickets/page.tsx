@@ -355,7 +355,7 @@ export default function AdminTickets() {
                   setCurrentPage(0);
                 }}
                 placeholder="Enter generator name..."
-                className="input"
+                className="input p-1"
               />
             </div>
             <div>
