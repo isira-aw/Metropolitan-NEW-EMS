@@ -49,13 +49,11 @@ public class EmployeeWorkReportDTO {
         private LocalDateTime checkInTime;
         private LocalDateTime checkOutTime;
         private Integer totalWorkMinutes;
-        private Double totalWorkHours;
 
         // Overtime
         private Integer morningOtMinutes;
         private Integer eveningOtMinutes;
         private Integer totalOtMinutes;
-        private Double totalOtHours;
 
         // Jobs & Generators
         private List<JobDetail> jobs;
@@ -88,7 +86,6 @@ public class EmployeeWorkReportDTO {
         private LocalDateTime startTime;
         private LocalDateTime endTime;
         private Integer workMinutes;
-        private Double workHours;
 
         // Score
         private Integer weight;
@@ -106,9 +103,7 @@ public class EmployeeWorkReportDTO {
         // Overall Period Stats
         private Integer totalDaysWorked;
         private Integer totalWorkMinutes;
-        private Double totalWorkHours;
         private Integer totalOtMinutes;
-        private Double totalOtHours;
 
         // Job Stats
         private Integer totalJobsCompleted;

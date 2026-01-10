@@ -128,8 +128,11 @@ export default function AdminReports() {
     });
   };
 
-  const formatHours = (hours: number) => {
-    return hours.toFixed(2);
+  const formatMinutesLocal = (minutes: number) => {
+    if (!minutes || minutes === 0) return '0h 0m';
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours}h ${mins}m`;
   };
 
   if (loading) return <LoadingSpinner />;
@@ -296,16 +299,16 @@ export default function AdminReports() {
                           {row.location}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-900">
-                          {formatHours(row.dailyWorkingHours)}
+                          {formatMinutesLocal(row.dailyWorkingMinutes)}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-900">
-                          {formatHours(row.idleHours)}
+                          {formatMinutesLocal(row.idleMinutes)}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-900">
-                          {formatHours(row.travelHours)}
+                          {formatMinutesLocal(row.travelMinutes)}
                         </td>
                         <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                          {formatHours(row.totalHours)}
+                          {formatMinutesLocal(row.totalMinutes)}
                         </td>
                       </tr>
                     ))}
@@ -343,15 +346,15 @@ export default function AdminReports() {
                       <span className="font-medium">{workTimeReport.length}</span>
                     </div>
                     <div>
-                      <span className="text-gray-600">Total Work Hours:</span>{' '}
+                      <span className="text-gray-600">Total Work Time:</span>{' '}
                       <span className="font-medium">
-                        {formatHours(workTimeReport.reduce((sum, r) => sum + r.workingHours, 0))}
+                        {formatMinutesLocal(workTimeReport.reduce((sum, r) => sum + r.workingMinutes, 0))}
                       </span>
                     </div>
                     <div>
-                      <span className="text-gray-600">Total OT Hours:</span>{' '}
+                      <span className="text-gray-600">Total OT:</span>{' '}
                       <span className="font-medium">
-                        {formatHours(workTimeReport.reduce((sum, r) => sum + r.totalOtHours, 0))}
+                        {formatMinutesLocal(workTimeReport.reduce((sum, r) => sum + r.totalOtMinutes, 0))}
                       </span>
                     </div>
                     <div>
@@ -403,13 +406,13 @@ export default function AdminReports() {
                             {formatTime(row.endTime)}
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-900">
-                            {formatHours(row.morningOtHours)}
+                            {formatMinutesLocal(row.morningOtMinutes)}
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-900">
-                            {formatHours(row.eveningOtHours)}
+                            {formatMinutesLocal(row.eveningOtMinutes)}
                           </td>
                           <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                            {formatHours(row.workingHours)}
+                            {formatMinutesLocal(row.workingMinutes)}
                           </td>
                           <td className="px-4 py-3 text-sm font-bold text-green-600">
                             {row.totalWeightEarned}

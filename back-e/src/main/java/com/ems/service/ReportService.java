@@ -270,8 +270,8 @@ public class ReportService {
             empReport.put("employeeName", employee.getFullName());
             empReport.put("totalJobs", cards.size());
             empReport.put("completedJobs", completedJobs);
-            empReport.put("totalWorkHours", totalWorkMinutes / 60.0);
-            empReport.put("totalOTHours", totalOT / 60.0);
+            empReport.put("totalWorkMinutes", totalWorkMinutes);
+            empReport.put("totalOTMinutes", totalOT);
             empReport.put("completionRate", cards.size() > 0 ? (completedJobs * 100.0 / cards.size()) : 0);
 
             report.add(empReport);
@@ -333,8 +333,8 @@ public class ReportService {
         result.put("date", date);
         result.put("employeesWorked", attendanceData.size());
         result.put("totalEmployees", allEmployees.size());
-        result.put("totalWorkHours", totalWorkMinutes / 60.0);
-        result.put("totalOTHours", totalOT / 60.0);
+        result.put("totalWorkMinutes", totalWorkMinutes);
+        result.put("totalOTMinutes", totalOT);
         result.put("attendanceData", attendanceData);
 
         return result;
@@ -371,8 +371,8 @@ public class ReportService {
         result.put("totalTickets", tickets.size());
         result.put("completedTickets", completedTickets);
         result.put("totalEmployees", employees.size());
-        result.put("totalWorkHours", totalWorkMinutes / 60.0);
-        result.put("totalOTHours", totalOT / 60.0);
+        result.put("totalWorkMinutes", totalWorkMinutes);
+        result.put("totalOTMinutes", totalOT);
         result.put("completionRate", tickets.size() > 0 ? (completedTickets * 100.0 / tickets.size()) : 0);
 
         return result;
@@ -564,7 +564,6 @@ public class ReportService {
                         .startTime(jobCard.getStartTime())
                         .endTime(jobCard.getEndTime())
                         .workMinutes(jobCard.getWorkMinutes())
-                        .workHours(jobCard.getWorkMinutes() / 60.0)
                         .weight(jobCard.getMainTicket().getWeight())
                         .score(jobScore.map(EmployeeScore::getWeight).orElse(null)) // Weight is the score
                         .weightedScore(jobScore.map(EmployeeScore::getWeight).orElse(null)) // Same as score now
@@ -610,11 +609,9 @@ public class ReportService {
                     .checkInTime(attendance.getDayStartTime())
                     .checkOutTime(attendance.getDayEndTime())
                     .totalWorkMinutes(attendance.getTotalWorkMinutes())
-                    .totalWorkHours(attendance.getTotalWorkMinutes() / 60.0)
                     .morningOtMinutes(attendance.getMorningOtMinutes())
                     .eveningOtMinutes(attendance.getEveningOtMinutes())
                     .totalOtMinutes(attendance.getMorningOtMinutes() + attendance.getEveningOtMinutes())
-                    .totalOtHours((attendance.getMorningOtMinutes() + attendance.getEveningOtMinutes()) / 60.0)
                     .jobs(jobDetails)
                     .dailyScore(dailyScore > 0 ? dailyScore : null)
                     .dailyTotalWeight(dailyScore > 0 ? dailyScore : null) // Same as dailyScore now (weight = score)
@@ -643,9 +640,7 @@ public class ReportService {
                 com.ems.dto.EmployeeWorkReportDTO.SummaryStatistics.builder()
                 .totalDaysWorked(totalDaysWorked)
                 .totalWorkMinutes(totalWorkMinutes)
-                .totalWorkHours(totalWorkMinutes / 60.0)
                 .totalOtMinutes(totalOtMinutes)
-                .totalOtHours(totalOtMinutes / 60.0)
                 .totalJobsCompleted(totalJobsCompleted)
                 .totalJobsScored(totalJobsScored)
                 .totalJobsPending(totalJobsPending)
@@ -755,13 +750,9 @@ public class ReportService {
                         .endTime(attendance.getDayEndTime())
                         .location(location.isEmpty() ? "N/A" : location)
                         .dailyWorkingMinutes(totalWorkMinutes)
-                        .dailyWorkingHours(DailyTimeTrackingReportDTO.minutesToHours(totalWorkMinutes))
                         .idleMinutes(totalIdleMinutes)
-                        .idleHours(DailyTimeTrackingReportDTO.minutesToHours(totalIdleMinutes))
                         .travelMinutes(totalTravelMinutes)
-                        .travelHours(DailyTimeTrackingReportDTO.minutesToHours(totalTravelMinutes))
                         .totalMinutes(attendance.getTotalWorkMinutes())
-                        .totalHours(DailyTimeTrackingReportDTO.minutesToHours(attendance.getTotalWorkMinutes()))
                         .build();
 
                 reports.add(report);
@@ -815,14 +806,9 @@ public class ReportService {
                     .startTime(attendance.getDayStartTime())
                     .endTime(attendance.getDayEndTime())
                     .morningOtMinutes(attendance.getMorningOtMinutes())
-                    .morningOtHours(EmployeeDailyWorkTimeReportDTO.minutesToHours(attendance.getMorningOtMinutes()))
                     .eveningOtMinutes(attendance.getEveningOtMinutes())
-                    .eveningOtHours(EmployeeDailyWorkTimeReportDTO.minutesToHours(attendance.getEveningOtMinutes()))
                     .totalOtMinutes(attendance.getMorningOtMinutes() + attendance.getEveningOtMinutes())
-                    .totalOtHours(EmployeeDailyWorkTimeReportDTO.minutesToHours(
-                            attendance.getMorningOtMinutes() + attendance.getEveningOtMinutes()))
                     .workingMinutes(attendance.getTotalWorkMinutes())
-                    .workingHours(EmployeeDailyWorkTimeReportDTO.minutesToHours(attendance.getTotalWorkMinutes()))
                     .totalWeightEarned(totalWeightEarned)
                     .jobsCompleted((int) jobsCompleted)
                     .build();

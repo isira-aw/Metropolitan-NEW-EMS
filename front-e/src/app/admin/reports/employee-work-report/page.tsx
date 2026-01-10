@@ -218,7 +218,7 @@ export default function EmployeeWorkReportPage() {
                   <span className="text-sm font-medium">Total Hours</span>
                 </div>
                 <p className="text-2xl font-bold text-green-900">
-                  {report.summary.totalWorkHours.toFixed(1)}h
+                  {formatMinutes(report.summary.totalWorkMinutes)}
                 </p>
               </div>
 
@@ -228,7 +228,7 @@ export default function EmployeeWorkReportPage() {
                   <span className="text-sm font-medium">OT Hours</span>
                 </div>
                 <p className="text-2xl font-bold text-orange-900">
-                  {report.summary.totalOtHours.toFixed(1)}h
+                  {formatMinutes(report.summary.totalOtMinutes)}
                 </p>
               </div>
 
@@ -295,8 +295,8 @@ export default function EmployeeWorkReportPage() {
                     </div>
                     <div className="text-right">
                       <div className="text-sm text-gray-600">
-                        Work: {day.totalWorkHours.toFixed(1)}h | OT:{' '}
-                        {day.totalOtHours.toFixed(1)}h
+                        Work: {formatMinutes(day.totalWorkMinutes)} | OT:{' '}
+                        {formatMinutes(day.totalOtMinutes)}
                       </div>
                       {day.dailyScore && (
                         <div className="text-sm font-medium text-blue-600 mt-1">
@@ -336,7 +336,7 @@ export default function EmployeeWorkReportPage() {
                           </div>
                           <div className="text-right">
                             <div className="text-sm font-medium text-gray-900">
-                              {job.workHours.toFixed(1)}h worked
+                              {formatMinutes(job.workMinutes)} worked
                             </div>
                             {job.scored && (
                               <div className="text-sm text-blue-600 mt-1">
@@ -386,15 +386,13 @@ export default function EmployeeWorkReportPage() {
               <div>
                 <span className="text-gray-600">Total Work Time:</span>
                 <p className="font-medium text-gray-900">
-                  {report.summary.totalWorkHours.toFixed(1)} hours (
-                  {formatMinutes(report.summary.totalWorkMinutes)})
+                  {formatMinutes(report.summary.totalWorkMinutes)}
                 </p>
               </div>
               <div>
                 <span className="text-gray-600">Total OT:</span>
                 <p className="font-medium text-gray-900">
-                  {report.summary.totalOtHours.toFixed(1)} hours (
-                  {formatMinutes(report.summary.totalOtMinutes)})
+                  {formatMinutes(report.summary.totalOtMinutes)}
                 </p>
               </div>
               <div>

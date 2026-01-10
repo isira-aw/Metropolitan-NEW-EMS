@@ -545,7 +545,6 @@ public class TicketService {
         stats.put("year", year);
         stats.put("month", month);
         stats.put("totalWorkMinutes", totalWorkMinutes);
-        stats.put("totalWorkHours", totalWorkMinutes / 60.0);
         stats.put("completedJobs", completedJobs);
         stats.put("totalJobs", cards.size());
 
