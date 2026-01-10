@@ -49,6 +49,9 @@ public class TicketService {
     @Autowired
     private LogService logService;
 
+    @Autowired
+    private NotificationService notificationService;
+
     @Transactional
     public MainTicket createMainTicket(MainTicketRequest request, String createdBy) {
         Generator generator = generatorRepository.findById(request.getGeneratorId())
@@ -217,22 +220,72 @@ public class TicketService {
         List<MiniJobCard> miniJobCards = miniJobCardRepository.findByMainTicketId(mainTicketId);
         MainTicket mainTicket = mainTicketRepository.findById(mainTicketId)
                 .orElseThrow(() -> new RuntimeException("Main ticket not found"));
-        
+
         boolean allCompleted = miniJobCards.stream()
                 .allMatch(mjc -> mjc.getStatus() == JobStatus.COMPLETED || mjc.getStatus() == JobStatus.CANCEL);
-        
+
         boolean anyStarted = miniJobCards.stream()
-                .anyMatch(mjc -> mjc.getStatus() == JobStatus.STARTED || 
+                .anyMatch(mjc -> mjc.getStatus() == JobStatus.STARTED ||
                                 mjc.getStatus() == JobStatus.TRAVELING ||
                                 mjc.getStatus() == JobStatus.ON_HOLD);
-        
+
+        JobStatus previousStatus = mainTicket.getStatus();
+
         if (allCompleted) {
             mainTicket.setStatus(JobStatus.COMPLETED);
         } else if (anyStarted) {
             mainTicket.setStatus(JobStatus.STARTED);
         }
-        
+
         mainTicketRepository.save(mainTicket);
+
+        // Send notification to generator owner when ticket is completed
+        // Only send if status changed from non-COMPLETED to COMPLETED
+        if (allCompleted && previousStatus != JobStatus.COMPLETED) {
+            sendTicketCompletionNotification(mainTicket, miniJobCards);
+        }
+    }
+
+    private void sendTicketCompletionNotification(MainTicket mainTicket, List<MiniJobCard> miniJobCards) {
+        try {
+            Generator generator = mainTicket.getGenerator();
+            String ownerEmail = generator.getOwnerEmail();
+            String ownerPhone = generator.getWhatsAppNumber();
+
+            // Skip notification if no contact information available
+            if ((ownerEmail == null || ownerEmail.isEmpty()) &&
+                (ownerPhone == null || ownerPhone.isEmpty())) {
+                return;
+            }
+
+            // Generate summary of work done
+            StringBuilder summary = new StringBuilder();
+            summary.append("Service Type: ").append(mainTicket.getType()).append("\n");
+            summary.append("Work Description: ").append(mainTicket.getDescription()).append("\n");
+            summary.append("Scheduled Date: ").append(mainTicket.getScheduledDate()).append("\n\n");
+
+            // Add employee details
+            summary.append("Employees:\n");
+            for (MiniJobCard jobCard : miniJobCards) {
+                if (jobCard.getStatus() == JobStatus.COMPLETED) {
+                    summary.append("- ").append(jobCard.getEmployee().getFullName());
+                    summary.append(" (Work Time: ").append(jobCard.getWorkMinutes()).append(" minutes)\n");
+                }
+            }
+
+            // Send notification via email and WhatsApp
+            notificationService.sendTicketCompletionNotification(
+                ownerEmail,
+                ownerPhone,
+                mainTicket.getTicketNumber(),
+                generator.getName(),
+                summary.toString()
+            );
+
+        } catch (Exception e) {
+            // Log error but don't fail the transaction
+            System.err.println("Failed to send ticket completion notification: " + e.getMessage());
+        }
     }
     
     private void validateStatusTransition(JobStatus current, JobStatus next) {
