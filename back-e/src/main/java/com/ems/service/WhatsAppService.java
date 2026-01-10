@@ -94,4 +94,19 @@ public class WhatsAppService {
 
         sendWhatsAppMessage(to, message);
     }
+
+    public void sendCustomWhatsApp(String to, String ticketNumber, String generatorName, String customMessage) {
+        String message = String.format(
+            "*Service Update - Ticket %s*\n\n" +
+            "Dear Generator Owner,\n\n" +
+            "This is an update regarding your service ticket.\n\n" +
+            "*Ticket Reference:* %s\n" +
+            "*Generator:* %s\n\n" +
+            "*Message:*\n%s\n\n" +
+            "Thank you for choosing Metropolitan EMS.",
+            ticketNumber, ticketNumber, generatorName, customMessage
+        );
+
+        sendWhatsAppMessage(to, message);
+    }
 }

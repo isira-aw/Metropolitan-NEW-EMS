@@ -67,4 +67,21 @@ public class EmailService {
 
         sendEmail(to, subject, body);
     }
+
+    public void sendCustomEmail(String to, String ticketNumber, String generatorName, String customMessage) {
+        String subject = "Service Update - Ticket " + ticketNumber;
+        String body = String.format(
+            "Dear Generator Owner,\n\n" +
+            "This is an update regarding your service ticket.\n\n" +
+            "Ticket Reference: %s\n" +
+            "Generator: %s\n\n" +
+            "Message:\n%s\n\n" +
+            "Thank you for choosing Metropolitan EMS.\n\n" +
+            "Best regards,\n" +
+            "Metropolitan EMS Team",
+            ticketNumber, generatorName, customMessage
+        );
+
+        sendEmail(to, subject, body);
+    }
 }

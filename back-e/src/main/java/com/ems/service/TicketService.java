@@ -229,8 +229,6 @@ public class TicketService {
                                 mjc.getStatus() == JobStatus.TRAVELING ||
                                 mjc.getStatus() == JobStatus.ON_HOLD);
 
-        JobStatus previousStatus = mainTicket.getStatus();
-
         if (allCompleted) {
             mainTicket.setStatus(JobStatus.COMPLETED);
         } else if (anyStarted) {
@@ -238,53 +236,37 @@ public class TicketService {
         }
 
         mainTicketRepository.save(mainTicket);
-
-        // Send notification to generator owner when ticket is completed
-        // Only send if status changed from non-COMPLETED to COMPLETED
-        if (allCompleted && previousStatus != JobStatus.COMPLETED) {
-            sendTicketCompletionNotification(mainTicket, miniJobCards);
-        }
     }
 
-    private void sendTicketCompletionNotification(MainTicket mainTicket, List<MiniJobCard> miniJobCards) {
-        try {
-            Generator generator = mainTicket.getGenerator();
-            String ownerEmail = generator.getOwnerEmail();
-            String ownerPhone = generator.getWhatsAppNumber();
+    // Manual notification method - called by admin from UI
+    public void sendCustomNotificationToOwner(Long mainTicketId, String customMessage, boolean sendEmail, boolean sendWhatsApp) {
+        MainTicket mainTicket = mainTicketRepository.findById(mainTicketId)
+                .orElseThrow(() -> new RuntimeException("Main ticket not found"));
 
-            // Skip notification if no contact information available
-            if ((ownerEmail == null || ownerEmail.isEmpty()) &&
-                (ownerPhone == null || ownerPhone.isEmpty())) {
-                return;
+        Generator generator = mainTicket.getGenerator();
+        String ownerEmail = generator.getOwnerEmail();
+        String ownerPhone = generator.getWhatsAppNumber();
+
+        // Send via email if requested and email is available
+        if (sendEmail && ownerEmail != null && !ownerEmail.isEmpty()) {
+            try {
+                notificationService.sendCustomEmail(ownerEmail, mainTicket.getTicketNumber(), generator.getName(), customMessage);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to send email: " + e.getMessage());
             }
+        }
 
-            // Generate summary of work done
-            StringBuilder summary = new StringBuilder();
-            summary.append("Service Type: ").append(mainTicket.getType()).append("\n");
-            summary.append("Work Description: ").append(mainTicket.getDescription()).append("\n");
-            summary.append("Scheduled Date: ").append(mainTicket.getScheduledDate()).append("\n\n");
-
-            // Add employee details
-            summary.append("Employees:\n");
-            for (MiniJobCard jobCard : miniJobCards) {
-                if (jobCard.getStatus() == JobStatus.COMPLETED) {
-                    summary.append("- ").append(jobCard.getEmployee().getFullName());
-                    summary.append(" (Work Time: ").append(jobCard.getWorkMinutes()).append(" minutes)\n");
-                }
+        // Send via WhatsApp if requested and phone is available
+        if (sendWhatsApp && ownerPhone != null && !ownerPhone.isEmpty()) {
+            try {
+                notificationService.sendCustomWhatsApp(ownerPhone, mainTicket.getTicketNumber(), generator.getName(), customMessage);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to send WhatsApp message: " + e.getMessage());
             }
+        }
 
-            // Send notification via email and WhatsApp
-            notificationService.sendTicketCompletionNotification(
-                ownerEmail,
-                ownerPhone,
-                mainTicket.getTicketNumber(),
-                generator.getName(),
-                summary.toString()
-            );
-
-        } catch (Exception e) {
-            // Log error but don't fail the transaction
-            System.err.println("Failed to send ticket completion notification: " + e.getMessage());
+        if (!sendEmail && !sendWhatsApp) {
+            throw new RuntimeException("Please select at least one notification method (Email or WhatsApp)");
         }
     }
     

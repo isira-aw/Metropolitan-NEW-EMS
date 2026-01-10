@@ -52,4 +52,14 @@ public class NotificationService {
             }
         }
     }
+
+    public void sendCustomEmail(String email, String ticketNumber, String generatorName, String customMessage) {
+        emailService.sendCustomEmail(email, ticketNumber, generatorName, customMessage);
+        log.info("Custom email sent to: {} for ticket: {}", email, ticketNumber);
+    }
+
+    public void sendCustomWhatsApp(String phone, String ticketNumber, String generatorName, String customMessage) {
+        whatsAppService.sendCustomWhatsApp(phone, ticketNumber, generatorName, customMessage);
+        log.info("Custom WhatsApp sent to: {} for ticket: {}", phone, ticketNumber);
+    }
 }

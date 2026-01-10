@@ -224,6 +224,11 @@ export const ticketService = {
     const response = await apiClient.put<MainTicket>(`/admin/tickets/${id}/cancel`);
     return response.data;
   },
+
+  async sendNotification(id: number, data: { ticketId: number; message: string; sendEmail: boolean; sendWhatsApp: boolean }): Promise<any> {
+    const response = await apiClient.post(`/admin/tickets/${id}/send-notification`, data);
+    return response.data;
+  },
 };
 
 // ===========================

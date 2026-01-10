@@ -23,6 +23,13 @@ export default function AdminTicketDetail() {
   const [currentPage, setCurrentPage] = useState(0);
   const [user, setUser] = useState<any>(null);
 
+  // Notification state
+  const [showNotificationForm, setShowNotificationForm] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState('');
+  const [sendEmail, setSendEmail] = useState(false);
+  const [sendWhatsApp, setSendWhatsApp] = useState(false);
+  const [sendingNotification, setSendingNotification] = useState(false);
+
   useEffect(() => {
     const role = authService.getRole();
     if (role !== 'ADMIN') {
@@ -39,6 +46,24 @@ export default function AdminTicketDetail() {
     try {
       const data = await ticketService.getById(id);
       setTicket(data);
+
+      // Set default notification message
+      const defaultMessage = `Dear Generator Owner,
+
+We would like to update you on the service ticket for your generator.
+
+Ticket Reference: ${data.ticketNumber}
+Generator: ${data.generator.name}
+Service Type: ${data.type}
+Status: ${data.status}
+
+${data.description || ''}
+
+If you have any questions, please feel free to contact us.
+
+Thank you for choosing Metropolitan EMS.`;
+
+      setNotificationMessage(defaultMessage);
     } catch (error) {
       console.error('Error loading ticket:', error);
     } finally {
@@ -83,6 +108,37 @@ export default function AdminTicketDetail() {
     }
   };
 
+  const handleSendNotification = async () => {
+    if (!sendEmail && !sendWhatsApp) {
+      alert('Please select at least one delivery method (Email or WhatsApp)');
+      return;
+    }
+
+    if (!notificationMessage.trim()) {
+      alert('Please enter a message');
+      return;
+    }
+
+    if (!confirm('Send this notification to the generator owner?')) return;
+
+    setSendingNotification(true);
+    try {
+      await ticketService.sendNotification(id, {
+        ticketId: id,
+        message: notificationMessage,
+        sendEmail,
+        sendWhatsApp,
+      });
+
+      alert('Notification sent successfully!');
+      setShowNotificationForm(false);
+    } catch (error: any) {
+      alert(error.response?.data?.error || 'Failed to send notification');
+    } finally {
+      setSendingNotification(false);
+    }
+  };
+
   if (loading) return <LoadingSpinner />;
   if (!ticket) return <div className="p-6">Ticket not found</div>;
 
@@ -121,6 +177,82 @@ export default function AdminTicketDetail() {
               <p><strong>Scheduled:</strong> {ticket.scheduledDate} {ticket.scheduledTime}</p>
             </div>
           </div>
+        </Card>
+
+        {/* Notification Section */}
+        <Card className="mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-bold">Send Notification to Generator Owner</h3>
+            <button
+              onClick={() => setShowNotificationForm(!showNotificationForm)}
+              className="btn-primary"
+            >
+              {showNotificationForm ? 'Hide Form' : 'Show Form'}
+            </button>
+          </div>
+
+          {showNotificationForm && (
+            <div className="space-y-4">
+              <div className="bg-blue-50 border border-blue-200 rounded p-3 text-sm text-blue-800">
+                <p><strong>Generator Owner Contact:</strong></p>
+                <p>Email: {ticket.generator.ownerEmail || 'Not provided'}</p>
+                <p>WhatsApp: {ticket.generator.whatsAppNumber || 'Not provided'}</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2">Message Template (Editable)</label>
+                <textarea
+                  value={notificationMessage}
+                  onChange={(e) => setNotificationMessage(e.target.value)}
+                  rows={12}
+                  className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter your message here..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2">Delivery Method</label>
+                <div className="space-y-2">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={sendEmail}
+                      onChange={(e) => setSendEmail(e.target.checked)}
+                      className="mr-2 h-4 w-4"
+                      disabled={!ticket.generator.ownerEmail}
+                    />
+                    <span>Send via Email {!ticket.generator.ownerEmail && '(No email provided)'}</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={sendWhatsApp}
+                      onChange={(e) => setSendWhatsApp(e.target.checked)}
+                      className="mr-2 h-4 w-4"
+                      disabled={!ticket.generator.whatsAppNumber}
+                    />
+                    <span>Send via WhatsApp {!ticket.generator.whatsAppNumber && '(No WhatsApp number provided)'}</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handleSendNotification}
+                  disabled={sendingNotification}
+                  className="btn-primary disabled:bg-gray-400 disabled:cursor-not-allowed"
+                >
+                  {sendingNotification ? 'Sending...' : 'Send Notification'}
+                </button>
+                <button
+                  onClick={() => setShowNotificationForm(false)}
+                  className="btn-secondary"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
         </Card>
 
         {/* Mini Job Cards */}
