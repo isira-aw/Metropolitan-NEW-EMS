@@ -27,7 +27,19 @@ export default function AdminTickets() {
   const [editingTicketId, setEditingTicketId] = useState<number | null>(null);
 
   // Filters
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const getTodayDate = () => {
+    // Get current date in Sri Lanka timezone (Asia/Colombo, UTC+5:30)
+    const sriLankaDate = new Date().toLocaleString('en-US', {
+      timeZone: 'Asia/Colombo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+    // Convert from MM/DD/YYYY to YYYY-MM-DD
+    const [month, day, year] = sriLankaDate.split('/');
+    return `${year}-${month}-${day}`;
+  };
+  const [selectedDate, setSelectedDate] = useState(getTodayDate());
   const [employees, setEmployees] = useState<User[]>([]);
   const [generatorSearchTerm, setGeneratorSearchTerm] = useState('');
   const [employeeFilter, setEmployeeFilter] = useState<number | 'ALL'>('ALL');
@@ -154,6 +166,11 @@ export default function AdminTickets() {
 
   // --- Event Handlers ---
 
+  const handleTodayFilter = () => {
+    setSelectedDate(getTodayDate());
+    setCurrentPage(0);
+  };
+
   const handleCancel = async (ticketId: number) => {
     if (!confirm("Are you sure you want to cancel this ticket?")) return;
     try {
@@ -253,7 +270,15 @@ export default function AdminTickets() {
               <label className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
                 <Calendar size={16} className="text-corporate-blue" /> Schedule Date
               </label>
-              <input type="date" value={selectedDate} onChange={(e) => { setSelectedDate(e.target.value); setCurrentPage(0); }} className="bg-slate-50 border-none rounded-xl py-3 px-4 text-sm font-bold text-slate-700 w-full focus:ring-2 focus:ring-corporate-blue" />
+              <div className="flex gap-2">
+                <input type="date" value={selectedDate} onChange={(e) => { setSelectedDate(e.target.value); setCurrentPage(0); }} className="flex-1 bg-slate-50 border-none rounded-xl py-3 px-4 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-corporate-blue" />
+                <button
+                  onClick={handleTodayFilter}
+                  className="bg-slate-900 text-white px-6 py-3 rounded-xl text-xs font-black uppercase hover:bg-corporate-blue transition-colors active:scale-95 whitespace-nowrap"
+                >
+                  Today
+                </button>
+              </div>
             </div>
 
             <div className="space-y-3">
