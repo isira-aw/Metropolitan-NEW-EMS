@@ -90,14 +90,7 @@ export default function AdminLogs() {
   };
 
   if (loading && !logs) {
-    return (
-      <>
-        <AdminNav currentPage="Logs" user={user} />
-        <div className="min-h-screen bg-soft-blue flex items-center justify-center">
-          <LoadingSpinner />
-        </div>
-      </>
-    );
+    return <LoadingSpinner />;
   }
 
   return (
