@@ -262,7 +262,6 @@ export default function AdminGeneratorDetail() {
             />
           )}
         </div>
-      </div>
     </AdminLayout>
   );
 }

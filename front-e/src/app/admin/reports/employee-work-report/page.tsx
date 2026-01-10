@@ -8,6 +8,7 @@ import {
   User,
   UserRole,
 } from '@/types';
+import AdminLayout from '@/components/layouts/AdminLayout';
 import Card from '@/components/ui/Card';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import StatusBadge from '@/components/ui/StatusBadge';
@@ -87,7 +88,8 @@ export default function EmployeeWorkReportPage() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <AdminLayout>
+      <div className="max-w-7xl mx-auto">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900">
           Employee Work Report
@@ -476,6 +478,7 @@ export default function EmployeeWorkReportPage() {
           }
         }
       `}</style>
-    </div>
+      </div>
+    </AdminLayout>
   );
 }
