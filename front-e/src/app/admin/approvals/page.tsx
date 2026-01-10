@@ -57,10 +57,21 @@ export default function AdminApprovals() {
 
       setPending({
         content: paginatedContent,
-        totalElements: filteredContent.length,
+        pageable: {
+          pageNumber: page,
+          pageSize: pageSize,
+          offset: page * pageSize,
+          paged: true,
+          unpaged: false,
+        },
         totalPages: Math.ceil(filteredContent.length / pageSize),
+        totalElements: filteredContent.length,
+        last: page >= Math.ceil(filteredContent.length / pageSize) - 1,
+        first: page === 0,
         size: pageSize,
         number: page,
+        numberOfElements: paginatedContent.length,
+        empty: paginatedContent.length === 0,
       });
       setCurrentPage(page);
     } catch (error) {
