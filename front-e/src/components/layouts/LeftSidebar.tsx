@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { authService } from '@/lib/services/auth.service';
+import { LucideIcon } from 'lucide-react'; // Import the built-in type
 import {
   LayoutDashboard,
   Users,
@@ -23,7 +24,7 @@ import {
 interface NavItem {
   name: string;
   path: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
+  icon: LucideIcon; // Use Lucide's official type instead of custom ComponentType
   badge?: number;
 }
 
@@ -57,163 +58,121 @@ export default function LeftSidebar({ role, user, pendingJobsCount }: LeftSideba
 
   const navItems = role === 'ADMIN' ? adminNavItems : employeeNavItems;
 
-  // Close mobile menu on route change
-  useEffect(() => {
-    setIsMobileOpen(false);
-  }, [pathname]);
+  useEffect(() => { setIsMobileOpen(false); }, [pathname]);
 
-  // Prevent scroll when mobile menu is open
-  useEffect(() => {
-    if (isMobileOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isMobileOpen]);
-
-  const handleLogout = () => {
-    authService.logout();
-  };
-
+  const handleLogout = () => authService.logout();
   const isActive = (path: string) => pathname === path;
 
   return (
     <>
       {/* Mobile Overlay */}
       {isMobileOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden transition-opacity"
-          onClick={() => setIsMobileOpen(false)}
-        />
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 lg:hidden" onClick={() => setIsMobileOpen(false)} />
       )}
 
       {/* Mobile Menu Button */}
-      <button
-        onClick={() => setIsMobileOpen(!isMobileOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-corporate-blue text-white rounded-lg shadow-lg hover:bg-soft-blue transition-colors"
-        aria-label="Toggle menu"
-      >
-        {isMobileOpen ? <X size={24} /> : <Menu size={24} />}
-      </button>
+      {!isMobileOpen && (
+        <button
+          onClick={() => setIsMobileOpen(true)}
+          className="lg:hidden fixed top-4 left-4 z-50 p-3 bg-slate-900 text-white rounded-2xl shadow-xl"
+        >
+          <Menu size={20} />
+        </button>
+      )}
 
-      {/* Sidebar */}
+      {/* Sidebar Container */}
       <aside
         className={`
-          fixed top-0 left-0 h-full bg-gradient-to-b from-corporate-blue to-[#0F3A7A] text-white z-50 shadow-2xl
-          transition-all duration-300 ease-in-out
+          fixed top-0 left-0 h-full bg-slate-900 text-white z-50 transition-all duration-300 ease-in-out border-r border-white/5
           ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
-          lg:translate-x-0
-          ${isCollapsed ? 'lg:w-20' : 'lg:w-72'}
-          w-72
+          lg:translate-x-0 ${isCollapsed ? 'lg:w-24' : 'lg:w-72'} w-72
         `}
       >
-        {/* Header */}
-        <div className="h-20 flex items-center justify-between px-6 border-b border-white/10">
+        {/* Brand Header */}
+        <div className="h-24 flex items-center justify-between px-6">
           <div className={`flex items-center gap-3 ${isCollapsed ? 'lg:hidden' : ''}`}>
-            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-              <Zap size={24} className="text-corporate-blue" />
+            <div className="w-10 h-10 bg-corporate-blue rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+              <Zap size={22} className="text-white" fill="currentColor" />
             </div>
             <div>
-              <h1 className="text-lg font-bold">EMS Portal</h1>
-              <p className="text-xs text-white/70">{role === 'ADMIN' ? 'Admin' : 'Employee'}</p>
+              <h1 className="text-sm font-black tracking-tighter uppercase">EMS <span className="text-corporate-blue">Portal</span></h1>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{role}</p>
             </div>
           </div>
 
-          {/* Collapse Button - Desktop Only */}
           <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="hidden lg:block p-2 hover:bg-white/10 rounded-lg transition-colors"
-            aria-label="Toggle sidebar"
+            onClick={() => (isMobileOpen ? setIsMobileOpen(false) : setIsCollapsed(!isCollapsed))}
+            className="p-2 hover:bg-white/5 rounded-xl text-slate-400 transition-colors"
           >
-            <ChevronLeft
-              size={20}
-              className={`transition-transform ${isCollapsed ? 'rotate-180' : ''}`}
-            />
-          </button>
-
-          {/* Close Button - Mobile Only */}
-          <button
-            onClick={() => setIsMobileOpen(false)}
-            className="lg:hidden p-2 hover:bg-white/10 rounded-lg transition-colors"
-            aria-label="Close menu"
-          >
-            <X size={20} />
+            {isMobileOpen ? <X size={20} /> : <ChevronLeft size={20} className={isCollapsed ? 'rotate-180' : ''} />}
           </button>
         </div>
 
-        {/* User Info */}
-        <div className={`px-6 py-4 border-b border-white/10 ${isCollapsed ? 'lg:hidden' : ''}`}>
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-              <UserIcon size={24} />
+        {/* User Quick Profile */}
+        <div className={`px-4 mb-6 ${isCollapsed ? 'lg:px-4' : ''}`}>
+          <div className={`bg-white/5 border border-white/5 rounded-[2rem] p-4 flex items-center gap-3 ${isCollapsed ? 'lg:justify-center' : ''}`}>
+            <div className="w-10 h-10 rounded-full bg-corporate-blue/20 border border-corporate-blue/30 flex items-center justify-center text-corporate-blue flex-shrink-0">
+              <UserIcon size={20} />
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm truncate">{user?.fullName || 'User'}</p>
-              <p className="text-xs text-white/70 truncate">{user?.email || ''}</p>
-            </div>
+            {!isCollapsed && (
+              <div className="min-w-0">
+                <p className="text-xs font-black truncate">{user?.fullName || 'Operator'}</p>
+                <p className="text-[10px] font-bold text-slate-500 truncate uppercase tracking-tighter">System Verified</p>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Navigation Items */}
-        <nav className="flex-1 overflow-y-auto py-6 px-3">
-          <ul className="space-y-2">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const active = isActive(item.path);
+        {/* Navigation */}
+        <nav className="flex-1 px-4 space-y-2">
+          {navItems.map((item) => {
+            const active = isActive(item.path);
+            const Icon = item.icon;
 
-              return (
-                <li key={item.path}>
-                  <button
-                    onClick={() => router.push(item.path)}
-                    className={`
-                      w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all
-                      ${active
-                        ? 'bg-white text-corporate-blue shadow-lg font-semibold'
-                        : 'text-white/90 hover:bg-white/10 hover:text-white'
-                      }
-                      ${isCollapsed ? 'lg:justify-center lg:px-0' : ''}
-                    `}
-                    title={isCollapsed ? item.name : undefined}
-                  >
-                    <div className="relative">
-                      <Icon size={22} className={active ? 'text-corporate-blue' : ''} />
-                      {item.badge && item.badge > 0 && (
-                        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                          {item.badge > 9 ? '9+' : item.badge}
-                        </span>
-                      )}
-                    </div>
-                    <span className={`flex-1 ${isCollapsed ? 'lg:hidden' : ''}`}>
-                      {item.name}
+            return (
+              <button
+                key={item.path}
+                onClick={() => router.push(item.path)}
+                className={`
+                  w-full group flex items-center gap-4 px-4 py-4 rounded-2xl transition-all relative
+                  ${active 
+                    ? 'bg-corporate-blue text-white shadow-lg shadow-blue-600/20' 
+                    : 'text-slate-400 hover:bg-white/5 hover:text-white'}
+                  ${isCollapsed ? 'lg:justify-center lg:px-0' : ''}
+                `}
+              >
+                <div className="relative">
+                  <Icon size={20} strokeWidth={active ? 2.5 : 2} />
+                  {item.badge && item.badge > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center border-2 border-slate-900">
+                      {item.badge}
                     </span>
-                    {item.badge && item.badge > 0 && !isCollapsed && (
-                      <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                        {item.badge}
-                      </span>
-                    )}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
+                  )}
+                </div>
+                
+                {!isCollapsed && (
+                  <span className="text-xs font-black uppercase tracking-widest">{item.name}</span>
+                )}
+
+                {active && !isCollapsed && (
+                  <div className="absolute right-4 w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                )}
+              </button>
+            );
+          })}
         </nav>
 
-        {/* Logout Button */}
-        <div className="p-4 border-t border-white/10">
+        {/* Bottom Actions */}
+        <div className="p-4 mt-auto">
           <button
             onClick={handleLogout}
             className={`
-              w-full flex items-center gap-3 px-4 py-3 rounded-lg
-              bg-white/10 hover:bg-red-500 text-white transition-all
+              w-full flex items-center gap-4 px-4 py-4 rounded-2xl text-slate-500 hover:bg-red-500/10 hover:text-red-500 transition-all
               ${isCollapsed ? 'lg:justify-center lg:px-0' : ''}
             `}
-            title={isCollapsed ? 'Logout' : undefined}
           >
-            <LogOut size={22} />
-            <span className={`font-semibold ${isCollapsed ? 'lg:hidden' : ''}`}>Logout</span>
+            <LogOut size={20} />
+            {!isCollapsed && <span className="text-xs font-black uppercase tracking-widest">Sign Out</span>}
           </button>
         </div>
       </aside>
