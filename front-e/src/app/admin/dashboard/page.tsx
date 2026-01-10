@@ -8,25 +8,17 @@ import { DashboardStats } from '@/types';
 import Card from '@/components/ui/Card';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { formatMinutes } from '@/lib/utils/format';
-import AdminNav from '@/components/layouts/AdminNav';
+import AdminLayout from '@/components/layouts/AdminLayout';
 import { Users, Zap, Ticket, CheckCircle, BarChart3 } from 'lucide-react';
 
 export default function AdminDashboard() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    const role = authService.getRole();
-    if (role !== 'ADMIN') {
-      router.push('/login');
-      return;
-    }
-
-    setUser(authService.getStoredUser());
     loadStats();
-  }, [router]);
+  }, []);
 
   const loadStats = async () => {
     try {
@@ -39,13 +31,13 @@ export default function AdminDashboard() {
     }
   };
 
-  if (loading) return <LoadingSpinner />;
+  if (loading) {
+    return <LoadingSpinner />;
+  }
 
   return (
-    <div className="min-h-screen bg-light-bg">
-      <AdminNav currentPage="Dashboard" user={user} />
-
-      <div className="container mx-auto p-4 md:p-6">
+    <AdminLayout>
+      <div className="max-w-7xl mx-auto">
         <h2 className="text-3xl font-bold mb-6 text-pure-black">Admin Dashboard</h2>
 
         {/* Statistics Grid */}
@@ -134,6 +126,6 @@ export default function AdminDashboard() {
           </div>
         )}
       </div>
-    </div>
+    </AdminLayout>
   );
 }

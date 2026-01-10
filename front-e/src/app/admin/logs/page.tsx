@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { logsService, userService } from '@/lib/services/admin.service';
 import { authService } from '@/lib/services/auth.service';
 import { ActivityLogResponse, PageResponse, User } from '@/types';
-import AdminNav from '@/components/layouts/AdminNav';
+import AdminLayout from '@/components/layouts/AdminLayout';
 import Card from '@/components/ui/Card';
 import Pagination from '@/components/ui/Pagination';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
@@ -17,7 +17,6 @@ export default function AdminLogs() {
   const [logs, setLogs] = useState<PageResponse<ActivityLogResponse> | null>(null);
   const [employees, setEmployees] = useState<User[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
-  const [user, setUser] = useState<any>(null);
 
   // Filters
   const [selectedEmployee, setSelectedEmployee] = useState<number | null>(null);
@@ -25,16 +24,10 @@ export default function AdminLogs() {
   const [endDate, setEndDate] = useState<string>('');
 
   useEffect(() => {
-    const role = authService.getRole();
-    if (role !== 'ADMIN') {
-      router.push('/login');
-      return;
-    }
-
-    setUser(authService.getStoredUser());
+    
     loadEmployees();
     loadLogs(0);
-  }, [router]);
+  }, []);
 
   const loadEmployees = async () => {
     try {
@@ -97,21 +90,13 @@ export default function AdminLogs() {
   };
 
   if (loading && !logs) {
-    return (
-      <>
-        <AdminNav currentPage="Logs" user={user} />
-        <div className="min-h-screen bg-soft-blue flex items-center justify-center">
-          <LoadingSpinner />
-        </div>
-      </>
-    );
+    return <LoadingSpinner />;
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <AdminNav currentPage="Logs" user={user} />
-      <div className="container mx-auto p-6 max-w-7xl">
-        <h2 className="text-3xl font-bold mb-6 text-gray-800">Activity Logs</h2>
+    <AdminLayout>
+      <div className="max-w-7xl mx-auto">
+        <h2 className="text-3xl font-bold mb-6 text-pure-black">Activity Logs</h2>
 
           {/* Filters */}
           <Card className="mb-6">
@@ -312,6 +297,6 @@ export default function AdminLogs() {
             )}
           </Card>
         </div>
-      </div>
+      </AdminLayout>
   );
 }
