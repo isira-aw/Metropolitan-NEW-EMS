@@ -20,7 +20,18 @@ export default function EmployeeJobCards() {
   const [statusFilter, setStatusFilter] = useState<JobStatus | 'ALL'>('ALL');
   const [pendingCount, setPendingCount] = useState(0);
 
-  const getTodayDate = () => new Date().toISOString().split('T')[0];
+  const getTodayDate = () => {
+    // Get current date in Sri Lanka timezone (Asia/Colombo, UTC+5:30)
+    const sriLankaDate = new Date().toLocaleString('en-US', {
+      timeZone: 'Asia/Colombo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+    // Convert from MM/DD/YYYY to YYYY-MM-DD
+    const [month, day, year] = sriLankaDate.split('/');
+    return `${year}-${month}-${day}`;
+  };
   const [selectedDate, setSelectedDate] = useState(getTodayDate());
 
   useEffect(() => {
