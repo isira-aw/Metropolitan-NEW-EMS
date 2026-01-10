@@ -157,7 +157,7 @@ export default function AdminTickets() {
   const handleCancel = async (ticketId: number) => {
     if (!confirm("Are you sure you want to cancel this ticket?")) return;
     try {
-      await ticketService.updateStatus(ticketId, JobStatus.CANCEL);
+      await ticketService.cancel(ticketId);
       loadTickets(currentPage);
     } catch (error) {
       alert("Failed to cancel ticket");
