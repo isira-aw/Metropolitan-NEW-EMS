@@ -19,7 +19,7 @@ export default function ForgotPassword() {
     setError('');
 
     try {
-      const response = await api.post('/api/password-reset/forgot-password', {
+      const response = await api.post('/password-reset/forgot-password', {
         emailOrPhone,
       });
 
