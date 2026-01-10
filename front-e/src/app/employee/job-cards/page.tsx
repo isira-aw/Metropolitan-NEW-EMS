@@ -66,8 +66,7 @@ export default function EmployeeJobCards() {
   if (loading) return <LoadingSpinner />;
 
   return (
-    <EmployeeLayout pendingJobsCount={dashboard?.pendingJobCards || 0}>
-
+    <EmployeeLayout pendingJobsCount={pendingCount}>
       <div className="max-w-7xl mx-auto">
         {/* Page Title - Mobile Optimized */}
         <h2 className="page-title mb-6">My Job Cards</h2>

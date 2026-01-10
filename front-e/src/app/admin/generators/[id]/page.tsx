@@ -5,7 +5,6 @@ import { useRouter, useParams } from 'next/navigation';
 import { generatorService, ticketService } from '@/lib/services/admin.service';
 import { authService } from '@/lib/services/auth.service';
 import { Generator, GeneratorStatistics, MainTicket, PageResponse } from '@/types';
-import AdminNav from '@/components/layouts/AdminNav';
 import Card from '@/components/ui/Card';
 import StatusBadge from '@/components/ui/StatusBadge';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
