@@ -31,7 +31,7 @@ export default function AdminNav({
         {/* Top Bar */}
         <div className="flex justify-between items-center h-16">
           <h1 className="text-lg md:text-2xl font-bold">
-            EMS Admin Portal...
+            EMS Admin Portal
           </h1>
 
           {/* Desktop Menu */}
