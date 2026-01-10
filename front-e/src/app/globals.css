@@ -261,7 +261,11 @@ main {
 /* Card hover effect */
 .card-hover {
   @apply transition-all duration-300;
-  @apply hover:shadow-medium hover:-translate-y-1;
+}
+
+.card-hover:hover {
+  box-shadow: 0 4px 16px rgba(20, 74, 146, 0.12);
+  transform: translateY(-4px);
 }
 
 /* Backdrop blur effect */
