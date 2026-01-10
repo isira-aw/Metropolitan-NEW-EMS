@@ -57,7 +57,9 @@ export default function EmployeeDashboard() {
 
   
 
-  if (loading) return <LoadingSpinner />;
+  if (loading) {
+    return <LoadingSpinner />;
+  }
 
   return (
     <EmployeeLayout pendingJobsCount={dashboard?.pendingJobCards || 0}>

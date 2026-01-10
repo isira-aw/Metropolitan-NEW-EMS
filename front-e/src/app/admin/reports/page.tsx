@@ -128,7 +128,9 @@ export default function AdminReports() {
     return `${hours}h ${mins}m`;
   };
 
-  if (loading) return <LoadingSpinner />;
+  if (loading) {
+    return <LoadingSpinner />;
+  }
 
   return (
     <AdminLayout>

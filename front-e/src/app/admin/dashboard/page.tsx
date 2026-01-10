@@ -31,7 +31,9 @@ export default function AdminDashboard() {
     }
   };
 
-  if (loading) return <LoadingSpinner />;
+  if (loading) {
+    return <LoadingSpinner />;
+  }
 
   return (
     <AdminLayout>

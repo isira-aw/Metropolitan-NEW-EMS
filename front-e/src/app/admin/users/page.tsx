@@ -122,7 +122,9 @@ export default function AdminUsers() {
     }
   };
 
-  if (loading) return <LoadingSpinner />;
+  if (loading) {
+    return <LoadingSpinner />;
+  }
 
   return (
     <AdminLayout>

@@ -100,7 +100,9 @@ export default function AdminGeneratorDetail() {
     loadTickets(0);
   };
 
-  if (loading) return <LoadingSpinner />;
+  if (loading) {
+    return <LoadingSpinner />;
+  }
   if (!generator) return <div className="p-6">Generator not found</div>;
 
   return (

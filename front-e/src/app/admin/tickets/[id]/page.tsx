@@ -131,7 +131,9 @@ Thank you for choosing Metropolitan EMS.`;
     }
   };
 
-  if (loading) return <LoadingSpinner />;
+  if (loading) {
+    return <LoadingSpinner />;
+  }
   if (!ticket) return <div className="p-6">Ticket not found</div>;
 
   return (

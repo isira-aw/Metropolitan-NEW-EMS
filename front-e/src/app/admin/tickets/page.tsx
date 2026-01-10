@@ -311,7 +311,9 @@ export default function AdminTickets() {
     }));
   };
 
-  if (loading) return <LoadingSpinner />;
+  if (loading) {
+    return <LoadingSpinner />;
+  }
 
   return (
     <AdminLayout>

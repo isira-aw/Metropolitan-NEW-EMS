@@ -112,7 +112,9 @@ export default function AdminGenerators() {
     }
   };
 
-  if (loading) return <LoadingSpinner />;
+  if (loading) {
+    return <LoadingSpinner />;
+  }
 
   return (
     <AdminLayout>
@@ -214,7 +216,6 @@ export default function AdminGenerators() {
           </div>
         </div>
       )}
-      </div>
     </AdminLayout>
   );
 }

@@ -105,7 +105,9 @@ export default function AdminApprovals() {
     );
   };
 
-  if (loading) return <LoadingSpinner />;
+  if (loading) {
+    return <LoadingSpinner />;
+  }
 
   return (
     <AdminLayout>
