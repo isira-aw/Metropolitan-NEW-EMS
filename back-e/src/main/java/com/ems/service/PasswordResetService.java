@@ -33,7 +33,7 @@ public class PasswordResetService {
     private int tokenExpiryMinutes;
 
     @Transactional
-    public void requestPasswordReset(String emailOrPhone) {
+    public boolean requestPasswordReset(String emailOrPhone) {
         // Try to find user by email or phone
         Optional<User> userOptional = userRepository.findByEmail(emailOrPhone);
 
@@ -41,11 +41,10 @@ public class PasswordResetService {
             userOptional = userRepository.findByPhone(emailOrPhone);
         }
 
-        // SECURITY: Don't reveal if user exists or not (prevent user enumeration)
+        // Check if user exists
         if (userOptional.isEmpty()) {
             log.warn("Password reset requested for non-existent user: {}", emailOrPhone);
-            // Still return success to prevent user enumeration
-            return;
+            return false; // User not found
         }
 
         User user = userOptional.get();
@@ -53,8 +52,7 @@ public class PasswordResetService {
         // Check if user is active
         if (Boolean.FALSE.equals(user.getActive())) {
             log.warn("Password reset requested for inactive user: {}", user.getUsername());
-            // Still return success to prevent user enumeration
-            return;
+            return false; // User is inactive
         }
 
         // Invalidate any existing valid tokens for this user
@@ -82,6 +80,7 @@ public class PasswordResetService {
         );
 
         log.info("Password reset token generated for user: {}", user.getUsername());
+        return true; // User found and reset link sent
     }
 
     @Transactional

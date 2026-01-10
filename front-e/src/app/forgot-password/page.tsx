@@ -23,12 +23,24 @@ export default function ForgotPassword() {
         emailOrPhone,
       });
 
-      setMessage(response.data.message);
-      setEmailOrPhone('');
+      if (response.data.success) {
+        // User is registered - show success message and redirect to login
+        setMessage(response.data.message + ' Redirecting to login page...');
+        setEmailOrPhone('');
+
+        // Redirect to login page after 3 seconds
+        setTimeout(() => {
+          router.push('/login');
+        }, 3000);
+      } else {
+        // User not found - show error message
+        setError(response.data.message);
+      }
     } catch (err: any) {
-      // Even on error, show the generic message to prevent user enumeration
-      if (err.response?.data?.message) {
-        setMessage(err.response.data.message);
+      if (err.response?.data?.error) {
+        setError(err.response.data.error);
+      } else if (err.response?.data?.message) {
+        setError(err.response.data.message);
       } else {
         setError('Failed to process request. Please try again.');
       }

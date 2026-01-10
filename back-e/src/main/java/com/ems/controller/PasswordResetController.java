@@ -23,16 +23,24 @@ public class PasswordResetController {
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         try {
-            passwordResetService.requestPasswordReset(request.getEmailOrPhone());
-            // Always return success message to prevent user enumeration
-            return ResponseEntity.ok(Map.of(
-                    "message", "If an account exists with this email or phone, a password reset link has been sent."
-            ));
+            boolean userExists = passwordResetService.requestPasswordReset(request.getEmailOrPhone());
+
+            if (userExists) {
+                return ResponseEntity.ok(Map.of(
+                        "success", true,
+                        "message", "User is registered. A password reset link has been sent to your email/phone."
+                ));
+            } else {
+                return ResponseEntity.ok(Map.of(
+                        "success", false,
+                        "message", "No account found with this email or phone number. Please check and try again, or contact support."
+                ));
+            }
         } catch (Exception e) {
             log.error("Error processing forgot password request", e);
-            // Return generic success message to prevent user enumeration
-            return ResponseEntity.ok(Map.of(
-                    "message", "If an account exists with this email or phone, a password reset link has been sent."
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "error", "Failed to process password reset request. Please try again."
             ));
         }
     }
