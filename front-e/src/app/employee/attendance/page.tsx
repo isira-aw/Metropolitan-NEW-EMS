@@ -10,26 +10,19 @@ import Pagination from '@/components/ui/Pagination';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { formatDate, formatDateTime, formatMinutes } from '@/lib/utils/format';
 import { User } from 'lucide-react';
+import EmployeeLayout from '@/components/layouts/EmployeeLayout';
 
 export default function EmployeeAttendance() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [history, setHistory] = useState<PageResponse<EmployeeDayAttendance> | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
-  const [user, setUser] = useState<any>(null);
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
 
   useEffect(() => {
-    const role = authService.getRole();
-    if (role !== 'EMPLOYEE') {
-      router.push('/login');
-      return;
-    }
-
-    setUser(authService.getStoredUser());
+    
     loadHistory(0);
-  }, [router]);
+  }, []);
 
   const loadHistory = async (page: number) => {
     try {

@@ -206,3 +206,83 @@ body {
 .action-buttons {
   @apply flex gap-2 justify-end;
 }
+
+/* ============================================
+   SIDEBAR & LAYOUT ENHANCEMENTS
+   ============================================ */
+
+/* Smooth scrollbar styling for sidebar */
+aside::-webkit-scrollbar {
+  width: 6px;
+}
+
+aside::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+aside::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+aside::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Page transitions */
+main {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Enhanced shadow utilities */
+.shadow-soft {
+  box-shadow: 0 2px 8px rgba(20, 74, 146, 0.08);
+}
+
+.shadow-medium {
+  box-shadow: 0 4px 16px rgba(20, 74, 146, 0.12);
+}
+
+.shadow-strong {
+  box-shadow: 0 8px 24px rgba(20, 74, 146, 0.16);
+}
+
+/* Card hover effect */
+.card-hover {
+  @apply transition-all duration-300;
+  @apply hover:shadow-medium hover:-translate-y-1;
+}
+
+/* Backdrop blur effect */
+.backdrop-blur {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Focus ring with brand color */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-corporate-blue focus:ring-offset-2;
+}
+
+/* Glassmorphism effect */
+.glass {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Smooth transitions */
+.transition-smooth {
+  @apply transition-all duration-300 ease-in-out;
+}

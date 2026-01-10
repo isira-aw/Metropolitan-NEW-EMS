@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { reportService, userService } from '@/lib/services/admin.service';
 import { authService } from '@/lib/services/auth.service';
-import AdminNav from '@/components/layouts/AdminNav';
+import AdminLayout from '@/components/layouts/AdminLayout';
 import Card from '@/components/ui/Card';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import {
@@ -17,7 +17,6 @@ import {
 export default function AdminReports() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
   const [employees, setEmployees] = useState<User[]>([]);
 
   // Filters
@@ -36,13 +35,7 @@ export default function AdminReports() {
   const [showReport2, setShowReport2] = useState(false);
 
   useEffect(() => {
-    const role = authService.getRole();
-    if (role !== 'ADMIN') {
-      router.push('/login');
-      return;
-    }
-
-    setUser(authService.getStoredUser());
+    
     loadEmployees();
 
     // Set default dates (last 7 days)
@@ -53,7 +46,7 @@ export default function AdminReports() {
     setStartDate(start.toISOString().split('T')[0]);
 
     setLoading(false);
-  }, [router]);
+  }, []);
 
   const loadEmployees = async () => {
     try {

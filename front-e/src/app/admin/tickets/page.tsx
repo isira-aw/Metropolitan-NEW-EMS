@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ticketService, generatorService, userService } from '@/lib/services/admin.service';
 import { authService } from '@/lib/services/auth.service';
 import { MainTicket, MainTicketRequest, PageResponse, Generator, User, JobCardType, JobStatus, TicketAssignment } from '@/types';
-import AdminNav from '@/components/layouts/AdminNav';
+import AdminLayout from '@/components/layouts/AdminLayout';
 import Card from '@/components/ui/Card';
 import StatusBadge from '@/components/ui/StatusBadge';
 import Pagination from '@/components/ui/Pagination';
@@ -51,16 +51,9 @@ export default function AdminTickets() {
     scheduledTime: '09:00:00',
     employeeIds: [],
   });
-  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    const role = authService.getRole();
-    if (role !== 'ADMIN') {
-      router.push('/login');
-      return;
-    }
-
-    setUser(authService.getStoredUser());
+    
     loadTickets(0);
     loadGenerators();
     loadEmployees();
@@ -321,10 +314,8 @@ export default function AdminTickets() {
   if (loading) return <LoadingSpinner />;
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <AdminNav currentPage="Tickets" user={user} />
-
-      <div className="container mx-auto p-6">
+    <AdminLayout>
+      <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-3xl font-bold">Ticket Management</h2>
           <button onClick={handleCreate} className="btn-primary">+ Create Ticket</button>

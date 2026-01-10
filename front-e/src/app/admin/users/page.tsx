@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { userService } from '@/lib/services/admin.service';
 import { authService } from '@/lib/services/auth.service';
 import { User, UserRequest, PageResponse, UserRole } from '@/types';
-import AdminNav from '@/components/layouts/AdminNav';
+import AdminLayout from '@/components/layouts/AdminLayout';
 import Card from '@/components/ui/Card';
 import Pagination from '@/components/ui/Pagination';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
@@ -28,18 +28,10 @@ export default function AdminUsers() {
     email: '',
     active: true,
   });
-  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    const role = authService.getRole();
-    if (role !== 'ADMIN') {
-      router.push('/login');
-      return;
-    }
-
-    setUser(authService.getStoredUser());
     loadUsers(0);
-  }, [router]);
+  }, []);
 
   const loadUsers = async (page: number, query = '') => {
     try {
@@ -133,10 +125,8 @@ export default function AdminUsers() {
   if (loading) return <LoadingSpinner />;
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <AdminNav currentPage="Users" user={user} />
-
-      <div className="container mx-auto p-6">
+    <AdminLayout>
+      <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-3xl font-bold">User Management</h2>
           <button onClick={handleCreate} className="btn-primary">+ Create User</button>
@@ -316,6 +306,7 @@ export default function AdminUsers() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </AdminLayout>
   );
 }

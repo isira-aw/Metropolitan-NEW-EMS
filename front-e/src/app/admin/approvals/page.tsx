@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { approvalService } from '@/lib/services/admin.service';
 import { authService } from '@/lib/services/auth.service';
 import { MiniJobCard, PageResponse } from '@/types';
-import AdminNav from '@/components/layouts/AdminNav';
+import AdminLayout from '@/components/layouts/AdminLayout';
 import Card from '@/components/ui/Card';
 import StatusBadge from '@/components/ui/StatusBadge';
 import Pagination from '@/components/ui/Pagination';
@@ -19,18 +19,11 @@ export default function AdminApprovals() {
   const [pending, setPending] = useState<PageResponse<MiniJobCard> | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    const role = authService.getRole();
-    if (role !== 'ADMIN') {
-      router.push('/login');
-      return;
-    }
-
-    setUser(authService.getStoredUser());
+    
     loadPending(0);
-  }, [router]);
+  }, []);
 
   const loadPending = async (page: number) => {
     try {
@@ -115,10 +108,8 @@ export default function AdminApprovals() {
   if (loading) return <LoadingSpinner />;
 
   return (
-    <div className="min-h-screen bg-light-bg">
-      <AdminNav currentPage="Approvals" user={user} />
-
-      <div className="container mx-auto p-4 md:p-6">
+    <AdminLayout>
+      <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <h2 className="text-3xl font-bold text-pure-black">Pending Approvals</h2>
           {selectedIds.length > 0 && (

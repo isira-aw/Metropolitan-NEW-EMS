@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { generatorService } from '@/lib/services/admin.service';
 import { authService } from '@/lib/services/auth.service';
 import { Generator, GeneratorRequest, PageResponse } from '@/types';
-import AdminNav from '@/components/layouts/AdminNav';
+import AdminLayout from '@/components/layouts/AdminLayout';
 import Card from '@/components/ui/Card';
 import Pagination from '@/components/ui/Pagination';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
@@ -29,18 +29,10 @@ export default function AdminGenerators() {
     landlineNumber: '',
     note: '',
   });
-  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    const role = authService.getRole();
-    if (role !== 'ADMIN') {
-      router.push('/login');
-      return;
-    }
-
-    setUser(authService.getStoredUser());
     loadGenerators(0);
-  }, [router]);
+  }, []);
 
   const loadGenerators = async (page: number, query = '') => {
     try {
@@ -123,10 +115,8 @@ export default function AdminGenerators() {
   if (loading) return <LoadingSpinner />;
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <AdminNav currentPage="Generators" user={user} />
-
-      <div className="container mx-auto p-6">
+    <AdminLayout>
+      <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-3xl font-bold">Generator Management</h2>
           <button onClick={handleCreate} className="btn-primary">+ Create Generator</button>
@@ -224,6 +214,7 @@ export default function AdminGenerators() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </AdminLayout>
   );
 }

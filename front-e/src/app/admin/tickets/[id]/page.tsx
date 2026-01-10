@@ -21,7 +21,6 @@ export default function AdminTicketDetail() {
   const [ticket, setTicket] = useState<MainTicket | null>(null);
   const [miniJobs, setMiniJobs] = useState<PageResponse<MiniJobCard> | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
-  const [user, setUser] = useState<any>(null);
 
   // Notification state
   const [showNotificationForm, setShowNotificationForm] = useState(false);
@@ -31,13 +30,7 @@ export default function AdminTicketDetail() {
   const [sendingNotification, setSendingNotification] = useState(false);
 
   useEffect(() => {
-    const role = authService.getRole();
-    if (role !== 'ADMIN') {
-      router.push('/login');
-      return;
-    }
-
-    setUser(authService.getStoredUser());
+    
     loadTicket();
     loadMiniJobs(0);
   }, [id, router]);
@@ -143,10 +136,8 @@ Thank you for choosing Metropolitan EMS.`;
   if (!ticket) return <div className="p-6">Ticket not found</div>;
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <AdminNav currentPage="Tickets" user={user} />
-
-      <div className="container mx-auto p-6">
+    <AdminLayout>
+      <div className="max-w-7xl mx-auto">
         <button
           onClick={() => router.push('/admin/tickets')}
           className="btn-secondary mb-6"

@@ -21,20 +21,13 @@ export default function AdminGeneratorDetail() {
   const [statistics, setStatistics] = useState<GeneratorStatistics | null>(null);
   const [tickets, setTickets] = useState<PageResponse<MainTicket> | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
-  const [user, setUser] = useState<any>(null);
 
   // Date filter state
   const [selectedDate, setSelectedDate] = useState('');
   const [dateFilterActive, setDateFilterActive] = useState(false);
 
   useEffect(() => {
-    const role = authService.getRole();
-    if (role !== 'ADMIN') {
-      router.push('/login');
-      return;
-    }
-
-    setUser(authService.getStoredUser());
+    
     loadGenerator();
     loadStatistics();
     loadTickets(0);
@@ -112,10 +105,8 @@ export default function AdminGeneratorDetail() {
   if (!generator) return <div className="p-6">Generator not found</div>;
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <AdminNav currentPage="Generators" user={user} />
-
-      <div className="container mx-auto p-6">
+    <AdminLayout>
+      <div className="max-w-7xl mx-auto">
         <button
           onClick={() => router.push('/admin/generators')}
           className="btn-secondary mb-6"
