@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
+import { Mail, ArrowLeft, CheckCircle2, AlertCircle, Loader2, ShieldQuestion } from 'lucide-react';
 
 export default function ForgotPassword() {
   const router = useRouter();
@@ -24,84 +25,119 @@ export default function ForgotPassword() {
       });
 
       if (response.data.success) {
-        // User is registered - show success message and redirect to login
-        setMessage(response.data.message + ' Redirecting to login page...');
+        setMessage(response.data.message);
         setEmailOrPhone('');
-
-        // Redirect to login page after 3 seconds
         setTimeout(() => {
           router.push('/login');
-        }, 3000);
+        }, 4000);
       } else {
-        // User not found - show error message
         setError(response.data.message);
       }
     } catch (err: any) {
-      if (err.response?.data?.error) {
-        setError(err.response.data.error);
-      } else if (err.response?.data?.message) {
-        setError(err.response.data.message);
-      } else {
-        setError('Failed to process request. Please try again.');
-      }
+      setError(err.response?.data?.error || err.response?.data?.message || 'System recovery failed. Contact Admin.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600">
-      <div className="bg-white p-8 rounded-lg shadow-2xl w-96">
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Forgot Password</h1>
-          <p className="text-gray-600">
-            Enter your email or phone number to receive a password reset link
-          </p>
+    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] relative overflow-hidden">
+      {/* Background Brand Elements */}
+      <div className="absolute top-0 left-0 w-full h-1/2 bg-slate-900" />
+      
+      <div className="relative w-full max-w-[440px] px-6">
+        {/* Header Section */}
+        <div className="flex flex-col items-center mb-8">
+          <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-[2rem] flex items-center justify-center border border-white/20 mb-4">
+            <ShieldQuestion size={32} className="text-white" />
+          </div>
+          <h1 className="text-2xl font-black text-white tracking-tighter uppercase">
+            Account <span className="text-corporate-blue">Recovery</span>
+          </h1>
         </div>
 
-        {message && (
-          <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
-            {message}
+        {/* Recovery Card */}
+        <div className="bg-white rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] p-8 md:p-10 border border-slate-100">
+          {!message ? (
+            <>
+              <div className="mb-8 text-center md:text-left">
+                <h2 className="text-xl font-black text-slate-900">Forgot Password?</h2>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-tight mt-1">
+                  Enter your credentials to receive a secure link.
+                </p>
+              </div>
+
+              {error && (
+                <div className="mb-6 flex items-center gap-3 p-4 bg-red-50 rounded-2xl border border-red-100 text-red-600">
+                  <AlertCircle size={18} />
+                  <p className="text-[10px] font-black uppercase tracking-tight">{error}</p>
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">
+                    Registered Email or Phone
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                    <input
+                      type="text"
+                      className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl py-4 pl-12 pr-4 text-sm font-bold text-slate-900 focus:bg-white focus:border-corporate-blue transition-all outline-none"
+                      placeholder="name@metropolitan.com"
+                      value={emailOrPhone}
+                      onChange={(e) => setEmailOrPhone(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-slate-900 hover:bg-corporate-blue text-white font-black uppercase tracking-[0.15em] py-5 rounded-2xl shadow-xl transition-all active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-70"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="animate-spin" size={20} />
+                      <span>Processing...</span>
+                    </>
+                  ) : (
+                    'Request Reset Link'
+                  )}
+                </button>
+              </form>
+            </>
+          ) : (
+            /* Success State */
+            <div className="text-center py-4">
+              <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6 text-green-500">
+                <CheckCircle2 size={48} />
+              </div>
+              <h2 className="text-xl font-black text-slate-900 mb-2">Check Your Inbox</h2>
+              <p className="text-sm font-bold text-slate-500 mb-8">
+                {message}
+              </p>
+              <div className="animate-pulse flex flex-col items-center gap-2">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  Redirecting to System Login
+                </p>
+                <div className="h-1 w-24 bg-slate-100 rounded-full overflow-hidden">
+                   <div className="h-full bg-corporate-blue animate-[loading_4s_ease-in-out]" style={{width: '100%'}}></div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-8 pt-6 border-t border-slate-50 text-center">
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-2 text-[10px] font-black text-slate-400 hover:text-slate-900 uppercase tracking-widest transition-colors"
+            >
+              <ArrowLeft size={14} />
+              Return to Login
+            </Link>
           </div>
-        )}
-
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Email or Phone Number
-            </label>
-            <input
-              type="text"
-              value={emailOrPhone}
-              onChange={(e) => setEmailOrPhone(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter your email or phone number"
-              required
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Sending...' : 'Send Reset Link'}
-          </button>
-        </form>
-
-        <div className="mt-6 text-center">
-          <Link
-            href="/login"
-            className="text-blue-500 hover:text-blue-600 text-sm font-medium"
-          >
-            Back to Login
-          </Link>
         </div>
       </div>
     </div>

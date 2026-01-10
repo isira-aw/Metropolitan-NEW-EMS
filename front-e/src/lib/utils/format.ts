@@ -1,6 +1,6 @@
 import { format, parseISO } from 'date-fns';
 
-export const formatDate = (date: string | Date): string => {
+export const formatDate = (date: string | Date | undefined): string => {
   if (!date) return '-';
   try {
     const d = typeof date === 'string' ? parseISO(date) : date;
@@ -10,7 +10,7 @@ export const formatDate = (date: string | Date): string => {
   }
 };
 
-export const formatDateTime = (date: string | Date): string => {
+export const formatDateTime = (date: string | Date | undefined): string => {
   if (!date) return '-';
   try {
     const d = typeof date === 'string' ? parseISO(date) : date;
@@ -20,7 +20,7 @@ export const formatDateTime = (date: string | Date): string => {
   }
 };
 
-export const formatTime = (date: string | Date): string => {
+export const formatTime = (date: string | Date | undefined): string => {
   if (!date) return '-';
   try {
     const d = typeof date === 'string' ? parseISO(date) : date;
