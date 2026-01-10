@@ -69,7 +69,7 @@ export default function EmployeeJobCards() {
 
   return (
     <EmployeeLayout pendingJobsCount={pendingCount}>
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Page Title - Mobile Optimized */}
         <div className="mb-4 sm:mb-6">
           <h2 className="text-2xl sm:text-3xl font-bold text-pure-black">My Job Cards</h2>
@@ -115,8 +115,8 @@ export default function EmployeeJobCards() {
         </Card>
 
         {/* Filter Tabs - Mobile Optimized with Smooth Scrolling */}
-        <div className="mb-6">
-          <div className="flex gap-2 overflow-x-auto pb-3 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        <div className="mb-6 -mx-4 px-4 sm:mx-0 sm:px-0">
+          <div className="flex gap-2 overflow-x-auto pb-3 sm:flex-wrap scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             <button
               onClick={() => setStatusFilter('ALL')}
               className={`px-5 py-3 rounded-lg font-semibold whitespace-nowrap transition-all active:scale-95 ${
@@ -167,9 +167,9 @@ export default function EmployeeJobCards() {
             jobCards.content.map((card) => (
               <Card
                 key={card.id}
-                className="relative hover:shadow-xl transition-all cursor-pointer active:scale-[0.98] border-2 border-slate-200 hover:border-corporate-blue bg-white overflow-hidden"
+                className="relative hover:shadow-xl transition-all cursor-pointer active:scale-[0.98] border-2 border-slate-200 hover:border-corporate-blue bg-white overflow-hidden w-full"
                 onClick={() => router.push(`/employee/job-cards/${card.id}`)}
-                style={{ minHeight: '44px' }} // Ensure good touch target
+                style={{ minHeight: '220px' }}
               >
                 {/* Priority Indicator Bar */}
                 <div
@@ -185,8 +185,8 @@ export default function EmployeeJobCards() {
 
                 {/* Card Header */}
                 <div className="pt-2">
-                  <div className="flex justify-between items-start gap-3 mb-3">
-                    <h3 className="font-bold text-base sm:text-lg text-pure-black leading-tight flex-1 line-clamp-2">
+                  <div className="flex justify-between items-start gap-2 mb-3">
+                    <h3 className="font-bold text-base sm:text-lg text-pure-black leading-tight flex-1 line-clamp-2 break-words">
                       {card.mainTicket.title}
                     </h3>
                     <div className="flex-shrink-0">
@@ -198,26 +198,26 @@ export default function EmployeeJobCards() {
                 {/* Card Details - Optimized for Mobile */}
                 <div className="space-y-2.5 mb-4">
                   <div className="flex items-start gap-2 text-sm bg-slate-50 p-2 rounded">
-                    <span className="text-slate-600 font-medium text-xs">🎫</span>
-                    <div className="flex-1">
+                    <span className="text-slate-600 font-medium text-xs flex-shrink-0">🎫</span>
+                    <div className="flex-1 min-w-0">
                       <span className="text-xs text-slate-500">Ticket Number</span>
-                      <p className="text-sm text-pure-black font-semibold">{card.mainTicket.ticketNumber}</p>
+                      <p className="text-sm text-pure-black font-semibold truncate">{card.mainTicket.ticketNumber}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2 text-sm bg-blue-50 px-3 py-2 rounded flex-1">
-                      <span className="text-xs">🔧</span>
-                      <div>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 text-sm bg-blue-50 px-2 py-2 rounded flex-1 min-w-0">
+                      <span className="text-xs flex-shrink-0">🔧</span>
+                      <div className="min-w-0">
                         <span className="text-xs text-slate-600 block">Type</span>
-                        <span className="text-sm font-medium text-pure-black">{card.mainTicket.type}</span>
+                        <span className="text-sm font-medium text-pure-black truncate block">{card.mainTicket.type}</span>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 bg-yellow-50 px-3 py-2 rounded">
+                    <div className="flex items-center gap-1 bg-yellow-50 px-2 py-2 rounded flex-shrink-0">
                       <span className="flex items-center gap-0.5">
                         {Array.from({ length: card.mainTicket.weight }).map((_, i) => (
-                          <Star key={i} size={16} className="text-yellow-500 fill-yellow-500" />
+                          <Star key={i} size={14} className="text-yellow-500 fill-yellow-500" />
                         ))}
                       </span>
                     </div>
@@ -226,24 +226,24 @@ export default function EmployeeJobCards() {
 
                 {/* Card Footer - Enhanced for Mobile */}
                 <div className="border-t-2 border-slate-100 pt-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-blue-50 p-3 rounded-lg">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Clock size={14} className="text-corporate-blue" />
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-blue-50 p-2.5 rounded-lg">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <Clock size={12} className="text-corporate-blue flex-shrink-0" />
                         <p className="text-xs text-slate-600 font-medium">Work Time</p>
                       </div>
-                      <p className="text-base font-bold text-corporate-blue">{formatMinutes(card.workMinutes)}</p>
+                      <p className="text-sm font-bold text-corporate-blue">{formatMinutes(card.workMinutes)}</p>
                     </div>
-                    <div className={`p-3 rounded-lg ${card.approved ? 'bg-green-50' : 'bg-orange-50'}`}>
-                      <div className="flex items-center gap-2 mb-1">
+                    <div className={`p-2.5 rounded-lg ${card.approved ? 'bg-green-50' : 'bg-orange-50'}`}>
+                      <div className="flex items-center gap-1.5 mb-1">
                         {card.approved ? (
-                          <CheckCircle size={14} className="text-green-600" />
+                          <CheckCircle size={12} className="text-green-600 flex-shrink-0" />
                         ) : (
-                          <Clock size={14} className="text-orange-500" />
+                          <Clock size={12} className="text-orange-500 flex-shrink-0" />
                         )}
                         <p className="text-xs text-slate-600 font-medium">Approval</p>
                       </div>
-                      <p className={`text-base font-bold ${card.approved ? 'text-green-600' : 'text-orange-500'}`}>
+                      <p className={`text-sm font-bold ${card.approved ? 'text-green-600' : 'text-orange-500'}`}>
                         {card.approved ? 'Approved' : 'Pending'}
                       </p>
                     </div>
