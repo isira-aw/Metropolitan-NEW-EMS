@@ -49,6 +49,9 @@ public class TicketService {
     @Autowired
     private LogService logService;
 
+    @Autowired
+    private NotificationService notificationService;
+
     @Transactional
     public MainTicket createMainTicket(MainTicketRequest request, String createdBy) {
         Generator generator = generatorRepository.findById(request.getGeneratorId())
@@ -217,22 +220,54 @@ public class TicketService {
         List<MiniJobCard> miniJobCards = miniJobCardRepository.findByMainTicketId(mainTicketId);
         MainTicket mainTicket = mainTicketRepository.findById(mainTicketId)
                 .orElseThrow(() -> new RuntimeException("Main ticket not found"));
-        
+
         boolean allCompleted = miniJobCards.stream()
                 .allMatch(mjc -> mjc.getStatus() == JobStatus.COMPLETED || mjc.getStatus() == JobStatus.CANCEL);
-        
+
         boolean anyStarted = miniJobCards.stream()
-                .anyMatch(mjc -> mjc.getStatus() == JobStatus.STARTED || 
+                .anyMatch(mjc -> mjc.getStatus() == JobStatus.STARTED ||
                                 mjc.getStatus() == JobStatus.TRAVELING ||
                                 mjc.getStatus() == JobStatus.ON_HOLD);
-        
+
         if (allCompleted) {
             mainTicket.setStatus(JobStatus.COMPLETED);
         } else if (anyStarted) {
             mainTicket.setStatus(JobStatus.STARTED);
         }
-        
+
         mainTicketRepository.save(mainTicket);
+    }
+
+    // Manual notification method - called by admin from UI
+    public void sendCustomNotificationToOwner(Long mainTicketId, String customMessage, boolean sendEmail, boolean sendWhatsApp) {
+        MainTicket mainTicket = mainTicketRepository.findById(mainTicketId)
+                .orElseThrow(() -> new RuntimeException("Main ticket not found"));
+
+        Generator generator = mainTicket.getGenerator();
+        String ownerEmail = generator.getOwnerEmail();
+        String ownerPhone = generator.getWhatsAppNumber();
+
+        // Send via email if requested and email is available
+        if (sendEmail && ownerEmail != null && !ownerEmail.isEmpty()) {
+            try {
+                notificationService.sendCustomEmail(ownerEmail, mainTicket.getTicketNumber(), generator.getName(), customMessage);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to send email: " + e.getMessage());
+            }
+        }
+
+        // Send via WhatsApp if requested and phone is available
+        if (sendWhatsApp && ownerPhone != null && !ownerPhone.isEmpty()) {
+            try {
+                notificationService.sendCustomWhatsApp(ownerPhone, mainTicket.getTicketNumber(), generator.getName(), customMessage);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to send WhatsApp message: " + e.getMessage());
+            }
+        }
+
+        if (!sendEmail && !sendWhatsApp) {
+            throw new RuntimeException("Please select at least one notification method (Email or WhatsApp)");
+        }
     }
     
     private void validateStatusTransition(JobStatus current, JobStatus next) {

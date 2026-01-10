@@ -269,4 +269,45 @@ public class AdminTicketController {
         MainTicket ticket = ticketService.cancelTicket(id);
         return ResponseEntity.ok(ticket);
     }
+
+    /**
+     * Send custom notification to generator owner
+     * Admin can send custom message via Email and/or WhatsApp
+     *
+     * @param id Ticket ID
+     * @param request SendNotificationRequest with message and delivery preferences
+     * @return Success message
+     */
+    @PostMapping("/{id}/send-notification")
+    public ResponseEntity<?> sendNotificationToOwner(
+            @PathVariable Long id,
+            @Valid @RequestBody com.ems.dto.SendNotificationRequest request) {
+        try {
+            ticketService.sendCustomNotificationToOwner(
+                id,
+                request.getMessage(),
+                request.isSendEmail(),
+                request.isSendWhatsApp()
+            );
+
+            String deliveryMethod = "";
+            if (request.isSendEmail() && request.isSendWhatsApp()) {
+                deliveryMethod = "Email and WhatsApp";
+            } else if (request.isSendEmail()) {
+                deliveryMethod = "Email";
+            } else if (request.isSendWhatsApp()) {
+                deliveryMethod = "WhatsApp";
+            }
+
+            return ResponseEntity.ok(java.util.Map.of(
+                "success", true,
+                "message", "Notification sent successfully via " + deliveryMethod
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of(
+                "success", false,
+                "error", e.getMessage()
+            ));
+        }
+    }
 }

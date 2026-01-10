@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import apiClient from '@/lib/api';
 
 export default function LoginPage() {
@@ -68,7 +69,7 @@ export default function LoginPage() {
             />
           </div>
 
-          <div className="mb-6">
+          <div className="mb-2">
             <label className="block text-gray-700 mb-2">Password</label>
             <input
               type="password"
@@ -77,6 +78,15 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
+          </div>
+
+          <div className="mb-6 text-right">
+            <Link
+              href="/forgot-password"
+              className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+            >
+              Forgot Password?
+            </Link>
           </div>
 
           <button
