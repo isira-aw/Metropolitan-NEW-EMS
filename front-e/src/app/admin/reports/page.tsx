@@ -11,16 +11,18 @@ import {
   EmployeeDailyWorkTimeReportDTO,
   User,
 } from '@/types';
-import { 
-  Calendar, 
-  User as UserIcon, 
-  FileText, 
-  TrendingUp, 
-  Clock, 
-  MapPin, 
-  X, 
+import {
+  Calendar,
+  User as UserIcon,
+  FileText,
+  TrendingUp,
+  Clock,
+  MapPin,
+  X,
   ChevronRight,
-  BarChart3
+  BarChart3,
+  Map,
+  ExternalLink
 } from 'lucide-react';
 
 export default function AdminReports() {
@@ -107,6 +109,14 @@ export default function AdminReports() {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return `${hours}h ${mins}m`;
+  };
+
+  const generateMapUrl = (locationPath?: any[]) => {
+    if (!locationPath || locationPath.length === 0) return null;
+    const coords = locationPath
+      .map(point => `${point.latitude},${point.longitude}`)
+      .join('/');
+    return `https://www.google.com/maps/dir/${coords}`;
   };
 
   if (loading) return <LoadingSpinner />;
@@ -226,27 +236,46 @@ export default function AdminReports() {
                       <table className="w-full">
                         <thead>
                           <tr className="border-b-2 border-slate-100">
-                            {['Employee', 'Date', 'Shift', 'Location', 'Working', 'Idle', 'Travel', 'Total'].map((h) => (
+                            {['Employee', 'Date', 'Shift', 'Location', 'Working', 'Idle', 'Travel', 'Total', 'Location Map'].map((h) => (
                               <th key={h} className="pb-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>
                             ))}
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
-                          {timeTrackingReport.map((row, i) => (
-                            <tr key={i} className="hover:bg-slate-50/50 transition-colors">
-                              <td className="py-6 text-sm font-black text-slate-900 uppercase">{row.employeeName}</td>
-                              <td className="py-6 text-sm font-bold text-slate-600">{formatDateLabel(row.date)}</td>
-                              <td className="py-6">
-                                <div className="text-[10px] font-black text-corporate-blue uppercase">{formatTime(row.startTime)}</div>
-                                <div className="text-[10px] font-black text-slate-300 uppercase">{formatTime(row.endTime)}</div>
-                              </td>
-                              <td className="py-6 text-sm font-bold text-slate-600 flex items-center gap-1"><MapPin size={14} className="text-slate-300" /> {row.location || '—'}</td>
-                              <td className="py-6 text-sm font-black text-slate-700">{formatMinutesLocal(row.dailyWorkingMinutes)}</td>
-                              <td className="py-6 text-sm font-black text-orange-500">{formatMinutesLocal(row.idleMinutes)}</td>
-                              <td className="py-6 text-sm font-black text-blue-500">{formatMinutesLocal(row.travelMinutes)}</td>
-                              <td className="py-6 text-sm font-black text-slate-900">{formatMinutesLocal(row.totalMinutes)}</td>
-                            </tr>
-                          ))}
+                          {timeTrackingReport.map((row, i) => {
+                            const mapUrl = generateMapUrl(row.locationPath);
+                            return (
+                              <tr key={i} className="hover:bg-slate-50/50 transition-colors">
+                                <td className="py-6 text-sm font-black text-slate-900 uppercase">{row.employeeName}</td>
+                                <td className="py-6 text-sm font-bold text-slate-600">{formatDateLabel(row.date)}</td>
+                                <td className="py-6">
+                                  <div className="text-[10px] font-black text-corporate-blue uppercase">{formatTime(row.startTime)}</div>
+                                  <div className="text-[10px] font-black text-slate-300 uppercase">{formatTime(row.endTime)}</div>
+                                </td>
+                                <td className="py-6 text-sm font-bold text-slate-600 flex items-center gap-1"><MapPin size={14} className="text-slate-300" /> {row.location || '—'}</td>
+                                <td className="py-6 text-sm font-black text-slate-700">{formatMinutesLocal(row.dailyWorkingMinutes)}</td>
+                                <td className="py-6 text-sm font-black text-orange-500">{formatMinutesLocal(row.idleMinutes)}</td>
+                                <td className="py-6 text-sm font-black text-blue-500">{formatMinutesLocal(row.travelMinutes)}</td>
+                                <td className="py-6 text-sm font-black text-slate-900">{formatMinutesLocal(row.totalMinutes)}</td>
+                                <td className="py-6">
+                                  {mapUrl ? (
+                                    <a
+                                      href={mapUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-2 px-4 py-2 bg-corporate-blue text-white rounded-xl text-xs font-black uppercase hover:bg-blue-700 transition-colors shadow-sm"
+                                    >
+                                      <Map size={14} />
+                                      View Path
+                                      <ExternalLink size={12} />
+                                    </a>
+                                  ) : (
+                                    <span className="text-xs font-bold text-slate-300 uppercase">No data</span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>

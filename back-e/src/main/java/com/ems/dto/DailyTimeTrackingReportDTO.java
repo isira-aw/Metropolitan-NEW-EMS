@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * DTO for Daily Time Tracking Report
@@ -28,4 +29,18 @@ public class DailyTimeTrackingReportDTO {
     private Integer idleMinutes;
     private Integer travelMinutes;
     private Integer totalMinutes;
+    private List<LocationPoint> locationPath;
+
+    /**
+     * Represents a location point with coordinates
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class LocationPoint {
+        private Double latitude;
+        private Double longitude;
+        private LocalDateTime timestamp;
+    }
 }

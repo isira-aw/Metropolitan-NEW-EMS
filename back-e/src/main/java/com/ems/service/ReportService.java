@@ -712,6 +712,7 @@ public class ReportService {
                 int totalIdleMinutes = 0;
                 int totalTravelMinutes = 0;
                 String location = "";
+                List<DailyTimeTrackingReportDTO.LocationPoint> locationPath = new ArrayList<>();
 
                 for (MiniJobCard jobCard : jobCards) {
                     List<JobStatusLog> logs = jobStatusLogRepository
@@ -725,6 +726,19 @@ public class ReportService {
                                 location = jobCard.getMainTicket().getGenerator().getLocationName();
                                 break;
                             }
+                        }
+                    }
+
+                    // Collect all location points from logs (in chronological order)
+                    List<JobStatusLog> reversedLogs = new ArrayList<>(logs);
+                    Collections.reverse(reversedLogs);
+                    for (JobStatusLog log : reversedLogs) {
+                        if (log.getLatitude() != null && log.getLongitude() != null) {
+                            locationPath.add(DailyTimeTrackingReportDTO.LocationPoint.builder()
+                                    .latitude(log.getLatitude())
+                                    .longitude(log.getLongitude())
+                                    .timestamp(log.getLoggedAt())
+                                    .build());
                         }
                     }
 
@@ -757,6 +771,7 @@ public class ReportService {
                         .idleMinutes(totalIdleMinutes)
                         .travelMinutes(totalTravelMinutes)
                         .totalMinutes(attendance.getTotalWorkMinutes())
+                        .locationPath(locationPath)
                         .build();
 
                 reports.add(report);
