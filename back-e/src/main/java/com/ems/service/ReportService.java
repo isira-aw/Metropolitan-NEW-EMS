@@ -1,5 +1,6 @@
 package com.ems.service;
 
+import com.ems.config.TimeZoneConfig;
 import com.ems.dto.DailyTimeTrackingReportDTO;
 import com.ems.dto.EmployeeDailyWorkTimeReportDTO;
 import com.ems.dto.OTReportResponse;
@@ -37,6 +38,9 @@ public class ReportService {
 
     @Autowired
     private GeneratorRepository generatorRepository;
+
+    @Autowired
+    private TimeZoneConfig timeZoneConfig;
     
     public List<TimeTrackingReportResponse> getTimeTrackingReport(Long employeeId, LocalDate startDate, LocalDate endDate) {
         User employee = null;
@@ -445,7 +449,7 @@ public class ReportService {
                 .count();
 
         // Calculate monthly work and OT minutes
-        LocalDate today = LocalDate.now(java.time.ZoneId.of("Asia/Colombo"));
+        LocalDate today = LocalDate.now(timeZoneConfig.getZoneId());
         LocalDate firstDayOfMonth = today.withDayOfMonth(1);
         LocalDate lastDayOfMonth = today.withDayOfMonth(today.lengthOfMonth());
 

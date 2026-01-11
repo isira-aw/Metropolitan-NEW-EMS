@@ -1,5 +1,6 @@
 package com.ems.service;
 
+import com.ems.config.TimeZoneConfig;
 import com.ems.dto.EmployeeDashboardResponse;
 import com.ems.dto.MainTicketRequest;
 import com.ems.dto.StatusUpdateRequest;
@@ -15,7 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -48,6 +48,9 @@ public class TicketService {
 
     @Autowired
     private LogService logService;
+
+    @Autowired
+    private TimeZoneConfig timeZoneConfig;
 
     @Autowired
     private NotificationService notificationService;
@@ -122,7 +125,7 @@ public class TicketService {
         }
 
         // Employee Status Update Restriction: Only allow updating status for tickets scheduled for today
-        LocalDate today = LocalDate.now(ZoneId.of("Asia/Colombo"));
+        LocalDate today = LocalDate.now(timeZoneConfig.getZoneId());
         LocalDate ticketScheduledDate = miniJobCard.getMainTicket().getScheduledDate();
         if (!ticketScheduledDate.equals(today)) {
             throw new RuntimeException("Cannot update status for tickets not scheduled for today. This ticket is scheduled for " +
@@ -162,7 +165,7 @@ public class TicketService {
         // Validate location data
         validateLocationData(request.getLatitude(), request.getLongitude());
 
-        LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Colombo"));
+        LocalDateTime now = LocalDateTime.now(timeZoneConfig.getZoneId());
         
         JobStatusLog log = new JobStatusLog();
         log.setMiniJobCard(miniJobCard);
@@ -371,7 +374,7 @@ public class TicketService {
         employeeScore.setWorkDate(miniJobCard.getEndTime().toLocalDate());
         employeeScore.setWeight(weight); // Weight and score are the same
         employeeScore.setApprovedBy(adminUsername);
-        employeeScore.setApprovedAt(LocalDateTime.now(ZoneId.of("Asia/Colombo")));
+        employeeScore.setApprovedAt(LocalDateTime.now(timeZoneConfig.getZoneId()));
 
         return employeeScoreRepository.save(employeeScore);
     }
@@ -509,7 +512,7 @@ public class TicketService {
         long completedCount = allCards.stream().filter(c -> c.getStatus() == JobStatus.COMPLETED).count();
 
         // Get current month stats
-        LocalDate now = LocalDate.now(ZoneId.of("Asia/Colombo"));
+        LocalDate now = LocalDate.now(timeZoneConfig.getZoneId());
         LocalDate monthStart = now.withDayOfMonth(1);
 
         int totalWorkMinutes = allCards.stream()
@@ -857,7 +860,7 @@ public class TicketService {
                 employeeScore.setWorkDate(miniJobCard.getEndTime().toLocalDate());
                 employeeScore.setWeight(miniJobCard.getMainTicket().getWeight());
                 employeeScore.setApprovedBy(approvedBy);
-                employeeScore.setApprovedAt(LocalDateTime.now(ZoneId.of("Asia/Colombo")));
+                employeeScore.setApprovedAt(LocalDateTime.now(timeZoneConfig.getZoneId()));
                 employeeScoreRepository.save(employeeScore);
             } catch (Exception e) {
                 // Log but don't fail approval if score creation fails
@@ -918,7 +921,7 @@ public class TicketService {
 
         score.setWeight(newWeight); // Weight and score are the same
         score.setApprovedBy(updatedBy);
-        score.setApprovedAt(LocalDateTime.now(ZoneId.of("Asia/Colombo")));
+        score.setApprovedAt(LocalDateTime.now(timeZoneConfig.getZoneId()));
 
         return employeeScoreRepository.save(score);
     }
@@ -980,7 +983,7 @@ public class TicketService {
                     employeeScore.setWorkDate(jobCard.getEndTime().toLocalDate());
                     employeeScore.setWeight(jobCard.getMainTicket().getWeight());
                     employeeScore.setApprovedBy(adminUsername);
-                    employeeScore.setApprovedAt(LocalDateTime.now(ZoneId.of("Asia/Colombo")));
+                    employeeScore.setApprovedAt(LocalDateTime.now(timeZoneConfig.getZoneId()));
                     employeeScoreRepository.save(employeeScore);
                     count++;
                 } catch (Exception e) {
