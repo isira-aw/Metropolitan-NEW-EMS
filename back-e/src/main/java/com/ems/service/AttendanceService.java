@@ -1,5 +1,6 @@
 package com.ems.service;
 
+import com.ems.config.TimeZoneConfig;
 import com.ems.entity.EmployeeDayAttendance;
 import com.ems.entity.JobStatus;
 import com.ems.entity.MiniJobCard;
@@ -17,7 +18,6 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -36,6 +36,9 @@ public class AttendanceService {
     @Autowired
     private LogService logService;
 
+    @Autowired
+    private TimeZoneConfig timeZoneConfig;
+
     private static final LocalTime MORNING_OT_CUTOFF = LocalTime.of(8, 30);
     private static final LocalTime EVENING_OT_CUTOFF = LocalTime.of(17, 30);
     
@@ -43,8 +46,8 @@ public class AttendanceService {
         User employee = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
         
-        LocalDate today = LocalDate.now(ZoneId.of("Asia/Colombo"));
-        LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Colombo"));
+        LocalDate today = LocalDate.now(timeZoneConfig.getZoneId());
+        LocalDateTime now = LocalDateTime.now(timeZoneConfig.getZoneId());
         
         String uniqueKey = employee.getId() + "-" + today;
         
@@ -77,8 +80,8 @@ public class AttendanceService {
         User employee = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
 
-        LocalDate today = LocalDate.now(ZoneId.of("Asia/Colombo"));
-        LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Colombo"));
+        LocalDate today = LocalDate.now(timeZoneConfig.getZoneId());
+        LocalDateTime now = LocalDateTime.now(timeZoneConfig.getZoneId());
 
         EmployeeDayAttendance attendance = attendanceRepository.findByEmployeeAndDate(employee, today)
                 .orElseThrow(() -> new RuntimeException("Day not started yet"));
@@ -140,12 +143,12 @@ public class AttendanceService {
     }
     
     public boolean hasDayStarted(User employee) {
-        LocalDate today = LocalDate.now(ZoneId.of("Asia/Colombo"));
+        LocalDate today = LocalDate.now(timeZoneConfig.getZoneId());
         return attendanceRepository.findByEmployeeAndDate(employee, today).isPresent();
     }
     
     public boolean hasDayEnded(User employee) {
-        LocalDate today = LocalDate.now(ZoneId.of("Asia/Colombo"));
+        LocalDate today = LocalDate.now(timeZoneConfig.getZoneId());
         return attendanceRepository.findByEmployeeAndDate(employee, today)
                 .map(attendance -> attendance.getDayEndTime() != null)
                 .orElse(false);
@@ -155,7 +158,7 @@ public class AttendanceService {
         User employee = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
 
-        LocalDate today = LocalDate.now(ZoneId.of("Asia/Colombo"));
+        LocalDate today = LocalDate.now(timeZoneConfig.getZoneId());
         return attendanceRepository.findByEmployeeAndDate(employee, today)
                 .orElse(null);
     }
@@ -169,7 +172,7 @@ public class AttendanceService {
         List<EmployeeDayAttendance> allAttendance = attendanceRepository.findByEmployeeAndDateBetween(
             employee,
             LocalDate.of(2000, 1, 1),
-            LocalDate.now(ZoneId.of("Asia/Colombo"))
+            LocalDate.now(timeZoneConfig.getZoneId())
         );
 
         // Manual pagination

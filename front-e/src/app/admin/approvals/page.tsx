@@ -10,6 +10,7 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import Pagination from '@/components/ui/Pagination';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { formatDateTime, formatMinutes } from '@/lib/utils/format';
+import { getTodayInTimezone } from '@/lib/config/timezone';
 import { Check, X, Star, Eye, Layers, User as UserIcon, Clock, Hash, Calendar } from 'lucide-react';
 
 export default function AdminApprovals() {
@@ -18,20 +19,7 @@ export default function AdminApprovals() {
   const [pending, setPending] = useState<PageResponse<MiniJobCard> | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
-
-  const getTodayDate = () => {
-    // Get current date in Sri Lanka timezone (Asia/Colombo, UTC+5:30)
-    const sriLankaDate = new Date().toLocaleString('en-US', {
-      timeZone: 'Asia/Colombo',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    });
-    // Convert from MM/DD/YYYY to YYYY-MM-DD
-    const [month, day, year] = sriLankaDate.split('/');
-    return `${year}-${month}-${day}`;
-  };
-  const [selectedDate, setSelectedDate] = useState(getTodayDate());
+  const [selectedDate, setSelectedDate] = useState(getTodayInTimezone());
 
   useEffect(() => {
     loadPending(0);
@@ -82,7 +70,7 @@ export default function AdminApprovals() {
   };
 
   const handleTodayFilter = () => {
-    setSelectedDate(getTodayDate());
+    setSelectedDate(getTodayInTimezone());
     setCurrentPage(0);
   };
 

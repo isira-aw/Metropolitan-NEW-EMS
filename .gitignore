@@ -12,6 +12,16 @@ front-e/.next/
 front-e/out/
 front-e/build/
 front-e/*.log
+front-e/.env.local
+front-e/.env
+
+# Environment Variables
+.env
+.env.local
+.env.production
+*.env
+!.env.example
+
 # IDE
 .vscode/
 .idea/
