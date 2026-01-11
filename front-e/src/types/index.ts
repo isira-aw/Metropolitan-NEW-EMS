@@ -270,6 +270,12 @@ export interface OTReportResponse {
   totalOtMinutes: number;
 }
 
+export interface LocationPoint {
+  latitude: number;
+  longitude: number;
+  timestamp: string;
+}
+
 export interface DailyTimeTrackingReportDTO {
   employeeId: number;
   employeeName: string;
@@ -281,6 +287,7 @@ export interface DailyTimeTrackingReportDTO {
   idleMinutes: number;
   travelMinutes: number;
   totalMinutes: number;
+  locationPath?: LocationPoint[];
 }
 
 export interface EmployeeDailyWorkTimeReportDTO {
