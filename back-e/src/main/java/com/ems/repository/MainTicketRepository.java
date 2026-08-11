@@ -14,4 +14,6 @@ public interface MainTicketRepository extends JpaRepository<MainTicket, Long> {
     Page<MainTicket> findByStatus(JobStatus status, Pageable pageable);
     Page<MainTicket> findByScheduledDateBetween(LocalDate startDate, LocalDate endDate, Pageable pageable);
     Page<MainTicket> findByCreatedBy(String createdBy, Pageable pageable);
+    // Caller passes Pageable with Sort.by("createdAt").descending() already applied
+    Page<MainTicket> findByGeneratorId(Long generatorId, Pageable pageable);
 }

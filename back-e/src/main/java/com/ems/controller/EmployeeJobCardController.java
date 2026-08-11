@@ -32,7 +32,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/employee/job-cards")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 @PreAuthorize("hasRole('EMPLOYEE')")
 public class EmployeeJobCardController {
 

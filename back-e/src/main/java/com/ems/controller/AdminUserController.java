@@ -25,7 +25,6 @@ import jakarta.validation.Valid;
 @RestController
 @RequestMapping("/api/admin/users")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminUserController {
 
@@ -136,19 +135,6 @@ public class AdminUserController {
             @Valid @RequestBody UserPutRequest request) {
         User user = userService.updateUser(id, request);
         return ResponseEntity.ok(user);
-    }
-
-    /**
-     * Delete user
-     * Soft delete - sets active = false
-     *
-     * @param id User ID
-     * @return No content
-     */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-        userService.deleteUser(id);
-        return ResponseEntity.noContent().build();
     }
 
     /**

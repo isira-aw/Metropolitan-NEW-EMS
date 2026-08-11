@@ -1,5 +1,6 @@
 package com.ems.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -20,6 +21,7 @@ import java.util.Map;
  * Catches exceptions across all controllers and returns properly formatted error responses
  */
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     /**
@@ -112,8 +114,8 @@ public class GlobalExceptionHandler {
         errorResponse.put("message", "An unexpected error occurred");
         errorResponse.put("path", request.getDescription(false).replace("uri=", ""));
 
-        // Log the full exception for debugging
-        ex.printStackTrace();
+        // Log the full exception server-side for debugging - never leaked to the client
+        log.error("Unhandled exception at {}", request.getDescription(false), ex);
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }

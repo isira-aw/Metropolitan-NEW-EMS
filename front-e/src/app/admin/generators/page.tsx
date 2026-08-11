@@ -7,6 +7,7 @@ import { Generator, GeneratorRequest, PageResponse } from '@/types';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import Pagination from '@/components/ui/Pagination';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { formatDate } from '@/lib/utils/format';
 import { 
   Zap, Plus, Search, MapPin, Mail, Phone, 
@@ -22,6 +23,7 @@ export default function AdminGenerators() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingGen, setEditingGen] = useState<Generator | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<GeneratorRequest>({
     model: '', name: '', capacity: '', locationName: '', ownerEmail: '', whatsAppNumber: '', landlineNumber: '', note: '',
   });
@@ -62,12 +64,13 @@ export default function AdminGenerators() {
     } catch (error: any) { alert(error.response?.data?.message || 'Error saving generator'); }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure? This will fail if there are associated tickets.')) return;
+  const confirmDelete = async () => {
+    if (deletingId == null) return;
     try {
-      await generatorService.delete(id);
+      await generatorService.delete(deletingId);
       loadGenerators(currentPage, searchQuery);
     } catch (error: any) { alert(error.response?.data?.message || 'Error deleting generator'); }
+    finally { setDeletingId(null); }
   };
 
   if (loading) return <LoadingSpinner />;
@@ -156,7 +159,7 @@ export default function AdminGenerators() {
                     </button>
                     <div className="flex gap-1">
                       <button onClick={() => handleEdit(gen)} className="p-2 text-slate-400 hover:text-slate-900 hover:bg-white rounded-lg transition-all"><Pencil size={16} /></button>
-                      <button onClick={() => handleDelete(gen.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-white rounded-lg transition-all"><Trash2 size={16} /></button>
+                      <button onClick={() => setDeletingId(gen.id)} aria-label={`Delete ${gen.name}`} className="p-2 text-slate-400 hover:text-red-600 hover:bg-white rounded-lg transition-all"><Trash2 size={16} /></button>
                     </div>
                   </div>
                 </div>
@@ -254,6 +257,15 @@ export default function AdminGenerators() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={deletingId !== null}
+        title="Delete Asset"
+        message="Are you sure? This will fail if there are associated tickets."
+        confirmLabel="Delete"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeletingId(null)}
+      />
     </AdminLayout>
   );
 }

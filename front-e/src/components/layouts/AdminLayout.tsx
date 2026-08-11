@@ -1,8 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { authService } from '@/lib/services/auth.service';
+import { useAuth } from '@/lib/hooks/useAuth';
 import LeftSidebar from './LeftSidebar';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
@@ -11,22 +9,9 @@ interface AdminLayoutProps {
 }
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
-  const router = useRouter();
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, isLoading } = useAuth('ADMIN');
 
-  useEffect(() => {
-    const role = authService.getRole();
-    if (role !== 'ADMIN') {
-      router.push('/login');
-      return;
-    }
-
-    setUser(authService.getStoredUser());
-    setLoading(false);
-  }, [router]);
-
-  if (loading) {
+  if (isLoading) {
     return <LoadingSpinner />;
   }
 

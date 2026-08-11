@@ -9,6 +9,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import {
   DailyTimeTrackingReportDTO,
   EmployeeDailyWorkTimeReportDTO,
+  LocationPoint,
   User,
 } from '@/types';
 import {
@@ -111,7 +112,7 @@ export default function AdminReports() {
     return `${hours}h ${mins}m`;
   };
 
-  const generateMapUrl = (locationPath?: any[]) => {
+  const generateMapUrl = (locationPath?: LocationPoint[]) => {
     if (!locationPath || locationPath.length === 0) return null;
     const coords = locationPath
       .map(point => `${point.latitude},${point.longitude}`)

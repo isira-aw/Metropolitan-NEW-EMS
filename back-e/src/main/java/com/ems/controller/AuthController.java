@@ -12,7 +12,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class AuthController {
     
     @Autowired
@@ -20,22 +19,16 @@ public class AuthController {
     
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
-        try {
-            AuthResponse response = authService.login(request);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
-        }
+        // Failures propagate to GlobalExceptionHandler (BadCredentialsException -> 401
+        // with a proper JSON body) instead of being swallowed into an empty 400.
+        AuthResponse response = authService.login(request);
+        return ResponseEntity.ok(response);
     }
-    
+
     @PostMapping("/refresh")
     public ResponseEntity<AuthResponse> refreshToken(@RequestBody Map<String, String> request) {
-        try {
-            String refreshToken = request.get("refreshToken");
-            AuthResponse response = authService.refreshToken(refreshToken);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
-        }
+        String refreshToken = request.get("refreshToken");
+        AuthResponse response = authService.refreshToken(refreshToken);
+        return ResponseEntity.ok(response);
     }
 }

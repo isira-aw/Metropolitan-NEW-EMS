@@ -82,7 +82,7 @@ export default function EmployeeDashboard() {
                 <h3 className="text-xs font-black uppercase tracking-[0.2em] opacity-70">Shift Status</h3>
               </div>
               <p className={`text-2xl md:text-3xl font-black ${dashboard?.dayStarted && !dashboard?.dayEnded ? 'text-white' : 'text-slate-900'}`}>
-                {dashboard?.currentStatus === 'PRESENT' ? 'Currently On Duty' : dashboard?.currentStatus || 'Not Started'}
+                {dashboard?.currentStatus === 'ACTIVE' ? 'Currently On Duty' : 'Not Started'}
               </p>
             </div>
 
@@ -168,10 +168,11 @@ export default function EmployeeDashboard() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {dashboard?.recentJobCards?.map((card) => (
-              <div 
+              <button
+                type="button"
                 key={card.id}
                 onClick={() => router.push(`/employee/job-cards/${card.id}`)}
-                className="group bg-white border-2 border-slate-100 p-5 rounded-3xl hover:border-corporate-blue cursor-pointer transition-all flex items-center justify-between"
+                className="group bg-white border-2 border-slate-100 p-5 rounded-3xl hover:border-corporate-blue transition-all flex items-center justify-between text-left w-full"
               >
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-corporate-blue group-hover:bg-corporate-blue group-hover:text-white transition-colors">
@@ -186,7 +187,7 @@ export default function EmployeeDashboard() {
                   <StatusBadge status={card.status} />
                   <ChevronRight size={18} className="text-slate-200 group-hover:text-corporate-blue group-hover:translate-x-1 transition-all" />
                 </div>
-              </div>
+              </button>
             ))}
           </div>
 

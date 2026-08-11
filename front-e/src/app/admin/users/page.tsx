@@ -7,10 +7,11 @@ import { User, UserRequest, PageResponse, UserRole } from '@/types';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import Pagination from '@/components/ui/Pagination';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import EmptyState from '@/components/ui/EmptyState';
 import { formatDate } from '@/lib/utils/format';
-import { 
-  Plus, Search, Pencil, Trash2, ShieldCheck, Mail, Phone, X, 
-  User as UserIcon, CheckCircle2, AlertCircle, Contact2, Fingerprint 
+import {
+  Plus, Search, Pencil, ShieldCheck, Mail, Phone, X,
+  User as UserIcon, CheckCircle2, AlertCircle, Contact2, Fingerprint
 } from 'lucide-react';
 
 export default function AdminUsers() {
@@ -58,7 +59,15 @@ export default function AdminUsers() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      editingUser ? await userService.update(editingUser.id, formData) : await userService.create(formData);
+      if (editingUser) {
+        // Omit password entirely when left blank so the backend keeps the
+        // existing one - only send it if the admin actually typed a new one.
+        const { password, ...rest } = formData;
+        const payload = password ? { ...rest, password } : rest;
+        await userService.update(editingUser.id, payload);
+      } else {
+        await userService.create(formData);
+      }
       setShowModal(false);
       loadUsers(currentPage, searchQuery);
     } catch (error: any) { alert(error.response?.data?.message || 'Error saving user'); }
@@ -166,11 +175,8 @@ export default function AdminUsers() {
                     </td>
                     <td className="px-6 py-5">
                       <div className="flex justify-end gap-2">
-                        <button onClick={() => handleEdit(u)} className="p-2.5 text-slate-400 hover:text-corporate-blue hover:bg-blue-50 rounded-xl transition-all">
+                        <button onClick={() => handleEdit(u)} aria-label={`Edit ${u.fullName}`} className="p-2.5 text-slate-400 hover:text-corporate-blue hover:bg-blue-50 rounded-xl transition-all">
                           <Pencil size={18} />
-                        </button>
-                        <button onClick={() => {}} className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all">
-                          <Trash2 size={18} />
                         </button>
                       </div>
                     </td>
@@ -178,6 +184,12 @@ export default function AdminUsers() {
                 ))}
               </tbody>
             </table>
+            {users && users.content.length === 0 && (
+              <EmptyState
+                icon={<UserIcon size={40} />}
+                message="No personnel match this search."
+              />
+            )}
           </div>
           <div className="border-t border-slate-50">
             {users && <Pagination currentPage={currentPage} totalPages={users.totalPages} onPageChange={(p) => loadUsers(p, searchQuery)} />}
@@ -224,12 +236,20 @@ export default function AdminUsers() {
                       <option value="ADMIN">ADMIN</option>
                     </select>
                   </div>
-                  {!editingUser && (
-                    <div className="col-span-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block ml-1">System Password</label>
-                      <input type="password" required value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} className="w-full bg-slate-50 rounded-xl py-3 px-4 text-sm font-bold border-none outline-none focus:ring-2 focus:ring-corporate-blue/20" />
-                    </div>
-                  )}
+                  <div className="col-span-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block ml-1">
+                      System Password {editingUser && <span className="text-slate-300">(leave blank to keep current)</span>}
+                    </label>
+                    <input
+                      type="password"
+                      required={!editingUser}
+                      minLength={6}
+                      value={formData.password}
+                      onChange={(e) => setFormData({...formData, password: e.target.value})}
+                      placeholder={editingUser ? 'Leave blank to keep current password' : undefined}
+                      className="w-full bg-slate-50 rounded-xl py-3 px-4 text-sm font-bold border-none outline-none focus:ring-2 focus:ring-corporate-blue/20"
+                    />
+                  </div>
                 </div>
               </div>
 

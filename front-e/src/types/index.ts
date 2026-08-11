@@ -57,9 +57,22 @@ export interface User {
   createdAt: string;
 }
 
+// Shape returned by authService.getStoredUser() - the client-side session
+// derived from localStorage, not the User entity itself.
+export interface StoredUser {
+  accessToken: string | null;
+  refreshToken: string | null;
+  role: string | null;
+  fullName: string | null;
+  username: string | null;
+  email: string | null;
+}
+
 export interface UserRequest {
   username: string;
-  password: string;
+  // Required when creating a user. Optional on update - blank/omitted means
+  // "keep the existing password".
+  password?: string;
   fullName: string;
   role: UserRole;
   phone?: string;
@@ -155,7 +168,13 @@ export interface MiniJobCard {
   approved: boolean;
   workMinutes: number;
   imageUrl?: string;
+  rejectionNote?: string;
   createdAt: string;
+}
+
+export interface BulkApprovalResult {
+  approved: MiniJobCard[];
+  failed: { id: number; reason: string }[];
 }
 
 export interface StatusUpdateRequest {
@@ -208,7 +227,7 @@ export interface EmployeeDashboardResponse {
   recentJobCards: MiniJobCard[];
   dayStarted: boolean;
   dayEnded: boolean;
-  currentStatus: string;
+  currentStatus: 'ACTIVE' | 'INACTIVE';
 }
 
 export interface MonthlyStats {

@@ -15,34 +15,22 @@ import java.util.Map;
 @RequestMapping("/api/password-reset")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*")
 public class PasswordResetController {
 
     private final PasswordResetService passwordResetService;
 
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
-        try {
-            boolean userExists = passwordResetService.requestPasswordReset(request.getEmailOrPhone());
+        // Always return the same generic response regardless of whether the account
+        // exists - the return value is intentionally ignored here to prevent user
+        // enumeration on this public, unauthenticated endpoint. Do not branch the
+        // response on it.
+        passwordResetService.requestPasswordReset(request.getEmailOrPhone());
 
-            if (userExists) {
-                return ResponseEntity.ok(Map.of(
-                        "success", true,
-                        "message", "User is registered. A password reset link has been sent to your email/phone."
-                ));
-            } else {
-                return ResponseEntity.ok(Map.of(
-                        "success", false,
-                        "message", "No account found with this email or phone number. Please check and try again, or contact support."
-                ));
-            }
-        } catch (Exception e) {
-            log.error("Error processing forgot password request", e);
-            return ResponseEntity.badRequest().body(Map.of(
-                    "success", false,
-                    "error", "Failed to process password reset request. Please try again."
-            ));
-        }
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "If an account exists for that email or phone number, a password reset link has been sent."
+        ));
     }
 
     @PostMapping("/reset-password")

@@ -3,31 +3,39 @@ package com.ems.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.services.ses.SesClient;
+import software.amazon.awssdk.services.ses.model.Body;
+import software.amazon.awssdk.services.ses.model.Content;
+import software.amazon.awssdk.services.ses.model.Destination;
+import software.amazon.awssdk.services.ses.model.Message;
+import software.amazon.awssdk.services.ses.model.SendEmailRequest;
+import software.amazon.awssdk.services.ses.model.SesException;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class EmailService {
 
-    private final JavaMailSender mailSender;
+    private final SesClient sesClient;
 
-    @Value("${spring.mail.username}")
+    @Value("${aws.ses.sender-email}")
     private String fromEmail;
 
     public void sendEmail(String to, String subject, String body) {
         try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(fromEmail);
-            message.setTo(to);
-            message.setSubject(subject);
-            message.setText(body);
+            SendEmailRequest request = SendEmailRequest.builder()
+                    .source(fromEmail)
+                    .destination(Destination.builder().toAddresses(to).build())
+                    .message(Message.builder()
+                            .subject(Content.builder().data(subject).build())
+                            .body(Body.builder().text(Content.builder().data(body).build()).build())
+                            .build())
+                    .build();
 
-            mailSender.send(message);
+            sesClient.sendEmail(request);
             log.info("Email sent successfully to: {}", to);
-        } catch (Exception e) {
+        } catch (SesException e) {
             log.error("Failed to send email to: {}. Error: {}", to, e.getMessage());
             throw new RuntimeException("Failed to send email: " + e.getMessage());
         }

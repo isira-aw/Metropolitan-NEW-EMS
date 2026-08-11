@@ -11,8 +11,11 @@ public class UserPutRequest {
     @NotBlank(message = "Username is required")
     private String username;
 
-//    @NotBlank(message = "Password is required")
-//    private String password;
+    // Optional on update - only provided when the admin wants to change the
+    // password. Blank/omitted means "keep the existing password". Length is
+    // validated in UserService.updateUser rather than here, since @Size would
+    // also reject a deliberately-blank "don't change it" value.
+    private String password;
 
     @NotBlank(message = "Full name is required")
     private String fullName;

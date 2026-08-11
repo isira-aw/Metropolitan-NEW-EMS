@@ -42,7 +42,11 @@ public class MiniJobCard {
 
     @Column(columnDefinition = "TEXT")
     private String imageUrl;
-    
+
+    @Column(columnDefinition = "TEXT")
+    private String rejectionNote;
+
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
