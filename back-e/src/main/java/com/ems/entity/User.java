@@ -41,7 +41,13 @@ public class User {
     
     @Column(nullable = false)
     private Boolean active = true;
-    
+
+    // System-seeded admin accounts (see AdminBootstrapInitializer) that can never be
+    // deactivated, demoted, or have their role changed via the admin API - guarantees
+    // there is always at least one working admin login.
+    @Column(name = "protected_account", nullable = false)
+    private Boolean protectedAccount = false;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

@@ -63,3 +63,9 @@ app.password.reset.token.expiry.minutes=${APP_PASSWORD_RESET_TOKEN_EXPIRY:15}
 
 # Enable Scheduling
 spring.task.scheduling.enabled=true
+
+# Admin bootstrap - creates one protected admin account on first startup if none
+# exists yet (see AdminBootstrapInitializer). Leave unset to skip seeding.
+bootstrap.admin.username=${BOOTSTRAP_ADMIN_USERNAME:superAdmin}
+bootstrap.admin.password=${BOOTSTRAP_ADMIN_PASSWORD:}
+bootstrap.admin.email=${BOOTSTRAP_ADMIN_EMAIL:}

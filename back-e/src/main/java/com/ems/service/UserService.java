@@ -65,6 +65,15 @@ public class UserService {
     public User updateUser(Long id, UserPutRequest request) {
         User user = getUserById(id);
 
+        if (Boolean.TRUE.equals(user.getProtectedAccount())) {
+            if (Boolean.FALSE.equals(request.getActive())) {
+                throw new RuntimeException("This admin account is protected and cannot be deactivated");
+            }
+            if (request.getRole() != UserRole.ADMIN) {
+                throw new RuntimeException("This admin account is protected and cannot change role");
+            }
+        }
+
         user.setFullName(request.getFullName());
         user.setPhone(request.getPhone());
         user.setEmail(request.getEmail());
@@ -89,6 +98,9 @@ public class UserService {
 
     public User deactivateUser(Long id) {
         User user = getUserById(id);
+        if (Boolean.TRUE.equals(user.getProtectedAccount())) {
+            throw new RuntimeException("This admin account is protected and cannot be deactivated");
+        }
         user.setActive(false);
         return userRepository.save(user);
     }
