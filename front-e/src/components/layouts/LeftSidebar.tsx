@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { authService } from '@/lib/services/auth.service';
+import { StoredUser } from '@/types';
 import { LucideIcon } from 'lucide-react'; // Import the built-in type
 import {
   LayoutDashboard,
@@ -30,7 +31,7 @@ interface NavItem {
 
 interface LeftSidebarProps {
   role: 'ADMIN' | 'EMPLOYEE';
-  user: any;
+  user: StoredUser | null;
   pendingJobsCount?: number;
 }
 

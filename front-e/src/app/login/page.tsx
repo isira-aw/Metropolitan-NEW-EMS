@@ -22,7 +22,7 @@ export default function LoginPage() {
       const response = await apiClient.post('/auth/login', {
         username,
         password,
-      });
+      }, { skipGlobalError: true });
 
       const { accessToken, refreshToken, role, fullName } = response.data;
 

@@ -24,7 +24,6 @@ import java.time.LocalDate;
 @RestController
 @RequestMapping("/api/employee/attendance")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 @PreAuthorize("hasRole('EMPLOYEE')")
 public class EmployeeAttendanceController {
 

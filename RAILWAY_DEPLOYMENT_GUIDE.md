@@ -123,11 +123,13 @@ Copy `.env.example` to `.env` and fill in your values. For Railway, set these in
 | `SPRING_DATASOURCE_URL` | `jdbc:postgresql://host:5432/db` | ✅ Yes | Railway provides this |
 | `SPRING_DATASOURCE_USERNAME` | `postgres` | ✅ Yes | Railway provides this |
 | `SPRING_DATASOURCE_PASSWORD` | `secure-password` | ✅ Yes | Railway provides this |
-| `JWT_SECRET` | `base64-encoded-256bit-key` | ✅ Yes | Generate new for production |
+| `JWT_SECRET` | `base64-encoded-256bit-key` | ✅ Yes | Generate new for production - no default |
+| `SPRING_PROFILES_ACTIVE` | `prod` | ✅ Yes | Anything other than `dev`/`local` - disables the dev account seeder |
 | `APP_TIMEZONE` | `Asia/Colombo` | ✅ Yes | **Critical for correct operation** |
-| `SPRING_MAIL_USERNAME` | `your-email@gmail.com` | ✅ Yes | For notifications |
-| `SPRING_MAIL_PASSWORD` | `gmail-app-password` | ✅ Yes | Gmail app password |
-| `APP_FRONTEND_URL` | `https://your-app.railway.app` | ✅ Yes | For CORS |
+| `AWS_REGION` | `us-east-1` | ✅ Yes | Region where the SES sender identity is verified |
+| `SES_SENDER_EMAIL` | `notifications@yourdomain.com` | ✅ Yes | Must be a verified SES identity |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | - | ⚠️ Conditional | Only if not using an IAM role on the host |
+| `APP_FRONTEND_URL` | `https://your-app.railway.app` | ✅ Yes | For CORS - must exactly match the deployed frontend origin |
 | `WHATSAPP_API_TOKEN` | `your-token` | ❌ No | Optional feature |
 
 #### Frontend Service (Next.js)
@@ -192,11 +194,14 @@ SPRING_DATASOURCE_URL=${{Postgres.DATABASE_URL}}
 SPRING_DATASOURCE_USERNAME=${{Postgres.PGUSER}}
 SPRING_DATASOURCE_PASSWORD=${{Postgres.PGPASSWORD}}
 JWT_SECRET=<your-generated-secret>
+SPRING_PROFILES_ACTIVE=prod
 APP_TIMEZONE=Asia/Colombo
-SPRING_MAIL_USERNAME=<your-email>
-SPRING_MAIL_PASSWORD=<your-app-password>
+AWS_REGION=us-east-1
+SES_SENDER_EMAIL=<your-verified-ses-sender>
 APP_FRONTEND_URL=<will-set-after-frontend-deployed>
 ```
+AWS credentials are only needed here if the Railway service can't otherwise
+assume an IAM role - set `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` in that case.
 
 **Networking:**
 - Railway will auto-assign a public URL
@@ -345,15 +350,10 @@ Test that the timezone is working correctly:
 **Symptom:** Password reset emails not received
 
 **Solution:**
-1. Verify Gmail credentials are correct
-2. Use Gmail **App Password**, not regular password
-3. Enable "Less secure app access" if using regular password (not recommended)
-4. Check backend logs for SMTP errors
-5. Test SMTP connection:
-```bash
-# From Railway backend shell
-telnet smtp.gmail.com 587
-```
+1. Verify `SES_SENDER_EMAIL` is a verified identity in the SES console for the configured `AWS_REGION`
+2. If the AWS account is still in the SES sandbox, verify the recipient address too (sandbox mode only allows sending to verified addresses)
+3. Confirm AWS credentials are actually available to the Railway service (env vars or IAM role) and the principal has `ses:SendEmail`
+4. Check backend logs for `SesException` details
 
 ### Issue: Build Failures
 

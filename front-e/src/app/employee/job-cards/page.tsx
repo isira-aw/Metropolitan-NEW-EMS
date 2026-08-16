@@ -168,10 +168,11 @@ export default function EmployeeJobCards() {
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {jobCards.content.map((card) => (
-                  <div 
+                  <button
+                    type="button"
                     key={card.id}
                     onClick={() => router.push(`/employee/job-cards/${card.id}`)}
-                    className="group bg-white border-2 border-slate-200 rounded-3xl overflow-hidden hover:border-corporate-blue hover:shadow-xl hover:shadow-blue-900/5 transition-all cursor-pointer flex flex-col"
+                    className="group bg-white border-2 border-slate-200 rounded-3xl overflow-hidden hover:border-corporate-blue hover:shadow-xl hover:shadow-blue-900/5 transition-all text-left flex flex-col w-full"
                   >
                     <div className="p-5 flex-1">
                       <div className="flex justify-between items-start mb-4">
@@ -213,7 +214,7 @@ export default function EmployeeJobCards() {
                       </div>
                       <ChevronRight size={18} className="text-slate-300 group-hover:text-corporate-blue group-hover:translate-x-1 transition-all" />
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
 

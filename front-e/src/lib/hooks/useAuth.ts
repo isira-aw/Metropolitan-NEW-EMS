@@ -3,11 +3,12 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { authService } from '../services/auth.service';
+import { StoredUser } from '@/types';
 
 export function useAuth(requiredRole?: string) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<StoredUser | null>(null);
 
   useEffect(() => {
     const checkAuth = () => {

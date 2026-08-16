@@ -1,5 +1,6 @@
 package com.ems.controller;
 
+import com.ems.dto.BulkApprovalResult;
 import com.ems.dto.ScoreRequest;
 import com.ems.entity.EmployeeScore;
 import com.ems.entity.MiniJobCard;
@@ -26,7 +27,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/admin/approvals")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminApprovalController {
 
@@ -99,13 +99,13 @@ public class AdminApprovalController {
      * @return List of approved MiniJobCard entities
      */
     @PutMapping("/bulk-approve")
-    public ResponseEntity<List<MiniJobCard>> bulkApproveMiniJobCards(
+    public ResponseEntity<BulkApprovalResult> bulkApproveMiniJobCards(
             @RequestBody List<Long> ids,
             Authentication auth) {
 
         String approvedBy = auth.getName();
-        List<MiniJobCard> approved = ticketService.bulkApproveMiniJobCards(ids, approvedBy);
-        return ResponseEntity.ok(approved);
+        BulkApprovalResult result = ticketService.bulkApproveMiniJobCards(ids, approvedBy);
+        return ResponseEntity.ok(result);
     }
 
     /**

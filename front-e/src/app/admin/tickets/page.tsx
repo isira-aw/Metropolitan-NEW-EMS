@@ -9,6 +9,7 @@ import Card from '@/components/ui/Card';
 import StatusBadge from '@/components/ui/StatusBadge';
 import Pagination from '@/components/ui/Pagination';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { formatDate } from '@/lib/utils/format';
 import { 
   Plus, Search, Calendar, User as UserIcon, 
@@ -25,6 +26,7 @@ export default function AdminTickets() {
   const [showModal, setShowModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [editingTicketId, setEditingTicketId] = useState<number | null>(null);
+  const [cancelingId, setCancelingId] = useState<number | null>(null);
 
   // Filters
   const getTodayDate = () => {
@@ -171,13 +173,15 @@ export default function AdminTickets() {
     setCurrentPage(0);
   };
 
-  const handleCancel = async (ticketId: number) => {
-    if (!confirm("Are you sure you want to cancel this ticket?")) return;
+  const confirmCancel = async () => {
+    if (cancelingId == null) return;
     try {
-      await ticketService.cancel(ticketId);
+      await ticketService.cancel(cancelingId);
       loadTickets(currentPage);
     } catch (error) {
       alert("Failed to cancel ticket");
+    } finally {
+      setCancelingId(null);
     }
   };
 
@@ -303,8 +307,8 @@ export default function AdminTickets() {
                 <Settings2 size={16} className="text-corporate-blue" /> Quick Status
               </label>
               <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-                {['ALL', 'PENDING', 'STARTED', 'COMPLETED'].map((status) => (
-                  <button key={status} onClick={() => setStatusFilter(status as any)} className={`px-4 py-3 rounded-xl text-[10px] font-black uppercase transition-all whitespace-nowrap ${statusFilter === status ? 'bg-corporate-blue text-white shadow-lg' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}>{status}</button>
+                {(['ALL', JobStatus.PENDING, JobStatus.STARTED, JobStatus.COMPLETED] as const).map((status) => (
+                  <button key={status} onClick={() => setStatusFilter(status)} className={`px-4 py-3 rounded-xl text-[10px] font-black uppercase transition-all whitespace-nowrap ${statusFilter === status ? 'bg-corporate-blue text-white shadow-lg' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}>{status}</button>
                 ))}
               </div>
             </div>
@@ -355,7 +359,7 @@ export default function AdminTickets() {
                     {ticket.status !== 'CANCEL' && ticket.status !== 'COMPLETED' && (
                       <>
                         <button onClick={() => handleEdit(ticket)} className="px-6 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black uppercase text-xs hover:bg-slate-200 transition-all">Edit</button>
-                        <button onClick={() => handleCancel(ticket.id)} className="px-6 py-4 bg-red-50 text-red-600 rounded-2xl font-black uppercase text-xs hover:bg-red-100 transition-all">Cancel</button>
+                        <button onClick={() => setCancelingId(ticket.id)} className="px-6 py-4 bg-red-50 text-red-600 rounded-2xl font-black uppercase text-xs hover:bg-red-100 transition-all">Cancel</button>
                       </>
                     )}
                   </div>
@@ -417,10 +421,15 @@ export default function AdminTickets() {
                   {showGeneratorDropdown && modalGeneratorSearch.length >= 3 && (
                     <div className="absolute z-[110] w-full mt-2 bg-white border border-slate-100 rounded-2xl shadow-2xl max-h-56 overflow-y-auto p-3">
                       {modalGenerators.map((gen) => (
-                        <div key={gen.id} onClick={() => { setSelectedGenerator(gen); setFormData({ ...formData, generatorId: gen.id }); setShowGeneratorDropdown(false); }} className="p-4 hover:bg-corporate-blue/5 rounded-2xl cursor-pointer border-b border-slate-50 last:border-0">
+                        <button
+                          type="button"
+                          key={gen.id}
+                          onClick={() => { setSelectedGenerator(gen); setFormData({ ...formData, generatorId: gen.id }); setShowGeneratorDropdown(false); }}
+                          className="w-full text-left p-4 hover:bg-corporate-blue/5 rounded-2xl border-b border-slate-50 last:border-0"
+                        >
                           <div className="font-black text-sm text-slate-900 uppercase">{gen.name}</div>
                           <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{gen.locationName}</div>
-                        </div>
+                        </button>
                       ))}
                     </div>
                   )}
@@ -441,10 +450,12 @@ export default function AdminTickets() {
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 overflow-y-auto p-2 bg-slate-50 rounded-[2rem] border border-slate-100">
                     {(modalEmployeeSearch.length >= 3 ? modalEmployees : (editMode ? modalEmployees : [])).map((emp) => (
-                      <div 
-                        key={emp.id} 
+                      <button
+                        type="button"
+                        key={emp.id}
                         onClick={() => toggleEmployee(emp.id)}
-                        className={`flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition-all border-2 ${formData.employeeIds.includes(emp.id) ? 'bg-white border-corporate-blue shadow-lg' : 'bg-white/50 border-transparent hover:bg-white'}`}
+                        aria-pressed={formData.employeeIds.includes(emp.id)}
+                        className={`flex items-center gap-4 p-4 rounded-2xl transition-all border-2 text-left ${formData.employeeIds.includes(emp.id) ? 'bg-white border-corporate-blue shadow-lg' : 'bg-white/50 border-transparent hover:bg-white'}`}
                       >
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center ${formData.employeeIds.includes(emp.id) ? 'bg-corporate-blue text-white' : 'bg-slate-200 text-slate-400'}`}>
                           {formData.employeeIds.includes(emp.id) ? <CheckCircle2 size={20} /> : <UserIcon size={18} />}
@@ -453,7 +464,7 @@ export default function AdminTickets() {
                           <span className="text-xs font-black uppercase text-slate-900">{emp.fullName}</span>
                           <span className="text-[10px] font-bold text-slate-400">{emp.username}</span>
                         </div>
-                      </div>
+                      </button>
                     ))}
                   </div>
                </div>
@@ -468,6 +479,15 @@ export default function AdminTickets() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={cancelingId !== null}
+        title="Cancel Ticket"
+        message="Are you sure you want to cancel this ticket?"
+        confirmLabel="Cancel Ticket"
+        onConfirm={confirmCancel}
+        onCancel={() => setCancelingId(null)}
+      />
     </AdminLayout>
   );
 }

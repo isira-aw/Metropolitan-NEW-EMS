@@ -26,7 +26,6 @@ import jakarta.validation.Valid;
 @RestController
 @RequestMapping("/api/admin/generators")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminGeneratorController {
 

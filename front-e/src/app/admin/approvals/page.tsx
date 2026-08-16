@@ -9,6 +9,9 @@ import Card from '@/components/ui/Card';
 import StatusBadge from '@/components/ui/StatusBadge';
 import Pagination from '@/components/ui/Pagination';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import Modal from '@/components/ui/Modal';
+import Button from '@/components/ui/Button';
 import { formatDateTime, formatMinutes } from '@/lib/utils/format';
 import { getTodayInTimezone } from '@/lib/config/timezone';
 import { Check, X, Star, Eye, Layers, User as UserIcon, Clock, Hash, Calendar } from 'lucide-react';
@@ -20,6 +23,10 @@ export default function AdminApprovals() {
   const [currentPage, setCurrentPage] = useState(0);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [selectedDate, setSelectedDate] = useState(getTodayInTimezone());
+  const [rejectingId, setRejectingId] = useState<number | null>(null);
+  const [rejectionNoteInput, setRejectionNoteInput] = useState('');
+  const [confirmingBulkApprove, setConfirmingBulkApprove] = useState(false);
+  const [scoringCard, setScoringCard] = useState<MiniJobCard | null>(null);
 
   useEffect(() => {
     loadPending(0);
@@ -85,45 +92,61 @@ export default function AdminApprovals() {
     }
   };
 
-  const handleReject = async (id: number) => {
-    const note = prompt('Enter rejection reason:');
-    if (!note) return;
+  const openRejectDialog = (id: number) => {
+    setRejectingId(id);
+    setRejectionNoteInput('');
+  };
+
+  const submitReject = async () => {
+    if (rejectingId == null || !rejectionNoteInput.trim()) return;
     try {
-      await approvalService.reject(id, note);
+      await approvalService.reject(rejectingId, rejectionNoteInput.trim());
       alert('Job card rejected!');
       loadPending(currentPage);
-      setSelectedIds(selectedIds.filter((sid) => sid !== id));
+      setSelectedIds((prev) => prev.filter((sid) => sid !== rejectingId));
     } catch (error: any) {
       alert(error.response?.data?.message || 'Error rejecting');
+    } finally {
+      setRejectingId(null);
     }
   };
 
-  const handleBulkApprove = async () => {
-    if (selectedIds.length === 0) return;
-    if (!confirm(`Approve ${selectedIds.length} selected job cards?`)) return;
+  const confirmBulkApprove = async () => {
     try {
-      await approvalService.bulkApprove(selectedIds);
-      alert(`${selectedIds.length} job cards approved!`);
+      const result = await approvalService.bulkApprove(selectedIds);
+      if (result.failed.length === 0) {
+        alert(`${result.approved.length} job cards approved!`);
+      } else {
+        const reasons = result.failed.map((f) => `#${f.id}: ${f.reason}`).join('\n');
+        alert(`${result.approved.length} approved, ${result.failed.length} failed:\n${reasons}`);
+      }
       setSelectedIds([]);
       loadPending(currentPage);
     } catch (error: any) {
       alert(error.response?.data?.message || 'Error bulk approving');
+    } finally {
+      setConfirmingBulkApprove(false);
     }
   };
 
-  const handleAssignScore = async (card: MiniJobCard) => {
+  const openScoreDialog = (card: MiniJobCard) => {
     if (!card.approved) {
       alert('Please approve the job card first before assigning a score.');
       return;
     }
-    if (!confirm(`Assign score (weight: ${card.mainTicket.weight}) to this job card?`)) return;
+    setScoringCard(card);
+  };
 
+  const confirmAssignScore = async () => {
+    if (!scoringCard) return;
     try {
-      await approvalService.addScore({ miniJobCardId: card.id });
-      alert(`Score of ${card.mainTicket.weight} assigned successfully!`);
+      await approvalService.addScore({ miniJobCardId: scoringCard.id });
+      alert(`Score of ${scoringCard.mainTicket.weight} assigned successfully!`);
       loadPending(currentPage);
     } catch (error: any) {
       alert(error.response?.data?.message || 'Error adding score');
+    } finally {
+      setScoringCard(null);
     }
   };
 
@@ -147,7 +170,7 @@ export default function AdminApprovals() {
 
           {selectedIds.length > 0 && (
             <button
-              onClick={handleBulkApprove}
+              onClick={() => setConfirmingBulkApprove(true)}
               className="flex items-center gap-3 bg-corporate-blue text-white px-8 py-4 rounded-2xl font-black uppercase text-sm hover:bg-slate-900 transition-all shadow-xl hover:-translate-y-1"
             >
               <Check size={20} strokeWidth={3} />
@@ -293,15 +316,15 @@ export default function AdminApprovals() {
                         <Check size={18} strokeWidth={3} /> Approve
                       </button>
 
-                      <button 
-                        onClick={() => handleReject(card.id)} 
+                      <button
+                        onClick={() => openRejectDialog(card.id)}
                         className="flex-1 md:flex-none px-6 py-4 bg-red-50 text-red-600 rounded-2xl font-black uppercase text-xs hover:bg-red-600 hover:text-white transition-all shadow-sm border border-red-100 flex items-center justify-center gap-2"
                       >
                         <X size={18} strokeWidth={3} /> Reject
                       </button>
 
-                      <button 
-                        onClick={() => handleAssignScore(card)} 
+                      <button
+                        onClick={() => openScoreDialog(card)}
                         className={`flex-1 md:flex-none px-6 py-4 rounded-2xl font-black uppercase text-xs flex items-center justify-center gap-2 transition-all border-2 ${
                           card.approved 
                           ? 'bg-yellow-50 border-yellow-200 text-yellow-700 hover:bg-yellow-500 hover:text-white' 
@@ -341,6 +364,48 @@ export default function AdminApprovals() {
           </div>
         )}
       </div>
+
+      <Modal
+        open={rejectingId !== null}
+        onClose={() => setRejectingId(null)}
+        title="Reject Job Card"
+        maxWidth="max-w-md"
+      >
+        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">
+          Rejection Reason
+        </label>
+        <textarea
+          value={rejectionNoteInput}
+          onChange={(e) => setRejectionNoteInput(e.target.value)}
+          className="w-full bg-slate-50 rounded-xl p-4 text-sm font-bold border-none outline-none focus:ring-2 focus:ring-corporate-blue/20 min-h-[100px]"
+          placeholder="Explain what needs to be corrected..."
+          autoFocus
+        />
+        <div className="flex gap-3 justify-end mt-6">
+          <Button variant="secondary" onClick={() => setRejectingId(null)}>Cancel</Button>
+          <Button variant="danger" disabled={!rejectionNoteInput.trim()} onClick={submitReject}>Reject</Button>
+        </div>
+      </Modal>
+
+      <ConfirmDialog
+        open={confirmingBulkApprove}
+        title="Bulk Approve"
+        message={`Approve ${selectedIds.length} selected job cards?`}
+        confirmLabel="Approve All"
+        danger={false}
+        onConfirm={confirmBulkApprove}
+        onCancel={() => setConfirmingBulkApprove(false)}
+      />
+
+      <ConfirmDialog
+        open={scoringCard !== null}
+        title="Assign Score"
+        message={scoringCard ? `Assign score (weight: ${scoringCard.mainTicket.weight}) to this job card?` : ''}
+        confirmLabel="Assign Score"
+        danger={false}
+        onConfirm={confirmAssignScore}
+        onCancel={() => setScoringCard(null)}
+      />
     </AdminLayout>
   );
 }

@@ -7,12 +7,9 @@ import com.ems.entity.UserRole;
 import com.ems.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class UserService {
@@ -48,10 +45,6 @@ public class UserService {
         return userRepository.findAll(pageable);
     }
     
-    public Page<User> getEmployees(Pageable pageable) {
-        return userRepository.findByRoleAndActive(UserRole.EMPLOYEE, true, pageable);
-    }
-
     public Page<User> getEmployees(Pageable pageable, boolean activeOnly) {
         if (activeOnly) {
             return userRepository.findByRoleAndActive(UserRole.EMPLOYEE, true, pageable);
@@ -78,17 +71,14 @@ public class UserService {
         user.setActive(request.getActive());
         user.setRole(request.getRole());
 
-//        if (request.getPassword() != null && !request.getPassword().isEmpty()) {
-//            user.setPassword(passwordEncoder.encode(request.getPassword()));
-//        }
+        if (request.getPassword() != null && !request.getPassword().isBlank()) {
+            if (request.getPassword().length() < 6) {
+                throw new RuntimeException("Password must be at least 6 characters long");
+            }
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
 
         return userRepository.save(user);
-    }
-
-    public void deleteUser(Long id) {
-        User user = getUserById(id);
-        user.setActive(false);
-        userRepository.save(user);
     }
 
     public User activateUser(Long id) {
@@ -104,17 +94,8 @@ public class UserService {
     }
 
     public Page<User> searchUsers(String query, Pageable pageable) {
-        // Search by full name or email containing the query
-        List<User> allUsers = userRepository.findAll();
-        List<User> filtered = allUsers.stream()
-                .filter(user -> user.getFullName().toLowerCase().contains(query.toLowerCase()) ||
-                        (user.getEmail() != null && user.getEmail().toLowerCase().contains(query.toLowerCase())))
-                .toList();
-
-        int start = (int) pageable.getOffset();
-        int end = Math.min((start + pageable.getPageSize()), filtered.size());
-        List<User> pageContent = start >= filtered.size() ? List.of() : filtered.subList(start, end);
-
-        return new PageImpl<>(pageContent, pageable, filtered.size());
+        // Search by full name or email containing the query, at the DB level
+        return userRepository.findByFullNameContainingIgnoreCaseOrEmailContainingIgnoreCase(
+                query, query, pageable);
     }
 }

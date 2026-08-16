@@ -30,7 +30,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/admin/tickets")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminTicketController {
 

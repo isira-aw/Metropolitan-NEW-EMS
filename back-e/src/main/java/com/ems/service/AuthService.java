@@ -6,31 +6,32 @@ import com.ems.entity.User;
 import com.ems.repository.UserRepository;
 import com.ems.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 public class AuthService {
-    
+
     @Autowired
     private UserRepository userRepository;
-    
+
     @Autowired
     private PasswordEncoder passwordEncoder;
-    
+
     @Autowired
     private JwtUtil jwtUtil;
-    
+
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new RuntimeException("Invalid credentials"));
-        
+                .orElseThrow(() -> new BadCredentialsException("Invalid username or password"));
+
         if (!user.getActive()) {
-            throw new RuntimeException("Account is inactive");
+            throw new BadCredentialsException("Account is inactive");
         }
-        
+
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new RuntimeException("Invalid credentials");
+            throw new BadCredentialsException("Invalid username or password");
         }
         
         String accessToken = jwtUtil.generateAccessToken(user.getUsername(), user.getRole().name());
@@ -47,14 +48,24 @@ public class AuthService {
     }
     
     public AuthResponse refreshToken(String refreshToken) {
-        String username = jwtUtil.extractUsername(refreshToken);
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        
-        if (!jwtUtil.validateToken(refreshToken, username)) {
-            throw new RuntimeException("Invalid refresh token");
+        String username;
+        try {
+            username = jwtUtil.extractUsername(refreshToken);
+        } catch (Exception e) {
+            throw new BadCredentialsException("Invalid refresh token");
         }
-        
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new BadCredentialsException("Invalid refresh token"));
+
+        if (!jwtUtil.validateToken(refreshToken, username)) {
+            throw new BadCredentialsException("Invalid refresh token");
+        }
+
+        if (!user.getActive()) {
+            throw new BadCredentialsException("Account is inactive");
+        }
+
         String newAccessToken = jwtUtil.generateAccessToken(user.getUsername(), user.getRole().name());
         String newRefreshToken = jwtUtil.generateRefreshToken(user.getUsername());
         

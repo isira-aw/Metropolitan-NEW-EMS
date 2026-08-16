@@ -9,6 +9,9 @@ import Card from '@/components/ui/Card';
 import StatusBadge from '@/components/ui/StatusBadge';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import Pagination from '@/components/ui/Pagination';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import Modal from '@/components/ui/Modal';
+import Button from '@/components/ui/Button';
 import { formatDateTime, formatMinutes } from '@/lib/utils/format';
 import { 
   ArrowLeft, 
@@ -42,6 +45,9 @@ export default function AdminTicketDetail() {
   const [sendEmail, setSendEmail] = useState(false);
   const [sendWhatsApp, setSendWhatsApp] = useState(false);
   const [sendingNotification, setSendingNotification] = useState(false);
+  const [approvingId, setApprovingId] = useState<number | null>(null);
+  const [rejectingId, setRejectingId] = useState<number | null>(null);
+  const [rejectionNoteInput, setRejectionNoteInput] = useState('');
 
   useEffect(() => {
     loadTicket();
@@ -70,26 +76,34 @@ export default function AdminTicketDetail() {
     }
   };
 
-  const handleApprove = async (miniJobId: number) => {
-    if (!confirm('Approve this job card?')) return;
+  const confirmApprove = async () => {
+    if (approvingId == null) return;
     try {
-      await approvalService.approve(miniJobId);
+      await approvalService.approve(approvingId);
       loadMiniJobs(currentPage);
       loadTicket();
     } catch (error: any) {
       alert(error.response?.data?.message || 'Error approving');
+    } finally {
+      setApprovingId(null);
     }
   };
 
-  const handleReject = async (miniJobId: number) => {
-    const note = prompt('Enter rejection reason:');
-    if (!note) return;
+  const openRejectDialog = (miniJobId: number) => {
+    setRejectingId(miniJobId);
+    setRejectionNoteInput('');
+  };
+
+  const submitReject = async () => {
+    if (rejectingId == null || !rejectionNoteInput.trim()) return;
     try {
-      await approvalService.reject(miniJobId, note);
+      await approvalService.reject(rejectingId, rejectionNoteInput.trim());
       loadMiniJobs(currentPage);
       loadTicket();
     } catch (error: any) {
       alert(error.response?.data?.message || 'Error rejecting');
+    } finally {
+      setRejectingId(null);
     }
   };
 
@@ -229,6 +243,13 @@ export default function AdminTicketDetail() {
                       <StatusBadge status={job.status} />
                     </div>
 
+                    {job.status === 'ON_HOLD' && job.rejectionNote && (
+                      <div className="mb-6 p-4 bg-rose-50 border border-rose-100 rounded-2xl">
+                        <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-1">Rejection Reason</p>
+                        <p className="text-sm font-bold text-rose-700">{job.rejectionNote}</p>
+                      </div>
+                    )}
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                       {/* Evidence Image */}
                       <div className="md:col-span-1">
@@ -284,13 +305,13 @@ export default function AdminTicketDetail() {
                           {job.status === 'COMPLETED' && !job.approved ? (
                             <div className="flex gap-3">
                               <button
-                                onClick={() => handleApprove(job.id)}
+                                onClick={() => setApprovingId(job.id)}
                                 className="flex-1 bg-emerald-500 text-white py-3 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-emerald-600 shadow-lg shadow-emerald-100 transition-all flex items-center justify-center gap-2"
                               >
                                 <CheckCircle2 size={16} /> Approve Labor
                               </button>
                               <button
-                                onClick={() => handleReject(job.id)}
+                                onClick={() => openRejectDialog(job.id)}
                                 className="px-6 py-3 bg-rose-50 text-rose-500 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-rose-100 transition-all flex items-center justify-center gap-2"
                               >
                                 <XCircle size={16} /> Reject
@@ -409,6 +430,38 @@ export default function AdminTicketDetail() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={approvingId !== null}
+        title="Approve Job Card"
+        message="Approve this job card?"
+        confirmLabel="Approve"
+        danger={false}
+        onConfirm={confirmApprove}
+        onCancel={() => setApprovingId(null)}
+      />
+
+      <Modal
+        open={rejectingId !== null}
+        onClose={() => setRejectingId(null)}
+        title="Reject Job Card"
+        maxWidth="max-w-md"
+      >
+        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">
+          Rejection Reason
+        </label>
+        <textarea
+          value={rejectionNoteInput}
+          onChange={(e) => setRejectionNoteInput(e.target.value)}
+          className="w-full bg-slate-50 rounded-xl p-4 text-sm font-bold border-none outline-none focus:ring-2 focus:ring-corporate-blue/20 min-h-[100px]"
+          placeholder="Explain what needs to be corrected..."
+          autoFocus
+        />
+        <div className="flex gap-3 justify-end mt-6">
+          <Button variant="secondary" onClick={() => setRejectingId(null)}>Cancel</Button>
+          <Button variant="danger" disabled={!rejectionNoteInput.trim()} onClick={submitReject}>Reject</Button>
+        </div>
+      </Modal>
     </AdminLayout>
   );
 }

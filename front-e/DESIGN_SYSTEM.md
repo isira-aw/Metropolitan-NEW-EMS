@@ -1,413 +1,117 @@
 # Metropolitan EMS - Design System
 
-Modern, minimal admin dashboard theme with clean flat UI, soft shadows, and rounded corners.
+Single source of truth for the corporate-navy visual system already implemented
+in `src/app/globals.css` and `tailwind.config.js`. This document was previously
+describing an unrelated slate/blue-600 palette that nothing in the app actually
+used - it now documents what's real, so components can be checked against it.
+
+Design philosophy: simple, clean, professional, enterprise-oriented. No
+gradients, no decorative animation, minimal color palette, one way to build
+each kind of component.
 
 ## Color Palette
 
-### Primary Background
-- **Dark Slate/Navy**: `#0F172A` or `bg-primary-bg`
-- Used for main application background
+Defined in `tailwind.config.js`:
 
-### Cards & Modals
-- **White Background**: `bg-white`
-- All cards, modals, and content containers use white backgrounds
+| Token | Hex | Use |
+|---|---|---|
+| `corporate-blue` | `#144A92` | Primary actions, active nav, links |
+| `soft-blue` | `#3F6FB5` | Secondary accents, hover highlights |
+| `pure-black` | `#000000` | Primary text |
+| `light-bg` | `#F4F6F8` | Page background |
 
-### Primary Actions
-- **Blue**: `bg-blue-600` (default), `bg-blue-700` (hover)
-- All primary action buttons use blue
+Slate (`slate-50`...`slate-900`) is used for neutral text, borders, and muted
+UI - not a separate competing palette. Red (`red-*`)/green (`green-*`)/amber
+(`amber-*`) are used for destructive/success/warning states respectively, kept
+to background-50/text-600/border-100 combinations (see Alerts below).
 
-### Error States
-- **Background**: `bg-red-50`
-- **Border**: `border-red-200`
-- **Text**: `text-red-700`
-
-### Text Colors
-- **Headings**: `text-slate-900`
-- **Body text**: `text-slate-600`
-- **Muted text**: `text-slate-400`
-
----
+Do not introduce new brand colors, gradients, or arbitrary hex values in
+components - use the tokens above or Tailwind's slate/red/green/amber scales.
 
 ## Typography
 
-### Page Titles
-```jsx
-<h1 className="page-title">Dashboard</h1>
-// Renders as: text-3xl font-bold text-slate-900
-```
+- Page titles: `text-2xl md:text-3xl font-black text-slate-900`
+- Section titles: `text-lg font-black text-slate-900`
+- Labels / helper text: `text-[10px] font-black text-slate-400 uppercase tracking-widest`
+- Body text: `text-sm font-bold text-slate-700`
+- Muted text: `text-sm text-slate-400`
 
-### Section Titles
-```jsx
-<h2 className="section-title">Recent Activities</h2>
-// Renders as: text-xl font-semibold text-slate-900
-```
+Keep the existing uppercase/tracked-out label style already used throughout
+the app - it's part of the visual identity, not a mistake to "correct" back to
+sentence case.
 
-### Labels
-```jsx
-<label className="input-label">Email Address</label>
-// Renders as: text-sm font-medium text-slate-700
-```
+## Buttons (`Button` component - `src/components/ui/Button.tsx`)
 
-### Body Text
-```jsx
-<p className="body-text">This is body text</p>
-// Renders as: text-sm text-slate-600
-```
+- **Primary**: `bg-corporate-blue text-white`, hover `bg-slate-900` - the main action on a screen.
+- **Secondary**: `bg-slate-100 text-slate-600`, hover `bg-slate-200` - cancel/secondary actions.
+- **Danger**: `bg-red-50 text-red-600 border border-red-100`, hover `bg-red-100` - destructive actions (matches the existing reject/delete styling already in use).
 
-### Muted Text
-```jsx
-<p className="muted-text">Last updated 2 hours ago</p>
-// Renders as: text-sm text-slate-400
-```
+All variants: `rounded-2xl font-black uppercase tracking-widest text-xs`,
+minimum 44px touch target (already enforced globally in `globals.css` on
+mobile), disabled state `opacity-50 cursor-not-allowed`.
 
----
+## Inputs (`Input` component - `src/components/ui/Input.tsx`)
 
-## Buttons
+Wraps the existing `.input-field`/`.input-field-error`/`.input-label` classes
+in `globals.css`. Every field: label with required/optional indicator, input,
+optional inline error line below in `text-red-600 text-xs`.
 
-### Primary Button
-Default action button with blue background.
+## Cards
 
-```jsx
-<button className="btn-primary">Save Changes</button>
-<button className="btn-primary" disabled>Processing...</button>
-```
+`bg-white rounded-2xl border border-slate-100 shadow-sm p-6` (or the existing
+`Card` component). Avoid the more extreme `rounded-[2rem]`/`rounded-[2.5rem]`
+arbitrary values on new components going forward - `rounded-2xl` is the
+standard.
 
-**Styles**:
-- Background: `bg-blue-600`
-- Hover: `hover:bg-blue-700`
-- Disabled: `bg-blue-400 cursor-not-allowed`
-- Rounded: `rounded-lg`
-- Text: `text-white font-medium`
+## Modals (`Modal` component - `src/components/ui/Modal.tsx`)
 
-### Secondary Button
-Text-style button with blue text and subtle hover background.
+- Backdrop: `fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4`
+- Container: `bg-white rounded-2xl shadow-2xl w-full max-w-lg`
+- Header: `bg-slate-900 text-white px-6 py-5 flex justify-between items-center`, close button top-right
+- Escape key and backdrop click both close the modal; focus moves into the modal on open
 
-```jsx
-<button className="btn-secondary">Cancel</button>
-```
+`ConfirmDialog` is a thin wrapper around `Modal` for confirm/cancel flows -
+use it instead of `window.confirm()`.
 
-**Styles**:
-- Text: `text-blue-600`
-- Hover: `hover:text-blue-700 hover:bg-blue-50`
-- Rounded: `rounded-lg`
+## Toasts (`Toast`/`ToastProvider` - `src/components/ui/Toast.tsx`)
 
-### Success Button
-Green action button for positive actions.
-
-```jsx
-<button className="btn-success">Approve</button>
-```
-
-**Styles**:
-- Background: `bg-green-600`
-- Hover: `hover:bg-green-700`
-- Disabled: `bg-green-400 cursor-not-allowed`
-
-### Danger Button
-Red button for destructive actions.
-
-```jsx
-<button className="btn-danger">Delete</button>
-```
-
-**Styles**:
-- Background: `bg-red-600`
-- Hover: `hover:bg-red-700`
-- Disabled: `bg-red-400 cursor-not-allowed`
-
----
-
-## Input Fields
-
-### Standard Input
-```jsx
-<div className="form-group">
-  <label className="input-label">Username</label>
-  <input type="text" className="input-field" />
-</div>
-```
-
-**Styles**:
-- Border: `border-slate-300`
-- Rounded: `rounded-lg`
-- Focus: `focus:ring-2 focus:ring-blue-500 focus:border-transparent`
-
-### Error State Input
-```jsx
-<input type="email" className="input-field-error" />
-<p className="error-text">Invalid email address</p>
-```
-
-**Styles**:
-- Border: `border-red-300`
-- Background: `bg-red-50`
-- Focus: `focus:ring-2 focus:ring-red-500`
-
----
-
-## Cards & Containers
-
-### Standard Card
-```jsx
-<div className="card">
-  <h3 className="section-title">Card Title</h3>
-  <p className="body-text">Card content goes here</p>
-</div>
-```
-
-**Styles**: `bg-white shadow-md rounded-lg p-6`
-
-### Stat Card (with colored border)
-```jsx
-<div className="stat-card border-blue-600">
-  <p className="muted-text">Total Users</p>
-  <h2 className="text-3xl font-bold text-blue-600">1,234</h2>
-</div>
-```
-
-**Styles**: `bg-white shadow-md rounded-lg p-6 border-l-4`
-
----
-
-## Modals
-
-### Modal Structure
-```jsx
-<div className="modal-backdrop">
-  <div className="modal-container">
-    <div className="flex justify-between items-center mb-4">
-      <h2 className="section-title">Modal Title</h2>
-      <button onClick={onClose}>×</button>
-    </div>
-
-    <div className="body-text">
-      Modal content goes here
-    </div>
-
-    <div className="action-buttons mt-6">
-      <button className="btn-secondary">Cancel</button>
-      <button className="btn-primary">Confirm</button>
-    </div>
-  </div>
-</div>
-```
-
-**Backdrop**: `fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50`
-
-**Container**: `bg-white rounded-2xl shadow-2xl p-8 max-w-2xl w-full`
-
----
+Replaces `window.alert()` everywhere, including the global API error
+interceptor. Fixed position (bottom-right), auto-dismiss after ~5s, manual
+dismiss button, variants: `success` (green), `error` (red), `info` (slate).
 
 ## Tables
 
-### Table Structure
-```jsx
-<div className="table-container">
-  <table className="table">
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Email</th>
-        <th>Role</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>John Doe</td>
-        <td>john@example.com</td>
-        <td>Admin</td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-```
+- Header row: `bg-slate-50/50`, cells `text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]`
+- Body rows: `divide-y divide-slate-50`, hover `hover:bg-slate-50/30`
+- Always pair with an `EmptyState` for the zero-results case and a `LoadingSpinner` while fetching.
+- Below `md`, provide a stacked-card fallback instead of relying solely on horizontal scroll for dense tables.
 
-**Header Styles**:
-- Background: `bg-slate-100`
-- Text: `text-slate-700 font-semibold text-sm`
+## Empty States (`EmptyState` component - `src/components/ui/EmptyState.tsx`)
 
-**Row Styles**:
-- Border: `border-b border-slate-200`
-- Hover: `hover:bg-slate-50`
+Icon (`text-slate-300`) + message (`text-slate-400 text-sm font-bold`) +
+optional action button, centered, generous vertical padding (`py-12`).
 
-**Cell Styles**:
-- Padding: `px-4 py-3`
-- Text: `text-sm text-slate-600`
+## Status Badges (`StatusBadge` component)
 
----
+One consistent badge per job/ticket status - reuse the existing component
+rather than inlining status-color logic per page.
 
-## Dropdowns
+## Accessibility
 
-```jsx
-<div className="dropdown">
-  <button className="dropdown-item">Option 1</button>
-  <button className="dropdown-item">Option 2</button>
-  <button className="dropdown-item">Option 3</button>
-</div>
-```
-
-**Container**: `bg-white rounded-lg shadow-lg border border-slate-200`
-
-**Items**: `px-4 py-2 text-sm text-slate-700 hover:bg-slate-100`
-
----
-
-## Error States
-
-### Error Container
-```jsx
-<div className="error-container">
-  <h4 className="error-title">Error</h4>
-  <p className="error-text">Something went wrong. Please try again.</p>
-</div>
-```
-
-**Styles**:
-- Background: `bg-red-50`
-- Border: `border border-red-200`
-- Text: `text-red-700`
-
----
-
-## Empty States
-
-```jsx
-<div className="empty-state">
-  <svg className="empty-state-icon w-16 h-16">...</svg>
-  <p className="empty-state-text">No items found</p>
-  <a href="#" className="empty-state-action">Create your first item</a>
-</div>
-```
-
-**Styles**:
-- Icon: `text-slate-300 mb-4`
-- Text: `text-slate-500 text-sm`
-- Action: `text-blue-600 text-sm hover:text-blue-700`
-
----
-
-## Utility Classes
-
-### Form Group
-```jsx
-<div className="form-group">
-  {/* Form field */}
-</div>
-```
-Adds bottom margin: `mb-4`
-
-### Action Buttons
-```jsx
-<div className="action-buttons">
-  <button className="btn-secondary">Cancel</button>
-  <button className="btn-primary">Save</button>
-</div>
-```
-Flex container with gap: `flex gap-2 justify-end`
-
----
-
-## Design Principles
-
-1. **No Gradients**: Use solid colors only for a clean, modern look
-2. **Rounded Corners**: Use `rounded-lg` (8px) for most elements, `rounded-2xl` for modals
-3. **Soft Shadows**: `shadow-md` for cards, `shadow-lg` for dropdowns, `shadow-2xl` for modals
-4. **Consistent Spacing**: Use Tailwind's spacing scale (px-4, py-2, gap-6, etc.)
-5. **Minimal Animation**: Only use subtle transitions on interactive elements
-6. **Flat UI**: No 3D effects, keep everything clean and minimal
-
----
-
-## Common Patterns
-
-### Form with Error Handling
-```jsx
-<form className="space-y-4">
-  <div className="form-group">
-    <label className="input-label">Email</label>
-    <input
-      type="email"
-      className={errors.email ? "input-field-error" : "input-field"}
-    />
-    {errors.email && (
-      <p className="error-text mt-1">{errors.email}</p>
-    )}
-  </div>
-
-  <div className="action-buttons">
-    <button type="submit" className="btn-primary">Submit</button>
-  </div>
-</form>
-```
-
-### Dashboard Stat Cards
-```jsx
-<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-  <div className="stat-card border-blue-600">
-    <p className="muted-text">Total Users</p>
-    <h2 className="text-3xl font-bold text-blue-600">1,234</h2>
-  </div>
-
-  <div className="stat-card border-green-600">
-    <p className="muted-text">Active Jobs</p>
-    <h2 className="text-3xl font-bold text-green-600">56</h2>
-  </div>
-</div>
-```
-
-### Confirmation Modal
-```jsx
-<div className="modal-backdrop">
-  <div className="modal-container max-w-md">
-    <h2 className="section-title mb-4">Confirm Delete</h2>
-    <p className="body-text mb-6">
-      Are you sure you want to delete this item? This action cannot be undone.
-    </p>
-    <div className="action-buttons">
-      <button className="btn-secondary" onClick={onCancel}>Cancel</button>
-      <button className="btn-danger" onClick={onConfirm}>Delete</button>
-    </div>
-  </div>
-</div>
-```
-
----
+- Every interactive element is a real `<button>`/`<a>`, not a `<div onClick>`.
+- Icon-only buttons get an `aria-label`.
+- Modals trap focus and restore it to the trigger element on close.
+- Color is never the only signal (status badges pair color with text, not color alone).
 
 ## Migration Guide
 
-### Updating Existing Components
+When touching a page as part of the design-system migration:
 
-1. **Replace gray colors with slate**:
-   - `text-gray-600` → `text-slate-600`
-   - `bg-gray-100` → `bg-slate-100`
-   - `border-gray-300` → `border-slate-300`
-
-2. **Update button classes**:
-   - Use predefined `.btn-*` classes instead of inline Tailwind
-   - Ensure all buttons have `rounded-lg` instead of `rounded`
-
-3. **Update input fields**:
-   - Replace custom input classes with `.input-field`
-   - Use `.input-field-error` for error states
-   - Add `.input-label` for all labels
-
-4. **Standardize modals**:
-   - Use `.modal-backdrop` and `.modal-container`
-   - Replace `rounded-lg` with `rounded-2xl` for modals
-
-5. **Update tables**:
-   - Wrap tables in `.table-container`
-   - Add `.table` class to `<table>` elements
-   - Ensure headers use `bg-slate-100`
-
----
-
-## Browser Support
-
-The design system uses modern CSS features supported in:
-- Chrome 90+
-- Firefox 88+
-- Safari 14+
-- Edge 90+
-
-All Tailwind utilities are autoprefixed for maximum compatibility.
+1. Replace `window.confirm(...)` with `ConfirmDialog`.
+2. Replace `window.alert(...)` with the `Toast` system (remove the page-level `alert()` in the `catch` block once the global interceptor's toast covers it - don't double up).
+3. Replace bespoke modal backdrops with `Modal`.
+4. Replace raw `<input>`/`<label>` pairs with `Input`.
+5. Replace one-off buttons with `Button`.
+6. Replace `<div onClick>` interactive rows with `<button>` and add keyboard support.
+7. Add an `EmptyState` branch to any table/list that doesn't already have one.
+8. Leave business logic, API calls, and validation rules untouched - this is a presentation-layer migration only.

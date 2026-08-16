@@ -1,6 +1,7 @@
 package com.ems.service;
 
 import com.ems.config.TimeZoneConfig;
+import com.ems.dto.BulkApprovalResult;
 import com.ems.dto.EmployeeDashboardResponse;
 import com.ems.dto.MainTicketRequest;
 import com.ems.dto.StatusUpdateRequest;
@@ -388,26 +389,8 @@ public class TicketService {
         User employee = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
 
-        // Get all job cards and sort by scheduled date and time (priority ordering)
-        List<MiniJobCard> allCards = miniJobCardRepository.findByEmployee(employee, Pageable.unpaged()).getContent();
-        List<MiniJobCard> sortedCards = allCards.stream()
-                .sorted((a, b) -> {
-                    // Sort by scheduled date first, then by scheduled time
-                    int dateCompare = a.getMainTicket().getScheduledDate()
-                            .compareTo(b.getMainTicket().getScheduledDate());
-                    if (dateCompare != 0) {
-                        return dateCompare;
-                    }
-                    return a.getMainTicket().getScheduledTime()
-                            .compareTo(b.getMainTicket().getScheduledTime());
-                })
-                .collect(Collectors.toList());
-
-        // Apply pagination to sorted list
-        int start = (int) pageable.getOffset();
-        int end = Math.min((start + pageable.getPageSize()), sortedCards.size());
-        List<MiniJobCard> pageContent = start >= sortedCards.size() ? List.of() : sortedCards.subList(start, end);
-        return new PageImpl<>(pageContent, pageable, sortedCards.size());
+        // Sorted by scheduled date/time (priority ordering) at the DB level
+        return miniJobCardRepository.findByEmployeeOrderByScheduledDateTime(employee, pageable);
     }
 
     public MiniJobCard getJobCardByIdForEmployee(Long id, String username) {
@@ -430,59 +413,21 @@ public class TicketService {
 
         JobStatus jobStatus = JobStatus.valueOf(status.toUpperCase());
 
-        // Get all job cards with the specified status and sort by scheduled date and time (priority ordering)
-        List<MiniJobCard> allCards = miniJobCardRepository.findByEmployeeAndStatus(employee, jobStatus, Pageable.unpaged()).getContent();
-        List<MiniJobCard> sortedCards = allCards.stream()
-                .sorted((a, b) -> {
-                    // Sort by scheduled date first, then by scheduled time
-                    int dateCompare = a.getMainTicket().getScheduledDate()
-                            .compareTo(b.getMainTicket().getScheduledDate());
-                    if (dateCompare != 0) {
-                        return dateCompare;
-                    }
-                    return a.getMainTicket().getScheduledTime()
-                            .compareTo(b.getMainTicket().getScheduledTime());
-                })
-                .collect(Collectors.toList());
-
-        // Apply pagination to sorted list
-        int start = (int) pageable.getOffset();
-        int end = Math.min((start + pageable.getPageSize()), sortedCards.size());
-        List<MiniJobCard> pageContent = start >= sortedCards.size() ? List.of() : sortedCards.subList(start, end);
-        return new PageImpl<>(pageContent, pageable, sortedCards.size());
+        // Sorted by scheduled date/time (priority ordering) at the DB level
+        return miniJobCardRepository.findByEmployeeAndStatusOrderByScheduledDateTime(employee, jobStatus, pageable);
     }
 
     public Page<MiniJobCard> getJobCardsByEmployeeAndDate(String username, LocalDate date, String status, Pageable pageable) {
         User employee = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
 
-        // Get all job cards for the employee
-        List<MiniJobCard> allCards = miniJobCardRepository.findByEmployee(employee, Pageable.unpaged()).getContent();
-
-        // Filter by scheduled date
-        List<MiniJobCard> filteredCards = allCards.stream()
-                .filter(card -> card.getMainTicket().getScheduledDate().equals(date))
-                .collect(Collectors.toList());
-
-        // Apply status filter if provided
         if (status != null && !status.isEmpty() && !status.equalsIgnoreCase("ALL")) {
             JobStatus jobStatus = JobStatus.valueOf(status.toUpperCase());
-            filteredCards = filteredCards.stream()
-                    .filter(card -> card.getStatus() == jobStatus)
-                    .collect(Collectors.toList());
+            return miniJobCardRepository.findByEmployeeAndScheduledDateAndStatusOrderByScheduledTime(
+                    employee, date, jobStatus, pageable);
         }
 
-        // Sort by scheduled time (ascending order)
-        List<MiniJobCard> sortedCards = filteredCards.stream()
-                .sorted((a, b) -> a.getMainTicket().getScheduledTime()
-                        .compareTo(b.getMainTicket().getScheduledTime()))
-                .collect(Collectors.toList());
-
-        // Apply pagination to sorted list
-        int start = (int) pageable.getOffset();
-        int end = Math.min((start + pageable.getPageSize()), sortedCards.size());
-        List<MiniJobCard> pageContent = start >= sortedCards.size() ? List.of() : sortedCards.subList(start, end);
-        return new PageImpl<>(pageContent, pageable, sortedCards.size());
+        return miniJobCardRepository.findByEmployeeAndScheduledDateOrderByScheduledTime(employee, date, pageable);
     }
 
 
@@ -612,6 +557,10 @@ public class TicketService {
 
         if (employee.getRole() != UserRole.EMPLOYEE) {
             throw new RuntimeException("User is not an employee");
+        }
+
+        if (!Boolean.TRUE.equals(employee.getActive())) {
+            throw new RuntimeException("Cannot assign a deactivated employee to a ticket");
         }
 
         // Check if already assigned
@@ -802,32 +751,16 @@ public class TicketService {
     }
 
     public Page<MainTicket> getTicketsByGenerator(Long generatorId, Pageable pageable) {
-        Generator generator = generatorRepository.findById(generatorId)
-                .orElseThrow(() -> new RuntimeException("Generator not found"));
+        if (!generatorRepository.existsById(generatorId)) {
+            throw new RuntimeException("Generator not found");
+        }
 
-        List<MainTicket> tickets = mainTicketRepository.findAll().stream()
-                .filter(t -> t.getGenerator().getId().equals(generatorId))
-                .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
-                .collect(Collectors.toList());
-
-        int start = (int) pageable.getOffset();
-        int end = Math.min((start + pageable.getPageSize()), tickets.size());
-        List<MainTicket> pageContent = start >= tickets.size() ? List.of() : tickets.subList(start, end);
-        return new PageImpl<>(pageContent, pageable, tickets.size());
+        return mainTicketRepository.findByGeneratorId(generatorId, pageable);
     }
 
     // Approval methods
     public Page<MiniJobCard> getPendingApprovals(Pageable pageable) {
-        List<MiniJobCard> allCards = miniJobCardRepository.findAll();
-        List<MiniJobCard> pending = allCards.stream()
-                .filter(c -> c.getStatus() == JobStatus.COMPLETED && !c.getApproved())
-                .sorted((a, b) -> b.getEndTime().compareTo(a.getEndTime()))
-                .collect(Collectors.toList());
-
-        int start = (int) pageable.getOffset();
-        int end = Math.min((start + pageable.getPageSize()), pending.size());
-        List<MiniJobCard> pageContent = start >= pending.size() ? List.of() : pending.subList(start, end);
-        return new PageImpl<>(pageContent, pageable, pending.size());
+        return miniJobCardRepository.findByStatusAndApproved(JobStatus.COMPLETED, false, pageable);
     }
 
     @Transactional
@@ -840,6 +773,7 @@ public class TicketService {
         }
 
         miniJobCard.setApproved(true);
+        miniJobCard.setRejectionNote(null);
         MiniJobCard saved = miniJobCardRepository.save(miniJobCard);
 
         updateMainTicketStatus(miniJobCard.getMainTicket().getId());
@@ -882,24 +816,26 @@ public class TicketService {
 
         card.setStatus(JobStatus.ON_HOLD);
         card.setApproved(false);
+        card.setRejectionNote(rejectionNote);
 
         return miniJobCardRepository.save(card);
     }
 
     @Transactional
-    public List<MiniJobCard> bulkApproveMiniJobCards(List<Long> ids, String approvedBy) {
+    public BulkApprovalResult bulkApproveMiniJobCards(List<Long> ids, String approvedBy) {
         List<MiniJobCard> approved = new ArrayList<>();
+        List<BulkApprovalResult.FailedApproval> failed = new ArrayList<>();
 
         for (Long id : ids) {
             try {
                 MiniJobCard card = approveMiniJobCard(id, approvedBy);
                 approved.add(card);
             } catch (Exception e) {
-                // Skip cards that can't be approved
+                failed.add(new BulkApprovalResult.FailedApproval(id, e.getMessage()));
             }
         }
 
-        return approved;
+        return new BulkApprovalResult(approved, failed);
     }
 
     public List<EmployeeScore> getScoresByTicket(Long ticketId) {

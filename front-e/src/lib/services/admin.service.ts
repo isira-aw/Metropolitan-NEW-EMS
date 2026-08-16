@@ -12,6 +12,7 @@ import {
   EmployeeScore,
   ScoreRequest,
   ApprovalStatistics,
+  BulkApprovalResult,
   TimeTrackingReportResponse,
   OTReportResponse,
   DailyTimeTrackingReportDTO,
@@ -65,10 +66,6 @@ export const userService = {
   async update(id: number, data: UserRequest): Promise<User> {
     const response = await apiClient.put<User>(`/admin/users/${id}`, data);
     return response.data;
-  },
-
-  async delete(id: number): Promise<void> {
-    await apiClient.delete(`/admin/users/${id}`);
   },
 
   async activate(id: number): Promise<User> {
@@ -225,7 +222,10 @@ export const ticketService = {
     return response.data;
   },
 
-  async sendNotification(id: number, data: { ticketId: number; message: string; sendEmail: boolean; sendWhatsApp: boolean }): Promise<any> {
+  async sendNotification(
+    id: number,
+    data: { ticketId: number; message: string; sendEmail: boolean; sendWhatsApp: boolean }
+  ): Promise<{ success: boolean; message?: string; error?: string }> {
     const response = await apiClient.post(`/admin/tickets/${id}/send-notification`, data);
     return response.data;
   },
@@ -255,8 +255,8 @@ export const approvalService = {
     return response.data;
   },
 
-  async bulkApprove(ids: number[]): Promise<MiniJobCard[]> {
-    const response = await apiClient.put<MiniJobCard[]>('/admin/approvals/bulk-approve', ids);
+  async bulkApprove(ids: number[]): Promise<BulkApprovalResult> {
+    const response = await apiClient.put<BulkApprovalResult>('/admin/approvals/bulk-approve', ids);
     return response.data;
   },
 

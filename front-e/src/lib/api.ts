@@ -1,6 +1,14 @@
 import axios from 'axios';
+import { showGlobalToast } from '@/components/ui/Toast';
 
-const API_BASE_URL = 'http://localhost:8080/api';
+declare module 'axios' {
+  export interface AxiosRequestConfig {
+    // Opt out of the global error-alert interceptor below for this request.
+    skipGlobalError?: boolean;
+  }
+}
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080/api';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -49,21 +57,21 @@ apiClient.interceptors.response.use(
       }
     }
 
-    // Global error popup handling
-    // Display backend error messages in a popup window
-    // Components can opt-out by adding { skipGlobalError: true } to config
+    // Global error toast handling
+    // Surfaces backend error messages via the app-wide toast system.
+    // Components can opt-out by adding { skipGlobalError: true } to config.
     const skipGlobalError = error.config?.skipGlobalError;
 
     if (!skipGlobalError) {
       if (error.response?.data?.message) {
-        // Don't show alert for silent failures (like getToday which handles its own errors)
+        // Don't show a toast for silent failures (like getToday which handles its own errors)
         const isSilentRequest = error.config?.url?.includes('/employee/attendance/today');
         if (!isSilentRequest) {
-          alert(error.response.data.message);
+          showGlobalToast(error.response.data.message, 'error');
         }
       } else if (error.message && !error.response) {
         // Network or other errors (only if there's no response from server)
-        alert('Network error: ' + error.message);
+        showGlobalToast('Network error: ' + error.message, 'error');
       }
     }
 

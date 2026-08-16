@@ -5,7 +5,7 @@ This document provides instructions for configuring the Email and WhatsApp messa
 ## Overview
 
 The application now includes a centralized messaging system that supports:
-- **Email notifications** via SMTP
+- **Email notifications** via Amazon SES
 - **WhatsApp messages** via Facebook WhatsApp Business API
 
 These are used for:
@@ -14,46 +14,19 @@ These are used for:
 
 ---
 
-## Email Configuration
+## Email Configuration (Amazon SES)
 
-### Gmail SMTP Setup
-
-1. **Enable 2-Factor Authentication** on your Gmail account
-2. **Generate App Password**:
-   - Go to Google Account Settings > Security
-   - Under "2-Step Verification", select "App passwords"
-   - Generate a new app password for "Mail"
-   - Copy the 16-character password
-
-3. **Update `application.properties`**:
+1. **Verify a sender identity** in the AWS SES console (either a single email address or a whole domain) in the region you plan to use. Until your AWS account is out of the SES sandbox, you'll also need to verify recipient addresses for testing.
+2. **Create an IAM principal** (user or role) with permission to call `ses:SendEmail` / `ses:SendRawEmail`, scoped to the verified identity if possible.
+3. **Provide AWS credentials to the application** via the standard AWS SDK credential chain - `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` environment variables, a shared credentials file, or (recommended for Railway/production) an IAM role attached to the host. Credentials are never stored in `application.properties` or logged.
+4. **Set these application properties / environment variables**:
 ```properties
-# Email Configuration (Gmail SMTP)
-spring.mail.host=smtp.gmail.com
-spring.mail.port=587
-spring.mail.username=your-email@gmail.com
-spring.mail.password=your-16-char-app-password
-spring.mail.properties.mail.smtp.auth=true
-spring.mail.properties.mail.smtp.starttls.enable=true
-spring.mail.properties.mail.smtp.starttls.required=true
+# Email Configuration (Amazon SES)
+aws.ses.region=${AWS_REGION:us-east-1}
+aws.ses.sender-email=${SES_SENDER_EMAIL}
 ```
-
-### Alternative SMTP Providers
-
-**SendGrid:**
-```properties
-spring.mail.host=smtp.sendgrid.net
-spring.mail.port=587
-spring.mail.username=apikey
-spring.mail.password=YOUR_SENDGRID_API_KEY
-```
-
-**AWS SES:**
-```properties
-spring.mail.host=email-smtp.us-east-1.amazonaws.com
-spring.mail.port=587
-spring.mail.username=YOUR_SMTP_USERNAME
-spring.mail.password=YOUR_SMTP_PASSWORD
-```
+   - `SES_SENDER_EMAIL` must exactly match a verified SES identity.
+   - `AWS_REGION` must be a region where SES is enabled and the sender identity was verified.
 
 ---
 
@@ -185,15 +158,19 @@ app.password.reset.token.expiry.minutes=15
 1. **Never commit real credentials** to version control
 2. Use **environment variables** for production:
    ```bash
-   export MAIL_USERNAME=your-email@gmail.com
-   export MAIL_PASSWORD=your-app-password
+   export AWS_ACCESS_KEY_ID=your-access-key-id
+   export AWS_SECRET_ACCESS_KEY=your-secret-access-key
+   export AWS_REGION=us-east-1
+   export SES_SENDER_EMAIL=your-verified-sender@example.com
    export WHATSAPP_TOKEN=your-access-token
    ```
+   AWS credentials are picked up automatically by the SDK's default credential
+   chain - they are never referenced in `application.properties`.
 
 3. Update `application.properties` to use env variables:
    ```properties
-   spring.mail.username=${MAIL_USERNAME}
-   spring.mail.password=${MAIL_PASSWORD}
+   aws.ses.region=${AWS_REGION}
+   aws.ses.sender-email=${SES_SENDER_EMAIL}
    whatsapp.api.token=${WHATSAPP_TOKEN}
    ```
 
@@ -208,10 +185,11 @@ app.password.reset.token.expiry.minutes=15
 
 ### Email Not Sending
 
-1. **Check SMTP credentials** are correct
-2. **Verify app password** is generated correctly
-3. **Check firewall** allows outbound SMTP (port 587)
-4. **Review logs** for detailed error messages
+1. **Check AWS credentials** are available to the app (env vars, shared credentials file, or IAM role)
+2. **Verify the sender identity** (`SES_SENDER_EMAIL`) is verified in the SES console for the configured `AWS_REGION`
+3. **Check SES sandbox status** - in the sandbox, recipient addresses must also be verified
+4. **Check IAM permissions** - the credentials/role need `ses:SendEmail`
+5. **Review logs** for detailed error messages (SES errors surface as `SesException` in the application log)
 
 ### WhatsApp Not Sending
 
