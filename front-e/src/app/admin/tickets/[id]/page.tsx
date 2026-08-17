@@ -26,7 +26,8 @@ import {
   CheckCircle2, 
   XCircle,
   AlertCircle,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Download
 } from 'lucide-react';
 
 export default function AdminTicketDetail() {
@@ -106,6 +107,11 @@ export default function AdminTicketDetail() {
     } finally {
       setRejectingId(null);
     }
+  };
+
+  const getImageExtension = (url: string) => {
+    const match = url.match(/^data:image\/(\w+);/);
+    return match ? match[1] : 'jpg';
   };
 
   if (loading) return <LoadingSpinner />;
@@ -475,11 +481,20 @@ export default function AdminTicketDetail() {
         maxWidth="max-w-3xl"
       >
         {previewImageUrl && (
-          <img
-            src={previewImageUrl}
-            alt="Site work evidence full size"
-            className="w-full max-h-[70vh] object-contain rounded-xl"
-          />
+          <div className="space-y-4">
+            <img
+              src={previewImageUrl}
+              alt="Site work evidence full size"
+              className="w-full max-h-[70vh] object-contain rounded-xl"
+            />
+            <a
+              href={previewImageUrl}
+              download={`site-evidence-${ticket.ticketNumber}.${getImageExtension(previewImageUrl)}`}
+              className="flex items-center justify-center gap-2 w-full bg-corporate-blue text-white py-3 rounded-xl font-black uppercase text-xs tracking-widest hover:bg-blue-700 transition-all"
+            >
+              <Download size={16} /> Download Image
+            </a>
+          </div>
         )}
       </Modal>
     </AdminLayout>
