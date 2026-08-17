@@ -1,6 +1,7 @@
 import './globals.css'
 import type { Metadata } from 'next'
 import { ToastProvider } from '@/components/ui/Toast'
+import { LoadingOverlayProvider } from '@/components/ui/LoadingOverlay'
 
 export const metadata: Metadata = {
   title: 'EMS - Employee Management System',
@@ -15,7 +16,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <ToastProvider>{children}</ToastProvider>
+        <ToastProvider>
+          <LoadingOverlayProvider>{children}</LoadingOverlayProvider>
+        </ToastProvider>
       </body>
     </html>
   )

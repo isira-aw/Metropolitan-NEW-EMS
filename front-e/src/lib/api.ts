@@ -1,10 +1,16 @@
 import axios from 'axios';
 import { showGlobalToast } from '@/components/ui/Toast';
+import { beginGlobalLoading, endGlobalLoading } from '@/components/ui/LoadingOverlay';
 
 declare module 'axios' {
   export interface AxiosRequestConfig {
     // Opt out of the global error-alert interceptor below for this request.
     skipGlobalError?: boolean;
+    // Opt out of the global full-screen loading overlay for this request.
+    skipGlobalLoading?: boolean;
+    // Internal: tracks whether this request incremented the loading counter,
+    // so the response/error handler decrements it exactly once.
+    _globalLoadingStarted?: boolean;
   }
 }
 
@@ -24,6 +30,10 @@ apiClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    if (!config.skipGlobalLoading) {
+      beginGlobalLoading();
+      config._globalLoadingStarted = true;
+    }
     return config;
   },
   (error) => {
@@ -33,8 +43,18 @@ apiClient.interceptors.request.use(
 
 // Response interceptor to handle errors
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (response.config?._globalLoadingStarted) {
+      endGlobalLoading();
+    }
+    return response;
+  },
   async (error) => {
+    if (error.config?._globalLoadingStarted) {
+      endGlobalLoading();
+      error.config._globalLoadingStarted = false;
+    }
+
     if (error.response?.status === 401) {
       // Token expired, try to refresh
       const refreshToken = localStorage.getItem('refreshToken');

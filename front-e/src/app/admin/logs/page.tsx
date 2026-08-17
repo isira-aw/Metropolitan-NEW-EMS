@@ -76,13 +76,13 @@ export default function AdminLogs() {
         </div>
 
         {/* Filters Card */}
-        <Card className="p-8 border-slate-100 shadow-2xl rounded-[2.5rem] bg-white">
-          <div className="flex items-center gap-2 mb-6 text-corporate-blue">
+        <Card className="p-6 border-slate-100 shadow-2xl rounded-[2.5rem] bg-white">
+          <div className="flex items-center gap-2 mb-4 text-corporate-blue">
             <Filter size={18} />
             <h3 className="text-sm font-black uppercase tracking-widest">Filter Audit Trail</h3>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Personnel</label>
               <div className="relative">
@@ -150,42 +150,42 @@ export default function AdminLogs() {
               <thead>
                 <tr className="bg-slate-50/50 border-b border-slate-100">
                   {['Timestamp', 'Subject Personnel', 'Action Performed', 'Status Delta', 'Asset Details', 'GPS'].map((header) => (
-                    <th key={header} className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{header}</th>
+                    <th key={header} className="px-5 py-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{header}</th>
                   ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="px-8 py-20 text-center"><LoadingSpinner /></td>
+                    <td colSpan={6} className="px-8 py-14 text-center"><LoadingSpinner /></td>
                   </tr>
                 ) : logs && logs.content.length > 0 ? (
                   logs.content.map((log) => (
                     <tr key={log.id} className="group hover:bg-slate-50/50 transition-colors">
-                      <td className="px-8 py-6">
-                        <div className="font-black text-slate-900 text-sm uppercase">{log.formattedDate}</div>
+                      <td className="px-5 py-3">
+                        <div className="font-black text-slate-900 text-xs uppercase">{log.formattedDate}</div>
                         <div className="text-[10px] font-black text-slate-400 tracking-widest">{log.formattedTime}</div>
                       </td>
-                      <td className="px-8 py-6">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 font-black text-xs">
+                      <td className="px-5 py-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 font-black text-xs flex-shrink-0">
                             {log.employeeFullName?.charAt(0)}
                           </div>
                           <div>
-                            <div className="font-black text-slate-900 text-sm uppercase leading-none mb-1">{log.employeeFullName || 'N/A'}</div>
+                            <div className="font-black text-slate-900 text-xs uppercase leading-none mb-1">{log.employeeFullName || 'N/A'}</div>
                             <div className="text-[10px] font-bold text-slate-400 lowercase">{log.employeeEmail}</div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-8 py-6">
-                        <span className={`px-3 py-1 text-[10px] font-black rounded-lg border uppercase tracking-wider ${getActivityBadgeColor(log.activityType)}`}>
+                      <td className="px-5 py-3">
+                        <span className={`px-2.5 py-1 text-[10px] font-black rounded-lg border uppercase tracking-wider ${getActivityBadgeColor(log.activityType)}`}>
                           {log.activityDescription}
                         </span>
                         {log.ticketNumber && (
-                          <div className="mt-2 text-[10px] font-black text-corporate-blue">TKT #{log.ticketNumber}</div>
+                          <div className="mt-1 text-[10px] font-black text-corporate-blue">TKT #{log.ticketNumber}</div>
                         )}
                       </td>
-                      <td className="px-8 py-6">
+                      <td className="px-5 py-3">
                         {log.oldStatus && log.newStatus ? (
                           <div className="flex items-center gap-2">
                             <span className="text-[10px] font-black text-slate-400 uppercase">{log.oldStatus}</span>
@@ -194,23 +194,23 @@ export default function AdminLogs() {
                           </div>
                         ) : <span className="text-slate-200">—</span>}
                       </td>
-                      <td className="px-8 py-6">
+                      <td className="px-5 py-3">
                         {log.generatorName ? (
                           <div>
-                            <div className="text-sm font-black text-slate-800 uppercase leading-none mb-1">{log.generatorName}</div>
+                            <div className="text-xs font-black text-slate-800 uppercase leading-none mb-1">{log.generatorName}</div>
                             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{log.generatorLocationName}</div>
                           </div>
                         ) : <span className="text-slate-200">—</span>}
                       </td>
-                      <td className="px-8 py-6">
+                      <td className="px-5 py-3">
                         {log.latitude && (
                           <a
                             href={log.locationMapUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center h-10 w-10 rounded-xl bg-slate-100 text-slate-400 hover:bg-corporate-blue hover:text-white transition-all shadow-sm"
+                            className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-slate-100 text-slate-400 hover:bg-corporate-blue hover:text-white transition-all shadow-sm"
                           >
-                            <MapPin size={18} />
+                            <MapPin size={16} />
                           </a>
                         )}
                       </td>
@@ -218,8 +218,8 @@ export default function AdminLogs() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={6} className="px-8 py-20 text-center">
-                      <History size={48} className="mx-auto text-slate-100 mb-4" />
+                    <td colSpan={6} className="px-8 py-14 text-center">
+                      <History size={40} className="mx-auto text-slate-100 mb-3" />
                       <p className="font-black text-slate-300 uppercase tracking-widest text-sm">No activity records found</p>
                     </td>
                   </tr>
@@ -229,7 +229,7 @@ export default function AdminLogs() {
           </div>
 
           {logs && logs.totalPages > 1 && (
-            <div className="px-8 py-6 border-t border-slate-50 bg-slate-50/30">
+            <div className="px-5 py-4 border-t border-slate-50 bg-slate-50/30">
               <Pagination
                 currentPage={currentPage}
                 totalPages={logs.totalPages}

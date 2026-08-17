@@ -112,32 +112,32 @@ export default function AdminGenerators() {
         </div>
 
         {/* Assets Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {generators && generators.content.length > 0 ? (
             generators.content.map((gen) => (
-              <div key={gen.id} className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group flex flex-col">
-                <div className="p-6 pb-0 flex justify-between items-start">
-                  <div className="bg-slate-100 p-3 rounded-2xl text-slate-600 group-hover:bg-corporate-blue group-hover:text-white transition-colors">
-                    <Zap size={20} fill="currentColor" />
+              <div key={gen.id} className="bg-white rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group flex flex-col">
+                <div className="p-4 pb-0 flex justify-between items-start">
+                  <div className="bg-slate-100 p-2.5 rounded-xl text-slate-600 group-hover:bg-corporate-blue group-hover:text-white transition-colors">
+                    <Zap size={18} fill="currentColor" />
                   </div>
-                  <span className="bg-green-50 text-green-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 border border-green-100">
-                    <Activity size={12} /> Registered
+                  <span className="bg-green-50 text-green-600 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 border border-green-100">
+                    <Activity size={11} /> Registered
                   </span>
                 </div>
 
-                <div className="p-6 space-y-4 flex-1">
+                <div className="p-4 space-y-3 flex-1">
                   <div>
-                    <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight leading-tight">{gen.name}</h3>
+                    <h3 className="text-base font-black text-slate-900 uppercase tracking-tight leading-tight">{gen.name}</h3>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Model: {gen.model}</p>
                   </div>
 
-                  <div className="space-y-2.5 border-t border-slate-50 pt-4">
+                  <div className="space-y-2 border-t border-slate-50 pt-3">
                     <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
-                      <MapPin size={14} className="text-slate-300" />
+                      <MapPin size={13} className="text-slate-300" />
                       <span>{gen.locationName}</span>
                     </div>
                     <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
-                      <Info size={14} className="text-slate-300" />
+                      <Info size={13} className="text-slate-300" />
                       <span>Capacity: {gen.capacity || 'N/A'}</span>
                     </div>
                     {gen.ownerEmail && (
@@ -149,17 +149,17 @@ export default function AdminGenerators() {
                   </div>
                 </div>
 
-                <div className="bg-slate-50/50 px-6 py-4 flex flex-col gap-3">
+                <div className="bg-slate-50/50 px-4 py-3 flex flex-col gap-2">
                   <div className="flex justify-between items-center">
-                    <button 
+                    <button
                       onClick={() => router.push(`/admin/generators/${gen.id}`)}
                       className="text-[10px] font-black text-corporate-blue uppercase tracking-widest flex items-center gap-1 group/btn"
                     >
                       Full Details <ChevronRight size={12} className="group-hover/btn:translate-x-1 transition-transform" />
                     </button>
                     <div className="flex gap-1">
-                      <button onClick={() => handleEdit(gen)} className="p-2 text-slate-400 hover:text-slate-900 hover:bg-white rounded-lg transition-all"><Pencil size={16} /></button>
-                      <button onClick={() => setDeletingId(gen.id)} aria-label={`Delete ${gen.name}`} className="p-2 text-slate-400 hover:text-red-600 hover:bg-white rounded-lg transition-all"><Trash2 size={16} /></button>
+                      <button onClick={() => handleEdit(gen)} className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-white rounded-lg transition-all"><Pencil size={14} /></button>
+                      <button onClick={() => setDeletingId(gen.id)} aria-label={`Delete ${gen.name}`} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-white rounded-lg transition-all"><Trash2 size={14} /></button>
                     </div>
                   </div>
                 </div>

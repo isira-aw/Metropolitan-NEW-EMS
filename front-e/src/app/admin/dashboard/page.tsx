@@ -65,16 +65,16 @@ export default function AdminDashboard() {
             { label: 'Total Tickets', value: stats?.totalTickets, sub: `Completed: ${stats?.completedTickets}`, icon: Ticket, color: 'bg-blue-600' },
             { label: 'Pending Approvals', value: stats?.pendingApprovals, sub: 'Requires Action', icon: CheckCircle, color: stats?.pendingApprovals && stats.pendingApprovals > 0 ? 'bg-amber-500' : 'bg-slate-900' },
           ].map((item, i) => (
-            <div key={i} className="group bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300">
-              <div className="flex justify-between items-start mb-4">
-                <div className={`${item.color} p-3 rounded-2xl text-white shadow-lg`}>
-                  <item.icon size={20} />
+            <div key={i} className="group bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:shadow-lg transition-all duration-300">
+              <div className="flex justify-between items-start mb-3">
+                <div className={`${item.color} p-2.5 rounded-xl text-white shadow-lg`}>
+                  <item.icon size={18} />
                 </div>
-                <ArrowUpRight size={20} className="text-slate-300 group-hover:text-corporate-blue transition-colors" />
+                <ArrowUpRight size={18} className="text-slate-300 group-hover:text-corporate-blue transition-colors" />
               </div>
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.label}</p>
-              <h3 className="text-3xl font-black text-slate-900 mt-1">{item.value || 0}</h3>
-              <p className="text-[10px] font-bold text-slate-500 uppercase mt-2">{item.sub}</p>
+              <h3 className="text-2xl font-black text-slate-900 mt-1">{item.value || 0}</h3>
+              <p className="text-[10px] font-bold text-slate-500 uppercase mt-1.5">{item.sub}</p>
             </div>
           ))}
         </div>
@@ -93,17 +93,17 @@ export default function AdminDashboard() {
               <button
                 key={i}
                 onClick={() => router.push(action.path)}
-                className="group flex items-center justify-between p-6 bg-slate-900 rounded-[2rem] hover:bg-corporate-blue transition-all duration-300 text-left overflow-hidden relative shadow-lg"
+                className="group flex items-center justify-between p-5 bg-slate-900 rounded-2xl hover:bg-corporate-blue transition-all duration-300 text-left overflow-hidden relative shadow-lg"
               >
                 <div className="relative z-10">
-                  <h4 className="text-white font-black uppercase tracking-tight text-lg leading-tight">{action.title}</h4>
+                  <h4 className="text-white font-black uppercase tracking-tight text-base leading-tight">{action.title}</h4>
                   <p className="text-white/50 text-[10px] font-bold uppercase tracking-tighter group-hover:text-white/80">{action.desc}</p>
                 </div>
                 <div className="relative z-10 bg-white/10 p-2 rounded-xl text-white group-hover:bg-white group-hover:text-corporate-blue transition-all">
-                  <ChevronRight size={20} />
+                  <ChevronRight size={18} />
                 </div>
                 {action.badge && action.badge > 0 && (
-                  <span className="absolute top-4 right-4 bg-red-500 text-white text-[9px] font-black px-2 py-1 rounded-full border border-slate-900">
+                  <span className="absolute top-3 right-3 bg-red-500 text-white text-[9px] font-black px-2 py-1 rounded-full border border-slate-900">
                     {action.badge} NEW
                   </span>
                 )}
@@ -114,8 +114,8 @@ export default function AdminDashboard() {
           {/* Time Analytics */}
           <div className="space-y-4">
             <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Efficiency Tracker</h3>
-            <div className="bg-white rounded-[2rem] border border-slate-100 p-8 shadow-sm h-full flex flex-col justify-center">
-              <div className="space-y-8">
+            <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm h-full flex flex-col justify-center">
+              <div className="space-y-6">
                 <div>
                   <div className="flex items-center gap-2 mb-2 text-corporate-blue">
                     <Clock size={16} strokeWidth={3} />
@@ -143,9 +143,9 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              <button 
+              <button
                 onClick={() => router.push('/admin/reports')}
-                className="mt-12 flex items-center justify-center gap-2 w-full py-4 border-2 border-slate-100 rounded-2xl text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hover:bg-slate-50 hover:text-corporate-blue transition-all"
+                className="mt-8 flex items-center justify-center gap-2 w-full py-3 border-2 border-slate-100 rounded-2xl text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hover:bg-slate-50 hover:text-corporate-blue transition-all"
               >
                 <BarChart3 size={16} />
                 View Full Analytics

@@ -180,7 +180,7 @@ export default function EmployeeWorkReportPage() {
 
       {/* Report Display */}
       {!loading && report && (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Report Header */}
           <Card>
             <div className="flex justify-between items-start mb-4">
@@ -203,63 +203,63 @@ export default function EmployeeWorkReportPage() {
             </div>
 
             {/* Summary Statistics */}
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mt-6">
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <div className="flex items-center text-blue-600 mb-2">
-                  <Calendar className="w-5 h-5 mr-2" />
-                  <span className="text-sm font-medium">Days Worked</span>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mt-4">
+              <div className="bg-blue-50 p-3 rounded-lg">
+                <div className="flex items-center text-blue-600 mb-1.5">
+                  <Calendar className="w-4 h-4 mr-1.5" />
+                  <span className="text-xs font-medium">Days Worked</span>
                 </div>
-                <p className="text-2xl font-bold text-blue-900">
+                <p className="text-xl font-bold text-blue-900">
                   {report.summary.totalDaysWorked}
                 </p>
               </div>
 
-              <div className="bg-green-50 p-4 rounded-lg">
-                <div className="flex items-center text-green-600 mb-2">
-                  <Clock className="w-5 h-5 mr-2" />
-                  <span className="text-sm font-medium">Total Hours</span>
+              <div className="bg-green-50 p-3 rounded-lg">
+                <div className="flex items-center text-green-600 mb-1.5">
+                  <Clock className="w-4 h-4 mr-1.5" />
+                  <span className="text-xs font-medium">Total Hours</span>
                 </div>
-                <p className="text-2xl font-bold text-green-900">
+                <p className="text-xl font-bold text-green-900">
                   {formatMinutes(report.summary.totalWorkMinutes)}
                 </p>
               </div>
 
-              <div className="bg-orange-50 p-4 rounded-lg">
-                <div className="flex items-center text-orange-600 mb-2">
-                  <TrendingUp className="w-5 h-5 mr-2" />
-                  <span className="text-sm font-medium">OT Hours</span>
+              <div className="bg-orange-50 p-3 rounded-lg">
+                <div className="flex items-center text-orange-600 mb-1.5">
+                  <TrendingUp className="w-4 h-4 mr-1.5" />
+                  <span className="text-xs font-medium">OT Hours</span>
                 </div>
-                <p className="text-2xl font-bold text-orange-900">
+                <p className="text-xl font-bold text-orange-900">
                   {formatMinutes(report.summary.totalOtMinutes)}
                 </p>
               </div>
 
-              <div className="bg-purple-50 p-4 rounded-lg">
-                <div className="flex items-center text-purple-600 mb-2">
-                  <Briefcase className="w-5 h-5 mr-2" />
-                  <span className="text-sm font-medium">Jobs Done</span>
+              <div className="bg-purple-50 p-3 rounded-lg">
+                <div className="flex items-center text-purple-600 mb-1.5">
+                  <Briefcase className="w-4 h-4 mr-1.5" />
+                  <span className="text-xs font-medium">Jobs Done</span>
                 </div>
-                <p className="text-2xl font-bold text-purple-900">
+                <p className="text-xl font-bold text-purple-900">
                   {report.summary.totalJobsCompleted}
                 </p>
               </div>
 
-              <div className="bg-yellow-50 p-4 rounded-lg">
-                <div className="flex items-center text-yellow-600 mb-2">
-                  <Award className="w-5 h-5 mr-2" />
-                  <span className="text-sm font-medium">Avg Score</span>
+              <div className="bg-yellow-50 p-3 rounded-lg">
+                <div className="flex items-center text-yellow-600 mb-1.5">
+                  <Award className="w-4 h-4 mr-1.5" />
+                  <span className="text-xs font-medium">Avg Score</span>
                 </div>
-                <p className="text-2xl font-bold text-yellow-900">
+                <p className="text-xl font-bold text-yellow-900">
                   {report.summary.overallAverageScore.toFixed(1)}
                 </p>
               </div>
 
-              <div className="bg-pink-50 p-4 rounded-lg">
-                <div className="flex items-center text-pink-600 mb-2">
-                  <Star className="w-5 h-5 mr-2" />
-                  <span className="text-sm font-medium">Total Points</span>
+              <div className="bg-pink-50 p-3 rounded-lg">
+                <div className="flex items-center text-pink-600 mb-1.5">
+                  <Star className="w-4 h-4 mr-1.5" />
+                  <span className="text-xs font-medium">Total Points</span>
                 </div>
-                <p className="text-2xl font-bold text-pink-900">
+                <p className="text-xl font-bold text-pink-900">
                   {report.summary.totalWeightedScore}
                 </p>
               </div>
@@ -267,20 +267,20 @@ export default function EmployeeWorkReportPage() {
           </Card>
 
           {/* Daily Records */}
-          <div className="space-y-4">
-            <h3 className="text-xl font-bold text-gray-900">
+          <div className="space-y-3">
+            <h3 className="text-lg font-bold text-gray-900">
               Daily Work Records
             </h3>
 
             {report.dailyRecords.map((day: DailyWorkRecord) => (
-              <Card key={day.date}>
-                <div className="border-b border-gray-200 pb-4 mb-4">
+              <Card key={day.date} className="p-4">
+                <div className="border-b border-gray-200 pb-3 mb-3">
                   <div className="flex justify-between items-start">
                     <div>
-                      <h4 className="text-lg font-bold text-gray-900">
+                      <h4 className="text-base font-bold text-gray-900">
                         {formatDate(day.date)}
                       </h4>
-                      <div className="flex gap-4 mt-2 text-sm text-gray-600">
+                      <div className="flex gap-4 mt-1 text-xs text-gray-600">
                         <span>
                           Check-in:{' '}
                           {day.checkInTime
@@ -296,12 +296,12 @@ export default function EmployeeWorkReportPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm text-gray-600">
+                      <div className="text-xs text-gray-600">
                         Work: {formatMinutes(day.totalWorkMinutes)} | OT:{' '}
                         {formatMinutes(day.totalOtMinutes)}
                       </div>
                       {day.dailyScore && (
-                        <div className="text-sm font-medium text-blue-600 mt-1">
+                        <div className="text-xs font-medium text-blue-600 mt-1">
                           Daily Score: {day.dailyScore} (Avg:{' '}
                           {day.dailyAverageScore?.toFixed(1)})
                         </div>
@@ -312,16 +312,16 @@ export default function EmployeeWorkReportPage() {
 
                 {/* Jobs for this day */}
                 {day.jobs.length > 0 ? (
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {day.jobs.map((job) => (
                       <div
                         key={job.miniJobCardId}
-                        className="bg-gray-50 p-4 rounded-lg"
+                        className="bg-gray-50 p-3 rounded-lg"
                       >
-                        <div className="flex justify-between items-start mb-2">
+                        <div className="flex justify-between items-start mb-1.5">
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="font-medium text-gray-900">
+                              <span className="font-medium text-sm text-gray-900">
                                 {job.ticketNumber}
                               </span>
                               <StatusBadge status={job.jobStatus as any} />
@@ -332,38 +332,38 @@ export default function EmployeeWorkReportPage() {
                                 <Star className="w-4 h-4 text-yellow-500 fill-current" />
                               )}
                             </div>
-                            <p className="text-sm text-gray-700 mt-1">
+                            <p className="text-xs text-gray-700 mt-1">
                               {job.ticketTitle}
                             </p>
                           </div>
                           <div className="text-right">
-                            <div className="text-sm font-medium text-gray-900">
+                            <div className="text-xs font-medium text-gray-900">
                               {formatMinutes(job.workMinutes)} worked
                             </div>
                             {job.scored && (
-                              <div className="text-sm text-blue-600 mt-1">
+                              <div className="text-xs text-blue-600 mt-1">
                                 Score: {job.weight} {'⭐'.repeat(job.weight)}
                               </div>
                             )}
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-4 text-sm text-gray-600 mt-2">
+                        <div className="flex items-center gap-3 text-xs text-gray-600 mt-1.5">
                           <div className="flex items-center">
-                            <MapPin className="w-4 h-4 mr-1" />
+                            <MapPin className="w-3.5 h-3.5 mr-1" />
                             {job.generatorName} - {job.generatorLocation}
                           </div>
-                          <div className="bg-gray-200 px-2 py-1 rounded text-xs">
+                          <div className="bg-gray-200 px-2 py-0.5 rounded text-[11px]">
                             {job.jobType}
                           </div>
-                          <div className="bg-gray-200 px-2 py-1 rounded text-xs">
+                          <div className="bg-gray-200 px-2 py-0.5 rounded text-[11px]">
                             Weight: {job.weight}
                           </div>
                         </div>
 
                         {!job.scored && job.approved && (
-                          <div className="mt-2 flex items-center text-sm text-orange-600">
-                            <AlertCircle className="w-4 h-4 mr-1" />
+                          <div className="mt-1.5 flex items-center text-xs text-orange-600">
+                            <AlertCircle className="w-3.5 h-3.5 mr-1" />
                             Approved but not scored yet
                           </div>
                         )}
@@ -371,7 +371,7 @@ export default function EmployeeWorkReportPage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-gray-500 text-sm">
+                  <p className="text-gray-500 text-xs">
                     No jobs completed on this day
                   </p>
                 )}

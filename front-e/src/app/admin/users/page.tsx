@@ -11,7 +11,7 @@ import EmptyState from '@/components/ui/EmptyState';
 import { formatDate } from '@/lib/utils/format';
 import {
   Plus, Search, Pencil, ShieldCheck, Mail, Phone, X,
-  User as UserIcon, CheckCircle2, AlertCircle, Contact2, Fingerprint
+  User as UserIcon, CheckCircle2, AlertCircle, Contact2, Fingerprint, Eye, EyeOff
 } from 'lucide-react';
 
 export default function AdminUsers() {
@@ -25,6 +25,7 @@ export default function AdminUsers() {
   const [formData, setFormData] = useState<UserRequest>({
     username: '', password: '', fullName: '', role: UserRole.EMPLOYEE, phone: '', email: '', active: true,
   });
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => { loadUsers(0); }, []);
 
@@ -39,20 +40,22 @@ export default function AdminUsers() {
   const handleCreate = () => {
     setEditingUser(null);
     setFormData({ username: '', password: '', fullName: '', role: UserRole.EMPLOYEE, phone: '', email: '', active: true });
+    setShowPassword(false);
     setShowModal(true);
   };
 
   const handleEdit = (user: User) => {
     setEditingUser(user);
-    setFormData({ 
-      username: user.username, 
-      password: '', 
-      fullName: user.fullName, 
-      role: user.role, 
-      phone: user.phone || '', 
-      email: user.email || '', 
-      active: user.active 
+    setFormData({
+      username: user.username,
+      password: '',
+      fullName: user.fullName,
+      role: user.role,
+      phone: user.phone || '',
+      email: user.email || '',
+      active: user.active
     });
+    setShowPassword(false);
     setShowModal(true);
   };
 
@@ -123,37 +126,37 @@ export default function AdminUsers() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50/50">
-                  <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Employee Profile</th>
-                  <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Designation</th>
-                  <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Contact Channels</th>
-                  <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status</th>
-                  <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Operations</th>
+                  <th className="px-5 py-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Employee Profile</th>
+                  <th className="px-5 py-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Designation</th>
+                  <th className="px-5 py-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Contact Channels</th>
+                  <th className="px-5 py-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status</th>
+                  <th className="px-5 py-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Operations</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {users?.content.map((u) => (
                   <tr key={u.id} className="hover:bg-slate-50/30 transition-colors group">
-                    <td className="px-6 py-5">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-500 font-black text-xs group-hover:bg-corporate-blue group-hover:text-white transition-all shadow-inner">
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 font-black text-xs group-hover:bg-corporate-blue group-hover:text-white transition-all shadow-inner flex-shrink-0">
                           {u.fullName.split(' ').map(n => n[0]).join('')}
                         </div>
                         <div>
-                          <p className="text-sm font-black text-slate-900 uppercase tracking-tight">{u.fullName}</p>
+                          <p className="text-xs font-black text-slate-900 uppercase tracking-tight">{u.fullName}</p>
                           <p className="text-[10px] font-bold text-slate-400 italic">@{u.username}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-5">
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest ${
+                    <td className="px-5 py-3">
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${
                         u.role === 'ADMIN' ? 'bg-slate-900 text-white' : 'bg-blue-50 text-corporate-blue border border-blue-100'
                       }`}>
                         {u.role === 'ADMIN' ? <ShieldCheck size={12} /> : <UserIcon size={12} />}
                         {u.role}
                       </span>
                     </td>
-                    <td className="px-6 py-5">
-                      <div className="space-y-1">
+                    <td className="px-5 py-3">
+                      <div className="space-y-0.5">
                         <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500">
                           <Mail size={12} className="text-slate-300" /> {u.email || '--'}
                         </div>
@@ -162,10 +165,10 @@ export default function AdminUsers() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-5">
-                      <button 
+                    <td className="px-5 py-3">
+                      <button
                         onClick={() => toggleActive(u.id, u.active)}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.15em] transition-all border ${
+                        className={`flex items-center gap-2 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.15em] transition-all border ${
                           u.active ? 'bg-green-50 text-green-600 border-green-100' : 'bg-red-50 text-red-600 border-red-100'
                         }`}
                       >
@@ -173,10 +176,10 @@ export default function AdminUsers() {
                         {u.active ? 'Active' : 'Disabled'}
                       </button>
                     </td>
-                    <td className="px-6 py-5">
+                    <td className="px-5 py-3">
                       <div className="flex justify-end gap-2">
-                        <button onClick={() => handleEdit(u)} aria-label={`Edit ${u.fullName}`} className="p-2.5 text-slate-400 hover:text-corporate-blue hover:bg-blue-50 rounded-xl transition-all">
-                          <Pencil size={18} />
+                        <button onClick={() => handleEdit(u)} aria-label={`Edit ${u.fullName}`} className="p-2 text-slate-400 hover:text-corporate-blue hover:bg-blue-50 rounded-xl transition-all">
+                          <Pencil size={16} />
                         </button>
                       </div>
                     </td>
@@ -214,7 +217,7 @@ export default function AdminUsers() {
               <button onClick={() => setShowModal(false)} className="bg-white/10 p-2 rounded-xl hover:bg-white/20 transition-all"><X size={20} /></button>
             </div>
             
-            <form onSubmit={handleSubmit} className="p-8 space-y-6 max-h-[80vh] overflow-y-auto custom-scrollbar">
+            <form onSubmit={handleSubmit} autoComplete="off" className="p-8 space-y-6 max-h-[80vh] overflow-y-auto custom-scrollbar">
               {/* Profile Identity Section */}
               <div className="space-y-4">
                 <p className="text-[10px] font-black text-corporate-blue uppercase tracking-widest flex items-center gap-2">
@@ -227,7 +230,7 @@ export default function AdminUsers() {
                   </div>
                   <div>
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block ml-1">System Username</label>
-                    <input disabled={!!editingUser} required value={formData.username} onChange={(e) => setFormData({...formData, username: e.target.value})} className="w-full bg-slate-50 rounded-xl py-3 px-4 text-sm font-bold border-none outline-none disabled:opacity-50" placeholder="j.doe" />
+                    <input disabled={!!editingUser} required autoComplete="off" name="new-personnel-username" value={formData.username} onChange={(e) => setFormData({...formData, username: e.target.value})} className="w-full bg-slate-50 rounded-xl py-3 px-4 text-sm font-bold border-none outline-none disabled:opacity-50" placeholder="j.doe" />
                   </div>
                   <div>
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block ml-1">Access Level</label>
@@ -240,15 +243,27 @@ export default function AdminUsers() {
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block ml-1">
                       System Password {editingUser && <span className="text-slate-300">(leave blank to keep current)</span>}
                     </label>
-                    <input
-                      type="password"
-                      required={!editingUser}
-                      minLength={6}
-                      value={formData.password}
-                      onChange={(e) => setFormData({...formData, password: e.target.value})}
-                      placeholder={editingUser ? 'Leave blank to keep current password' : undefined}
-                      className="w-full bg-slate-50 rounded-xl py-3 px-4 text-sm font-bold border-none outline-none focus:ring-2 focus:ring-corporate-blue/20"
-                    />
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        required={!editingUser}
+                        minLength={6}
+                        autoComplete="new-password"
+                        name="new-personnel-password"
+                        value={formData.password}
+                        onChange={(e) => setFormData({...formData, password: e.target.value})}
+                        placeholder={editingUser ? 'Leave blank to keep current password' : undefined}
+                        className="w-full bg-slate-50 rounded-xl py-3 pl-4 pr-11 text-sm font-bold border-none outline-none focus:ring-2 focus:ring-corporate-blue/20"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((v) => !v)}
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500 transition-colors"
+                      >
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

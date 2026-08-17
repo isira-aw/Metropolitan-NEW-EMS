@@ -48,6 +48,7 @@ export default function AdminTicketDetail() {
   const [approvingId, setApprovingId] = useState<number | null>(null);
   const [rejectingId, setRejectingId] = useState<number | null>(null);
   const [rejectionNoteInput, setRejectionNoteInput] = useState('');
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
     loadTicket();
@@ -223,20 +224,20 @@ export default function AdminTicketDetail() {
 
               {miniJobs && miniJobs.content.length > 0 ? (
                 miniJobs.content.map((job) => (
-                  <Card key={job.id} className="p-8 border-none shadow-xl rounded-[2.5rem] bg-white group overflow-hidden relative">
+                  <Card key={job.id} className="p-5 border-none shadow-lg rounded-[2rem] bg-white group overflow-hidden relative">
                     {job.approved && (
-                      <div className="absolute top-0 right-0 p-4">
-                        <CheckCircle2 size={32} className="text-emerald-100" />
+                      <div className="absolute top-0 right-0 p-3">
+                        <CheckCircle2 size={28} className="text-emerald-100" />
                       </div>
                     )}
-                    
-                    <div className="flex flex-col md:flex-row justify-between gap-6 mb-8">
-                      <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 rounded-2xl bg-slate-100 flex items-center justify-center font-black text-slate-400">
+
+                    <div className="flex flex-col md:flex-row justify-between gap-4 mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-xl bg-slate-100 flex items-center justify-center font-black text-slate-400">
                           {job.employee.fullName.charAt(0)}
                         </div>
                         <div>
-                          <h4 className="font-black text-slate-900 uppercase leading-none mb-1">{job.employee.fullName}</h4>
+                          <h4 className="font-black text-slate-900 uppercase leading-none mb-1 text-sm">{job.employee.fullName}</h4>
                           <p className="text-[10px] font-bold text-slate-400 tracking-widest lowercase">{job.employee.email}</p>
                         </div>
                       </div>
@@ -244,55 +245,59 @@ export default function AdminTicketDetail() {
                     </div>
 
                     {job.status === 'ON_HOLD' && job.rejectionNote && (
-                      <div className="mb-6 p-4 bg-rose-50 border border-rose-100 rounded-2xl">
+                      <div className="mb-4 p-3 bg-rose-50 border border-rose-100 rounded-xl">
                         <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-1">Rejection Reason</p>
                         <p className="text-sm font-bold text-rose-700">{job.rejectionNote}</p>
                       </div>
                     )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                       {/* Evidence Image */}
                       <div className="md:col-span-1">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                          <ImageIcon size={14} /> Site Evidence
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                          <ImageIcon size={13} /> Site Evidence
                         </p>
                         {job.imageUrl ? (
-                          <div className="relative group/img cursor-zoom-in">
+                          <button
+                            type="button"
+                            onClick={() => setPreviewImageUrl(job.imageUrl!)}
+                            className="relative group/img cursor-zoom-in block w-full text-left"
+                          >
                             <img
                               src={job.imageUrl}
                               alt="Site work evidence"
-                              className="rounded-2xl w-full aspect-square object-cover shadow-lg grayscale group-hover/img:grayscale-0 transition-all duration-500"
+                              className="rounded-xl w-full h-32 object-cover shadow grayscale group-hover/img:grayscale-0 transition-all duration-500"
                             />
-                            <div className="absolute inset-0 bg-corporate-blue/20 opacity-0 group-hover/img:opacity-100 transition-opacity rounded-2xl flex items-center justify-center">
+                            <div className="absolute inset-0 bg-corporate-blue/20 opacity-0 group-hover/img:opacity-100 transition-opacity rounded-xl flex items-center justify-center">
                               <span className="text-[10px] font-black text-white uppercase tracking-widest">View Full Size</span>
                             </div>
-                          </div>
+                          </button>
                         ) : (
-                          <div className="aspect-square rounded-2xl bg-slate-50 border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-300">
-                            <ImageIcon size={32} />
-                            <span className="text-[10px] font-black uppercase mt-2 tracking-widest">No Image</span>
+                          <div className="h-32 rounded-xl bg-slate-50 border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-300">
+                            <ImageIcon size={28} />
+                            <span className="text-[10px] font-black uppercase mt-1 tracking-widest">No Image</span>
                           </div>
                         )}
                       </div>
 
                       {/* Work Details */}
                       <div className="md:col-span-2 flex flex-col justify-between">
-                        <div className="grid grid-cols-2 gap-6">
+                        <div className="grid grid-cols-2 gap-4">
                           <div>
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Labor Time</p>
-                            <p className="text-lg font-black text-slate-800 uppercase italic flex items-center gap-2">
-                              <Clock size={16} className="text-corporate-blue" /> {formatMinutes(job.workMinutes)}
+                            <p className="text-base font-black text-slate-800 uppercase italic flex items-center gap-2">
+                              <Clock size={15} className="text-corporate-blue" /> {formatMinutes(job.workMinutes)}
                             </p>
                           </div>
                           <div>
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Approval State</p>
-                            <p className={`text-lg font-black uppercase italic ${job.approved ? 'text-emerald-500' : 'text-slate-300'}`}>
+                            <p className={`text-base font-black uppercase italic ${job.approved ? 'text-emerald-500' : 'text-slate-300'}`}>
                               {job.approved ? 'Verified' : 'Pending'}
                             </p>
                           </div>
                           <div className="col-span-2">
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Session Windows</p>
-                            <div className="flex items-center gap-3 text-xs font-bold text-slate-600">
+                            <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
                               <span className="px-2 py-1 bg-slate-50 rounded-lg">{formatDateTime(job.startTime)}</span>
                               <span className="text-slate-300">→</span>
                               <span className="px-2 py-1 bg-slate-50 rounded-lg">{formatDateTime(job.endTime)}</span>
@@ -301,24 +306,24 @@ export default function AdminTicketDetail() {
                         </div>
 
                         {/* Action Bar */}
-                        <div className="mt-8 pt-6 border-t border-slate-50">
+                        <div className="mt-4 pt-3 border-t border-slate-50">
                           {job.status === 'COMPLETED' && !job.approved ? (
-                            <div className="flex gap-3">
+                            <div className="flex gap-2">
                               <button
                                 onClick={() => setApprovingId(job.id)}
-                                className="flex-1 bg-emerald-500 text-white py-3 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-emerald-600 shadow-lg shadow-emerald-100 transition-all flex items-center justify-center gap-2"
+                                className="flex-1 bg-emerald-500 text-white py-2.5 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-emerald-600 shadow-md shadow-emerald-100 transition-all flex items-center justify-center gap-2"
                               >
-                                <CheckCircle2 size={16} /> Approve Labor
+                                <CheckCircle2 size={15} /> Approve Labor
                               </button>
                               <button
                                 onClick={() => openRejectDialog(job.id)}
-                                className="px-6 py-3 bg-rose-50 text-rose-500 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-rose-100 transition-all flex items-center justify-center gap-2"
+                                className="px-5 py-2.5 bg-rose-50 text-rose-500 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-rose-100 transition-all flex items-center justify-center gap-2"
                               >
-                                <XCircle size={16} /> Reject
+                                <XCircle size={15} /> Reject
                               </button>
                             </div>
                           ) : job.approved && (
-                            <div className="w-full py-3 bg-emerald-50 text-emerald-600 rounded-xl font-black uppercase text-[10px] tracking-[0.2em] text-center border border-emerald-100">
+                            <div className="w-full py-2.5 bg-emerald-50 text-emerald-600 rounded-xl font-black uppercase text-[10px] tracking-[0.2em] text-center border border-emerald-100">
                               Personnel Activity Verified by Admin
                             </div>
                           )}
@@ -352,7 +357,7 @@ export default function AdminTicketDetail() {
       <div className="space-y-8">
         {/* Asset Details */}
         <div className="group">
-          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+          <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-2 flex items-center gap-2">
             <Settings size={12} className="text-corporate-blue" /> Machine Specs
           </p>
           <div className="pl-5 border-l border-slate-800 group-hover:border-corporate-blue transition-colors">
@@ -363,7 +368,7 @@ export default function AdminTicketDetail() {
 
         {/* Location Details */}
         <div className="group">
-          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+          <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-2 flex items-center gap-2">
             <MapPin size={12} className="text-corporate-blue" /> Deployment Site
           </p>
           <div className="pl-5 border-l border-slate-800 group-hover:border-corporate-blue transition-colors">
@@ -375,7 +380,7 @@ export default function AdminTicketDetail() {
 
         {/* Schedule */}
         <div className="group">
-          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+          <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-2 flex items-center gap-2">
             <Calendar size={12} className="text-corporate-blue" /> Ops Window
           </p>
           <div className="pl-5 border-l border-slate-800 group-hover:border-corporate-blue transition-colors">
@@ -387,7 +392,7 @@ export default function AdminTicketDetail() {
 
         {/* Complexity Weight (Stars) */}
         <div className="group">
-          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+          <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-2 flex items-center gap-2">
             <AlertCircle size={12} className="text-corporate-blue" /> Complexity Weight
           </p>
           <div className="pl-5 border-l border-slate-800 group-hover:border-corporate-blue transition-colors">
@@ -402,7 +407,7 @@ export default function AdminTicketDetail() {
                   <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.97a1 1 0 00.95.69h4.18c.969 0 1.371 1.24.588 1.81l-3.388 2.46a1 1 0 00-.364 1.118l1.286 3.97c.3.921-.755 1.688-1.54 1.118l-3.388-2.46a1 1 0 00-1.175 0l-3.388 2.46c-.784.57-1.838-.197-1.539-1.118l1.286-3.97a1 1 0 00-.364-1.118L2.05 9.397c-.783-.57-.38-1.81.588-1.81h4.18a1 1 0 00.95-.69l1.286-3.97z" />
                 </svg>
               ))}
-              <span className="ml-2 text-[10px] font-black text-slate-600">LVL {ticket.weight}</span>
+              <span className="ml-2 text-[10px] font-black text-slate-300">LVL {ticket.weight}</span>
             </div>
           </div>
         </div>
@@ -410,8 +415,8 @@ export default function AdminTicketDetail() {
 
       {/* Internal Briefing Section */}
       <div className="mt-12 p-5 bg-slate-800/40 rounded-3xl border border-slate-800 group hover:border-slate-700 transition-all">
-        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Service Briefing</p>
-        <p className="text-xs italic font-medium text-slate-400 leading-relaxed group-hover:text-slate-200 transition-colors">
+        <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-3">Service Briefing</p>
+        <p className="text-xs italic font-medium text-slate-300 leading-relaxed group-hover:text-slate-100 transition-colors">
           "{ticket.description || 'No specific instructions provided for this maintenance cycle.'}"
         </p>
       </div>
@@ -461,6 +466,21 @@ export default function AdminTicketDetail() {
           <Button variant="secondary" onClick={() => setRejectingId(null)}>Cancel</Button>
           <Button variant="danger" disabled={!rejectionNoteInput.trim()} onClick={submitReject}>Reject</Button>
         </div>
+      </Modal>
+
+      <Modal
+        open={previewImageUrl !== null}
+        onClose={() => setPreviewImageUrl(null)}
+        title="Site Evidence"
+        maxWidth="max-w-3xl"
+      >
+        {previewImageUrl && (
+          <img
+            src={previewImageUrl}
+            alt="Site work evidence full size"
+            className="w-full max-h-[70vh] object-contain rounded-xl"
+          />
+        )}
       </Modal>
     </AdminLayout>
   );

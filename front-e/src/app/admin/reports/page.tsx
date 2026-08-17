@@ -132,8 +132,8 @@ export default function AdminReports() {
         </div>
 
         {/* Filters Card */}
-        <Card className="p-8 border-slate-100 shadow-2xl rounded-[2.5rem] bg-white">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <Card className="p-6 border-slate-100 shadow-2xl rounded-[2.5rem] bg-white">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-3">
               <label className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
                 <UserIcon size={16} className="text-corporate-blue" /> Target Personnel
@@ -216,11 +216,11 @@ export default function AdminReports() {
         {(showReport1 || showReport2) && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             <Card className="p-0 border-slate-100 shadow-2xl rounded-[2.5rem] bg-white overflow-hidden">
-              <div className="p-8 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+              <div className="p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
                 <div className="flex items-center gap-4">
                    <div className="p-3 bg-white rounded-xl shadow-sm"><FileText size={24} className="text-corporate-blue" /></div>
                    <div>
-                     <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Generated Data</h3>
+                     <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Generated Data</h3>
                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{formatDateLabel(startDate)} — {formatDateLabel(endDate)}</p>
                    </div>
                 </div>
@@ -229,7 +229,7 @@ export default function AdminReports() {
 
               {/* Report 1 Table */}
               {showReport1 && (
-                <div className="p-8">
+                <div className="p-6">
                   {timeTrackingReport.length === 0 ? (
                     <div className="py-20 text-center"><BarChart3 size={48} className="mx-auto text-slate-200 mb-4" /><p className="font-black text-slate-400 uppercase">No data for this range</p></div>
                   ) : (
@@ -238,7 +238,7 @@ export default function AdminReports() {
                         <thead>
                           <tr className="border-b-2 border-slate-100">
                             {['Employee', 'Date', 'Shift', 'Location', 'Working', 'Idle', 'Travel', 'Total', 'Location Map'].map((h) => (
-                              <th key={h} className="pb-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>
+                              <th key={h} className="pb-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>
                             ))}
                           </tr>
                         </thead>
@@ -247,31 +247,31 @@ export default function AdminReports() {
                             const mapUrl = generateMapUrl(row.locationPath);
                             return (
                               <tr key={i} className="hover:bg-slate-50/50 transition-colors">
-                                <td className="py-6 text-sm font-black text-slate-900 uppercase">{row.employeeName}</td>
-                                <td className="py-6 text-sm font-bold text-slate-600">{formatDateLabel(row.date)}</td>
-                                <td className="py-6">
+                                <td className="py-3 text-xs font-black text-slate-900 uppercase">{row.employeeName}</td>
+                                <td className="py-3 text-xs font-bold text-slate-600">{formatDateLabel(row.date)}</td>
+                                <td className="py-3">
                                   <div className="text-[10px] font-black text-corporate-blue uppercase">{formatTime(row.startTime)}</div>
                                   <div className="text-[10px] font-black text-slate-300 uppercase">{formatTime(row.endTime)}</div>
                                 </td>
-                                <td className="py-6 text-sm font-bold text-slate-600 flex items-center gap-1"><MapPin size={14} className="text-slate-300" /> {row.location || '—'}</td>
-                                <td className="py-6 text-sm font-black text-slate-700">{formatMinutesLocal(row.dailyWorkingMinutes)}</td>
-                                <td className="py-6 text-sm font-black text-orange-500">{formatMinutesLocal(row.idleMinutes)}</td>
-                                <td className="py-6 text-sm font-black text-blue-500">{formatMinutesLocal(row.travelMinutes)}</td>
-                                <td className="py-6 text-sm font-black text-slate-900">{formatMinutesLocal(row.totalMinutes)}</td>
-                                <td className="py-6">
+                                <td className="py-3 text-xs font-bold text-slate-600 flex items-center gap-1"><MapPin size={14} className="text-slate-300" /> {row.location || '—'}</td>
+                                <td className="py-3 text-xs font-black text-slate-700">{formatMinutesLocal(row.dailyWorkingMinutes)}</td>
+                                <td className="py-3 text-xs font-black text-orange-500">{formatMinutesLocal(row.idleMinutes)}</td>
+                                <td className="py-3 text-xs font-black text-blue-500">{formatMinutesLocal(row.travelMinutes)}</td>
+                                <td className="py-3 text-xs font-black text-slate-900">{formatMinutesLocal(row.totalMinutes)}</td>
+                                <td className="py-3">
                                   {mapUrl ? (
                                     <a
                                       href={mapUrl}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="inline-flex items-center gap-2 px-4 py-2 bg-corporate-blue text-white rounded-xl text-xs font-black uppercase hover:bg-blue-700 transition-colors shadow-sm"
+                                      className="inline-flex items-center gap-2 px-3 py-1.5 bg-corporate-blue text-white rounded-xl text-[10px] font-black uppercase hover:bg-blue-700 transition-colors shadow-sm"
                                     >
-                                      <Map size={14} />
+                                      <Map size={12} />
                                       View Path
-                                      <ExternalLink size={12} />
+                                      <ExternalLink size={10} />
                                     </a>
                                   ) : (
-                                    <span className="text-xs font-bold text-slate-300 uppercase">No data</span>
+                                    <span className="text-[10px] font-bold text-slate-300 uppercase">No data</span>
                                   )}
                                 </td>
                               </tr>
@@ -286,17 +286,17 @@ export default function AdminReports() {
 
               {/* Report 2 Content */}
               {showReport2 && (
-                <div className="p-8 space-y-8">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div className="p-6 space-y-6">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {[
                       { label: 'Total Days', val: workTimeReport.length, color: 'text-slate-900' },
                       { label: 'Active Duty', val: formatMinutesLocal(workTimeReport.reduce((sum, r) => sum + r.workingMinutes, 0)), color: 'text-corporate-blue' },
                       { label: 'Total OT', val: formatMinutesLocal(workTimeReport.reduce((sum, r) => sum + r.totalOtMinutes, 0)), color: 'text-orange-500' },
                       { label: 'Weight Score', val: workTimeReport.reduce((sum, r) => sum + r.totalWeightEarned, 0), color: 'text-green-600' }
                     ].map((s, i) => (
-                      <div key={i} className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100">
+                      <div key={i} className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{s.label}</p>
-                        <p className={`text-2xl font-black ${s.color}`}>{s.val}</p>
+                        <p className={`text-xl font-black ${s.color}`}>{s.val}</p>
                       </div>
                     ))}
                   </div>
@@ -306,20 +306,20 @@ export default function AdminReports() {
                       <thead>
                         <tr className="border-b-2 border-slate-100">
                           {['Date', 'Time In', 'Time Out', 'Morning OT', 'Evening OT', 'Work Hours', 'Weight'].map((h) => (
-                            <th key={h} className="pb-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>
+                            <th key={h} className="pb-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>
                           ))}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-50">
                         {workTimeReport.map((row, i) => (
                           <tr key={i} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="py-6 text-sm font-black text-slate-900 uppercase">{formatDateLabel(row.date)}</td>
-                            <td className="py-6 text-sm font-bold text-slate-600">{formatTime(row.startTime)}</td>
-                            <td className="py-6 text-sm font-bold text-slate-600">{formatTime(row.endTime)}</td>
-                            <td className="py-6 text-sm font-black text-slate-700">{formatMinutesLocal(row.morningOtMinutes)}</td>
-                            <td className="py-6 text-sm font-black text-slate-700">{formatMinutesLocal(row.eveningOtMinutes)}</td>
-                            <td className="py-6 text-sm font-black text-corporate-blue">{formatMinutesLocal(row.workingMinutes)}</td>
-                            <td className="py-6"><span className="bg-green-100 text-green-700 px-3 py-1 rounded-lg text-xs font-black uppercase">+{row.totalWeightEarned} pts</span></td>
+                            <td className="py-3 text-xs font-black text-slate-900 uppercase">{formatDateLabel(row.date)}</td>
+                            <td className="py-3 text-xs font-bold text-slate-600">{formatTime(row.startTime)}</td>
+                            <td className="py-3 text-xs font-bold text-slate-600">{formatTime(row.endTime)}</td>
+                            <td className="py-3 text-xs font-black text-slate-700">{formatMinutesLocal(row.morningOtMinutes)}</td>
+                            <td className="py-3 text-xs font-black text-slate-700">{formatMinutesLocal(row.eveningOtMinutes)}</td>
+                            <td className="py-3 text-xs font-black text-corporate-blue">{formatMinutesLocal(row.workingMinutes)}</td>
+                            <td className="py-3"><span className="bg-green-100 text-green-700 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase">+{row.totalWeightEarned} pts</span></td>
                           </tr>
                         ))}
                       </tbody>

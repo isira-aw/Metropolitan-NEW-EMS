@@ -7,6 +7,7 @@ import { MiniJobCard, JobStatusLog, JobStatus } from '@/types';
 import Card from '@/components/ui/Card';
 import StatusBadge from '@/components/ui/StatusBadge';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { formatDateTime, formatMinutes } from '@/lib/utils/format';
 import { Star, CheckCircle, Clock, MapPin, AlertTriangle, ChevronLeft, Camera, Shield, Info, ExternalLink } from 'lucide-react';
 import EmployeeLayout from '@/components/layouts/EmployeeLayout';
@@ -22,6 +23,7 @@ export default function JobCardDetail() {
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [gettingLocation, setGettingLocation] = useState(false);
+  const [confirmingStatus, setConfirmingStatus] = useState<JobStatus | null>(null);
 
   useEffect(() => {
     loadJobCard();
@@ -202,11 +204,11 @@ export default function JobCardDetail() {
                 )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {(['TRAVELING', 'STARTED', 'ON_HOLD', 'COMPLETED', 'CANCEL'] as JobStatus[]).map((status) => 
+                  {(['TRAVELING', 'STARTED', 'ON_HOLD', 'COMPLETED', 'CANCEL'] as JobStatus[]).map((status) =>
                     canUpdateStatus(status) && (
                       <button
                         key={status}
-                        onClick={() => updateStatus(status)}
+                        onClick={() => setConfirmingStatus(status)}
                         disabled={gettingLocation}
                         className={`py-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2
                           ${status === 'CANCEL' 
@@ -320,6 +322,25 @@ export default function JobCardDetail() {
 
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmingStatus !== null}
+        title="Confirm Status Change"
+        message={
+          confirmingStatus
+            ? `Are you sure you want to change the status to "${confirmingStatus.replace('_', ' ')}"? This will be logged with your GPS location.`
+            : ''
+        }
+        confirmLabel="Yes, Update"
+        cancelLabel="Cancel"
+        danger={confirmingStatus === 'CANCEL'}
+        onConfirm={() => {
+          const status = confirmingStatus;
+          setConfirmingStatus(null);
+          if (status) updateStatus(status);
+        }}
+        onCancel={() => setConfirmingStatus(null)}
+      />
     </EmployeeLayout>
   );
 }
