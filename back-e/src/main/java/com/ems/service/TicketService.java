@@ -48,6 +48,9 @@ public class TicketService {
     private EmployeeScoreRepository employeeScoreRepository;
 
     @Autowired
+    private ActivityLogRepository activityLogRepository;
+
+    @Autowired
     private LogService logService;
 
     @Autowired
@@ -726,27 +729,35 @@ public class TicketService {
         return ticket;
     }
 
+    /**
+     * Permanently (hard) delete a main ticket, regardless of its status or the
+     * status of its mini job cards - started, completed, or cancelled tickets
+     * can all be removed. Every dependent record is deleted first so no
+     * orphaned rows (or FK violations) are left behind:
+     * EmployeeScore -> ActivityLog (per mini job card) -> JobStatusLog ->
+     * MiniJobCard -> ActivityLog (per ticket) -> TicketAssignment -> MainTicket.
+     */
     @Transactional
     public void deleteMainTicket(Long id) {
         MainTicket ticket = mainTicketRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Ticket not found"));
 
         List<MiniJobCard> cards = miniJobCardRepository.findByMainTicketId(id);
-        boolean hasNonPending = cards.stream()
-                .anyMatch(c -> c.getStatus() != JobStatus.PENDING && c.getStatus() != JobStatus.CANCEL);
-
-        if (hasNonPending) {
-            throw new RuntimeException("Cannot delete ticket with active job cards");
+        for (MiniJobCard card : cards) {
+            employeeScoreRepository.findByMiniJobCardId(card.getId())
+                    .ifPresent(employeeScoreRepository::delete);
+            activityLogRepository.deleteAll(
+                    activityLogRepository.findByMiniJobCardIdOrderByTimestampDesc(card.getId()));
+            jobStatusLogRepository.deleteAll(
+                    jobStatusLogRepository.findByMiniJobCardIdOrderByLoggedAtDesc(card.getId()));
         }
-
-        // Delete mini job cards
         miniJobCardRepository.deleteAll(cards);
 
-        // Delete assignments
+        activityLogRepository.deleteAll(activityLogRepository.findByMainTicketId(id));
+
         List<TicketAssignment> assignments = ticketAssignmentRepository.findByMainTicketId(id);
         ticketAssignmentRepository.deleteAll(assignments);
 
-        // Delete ticket
         mainTicketRepository.delete(ticket);
     }
 
@@ -761,6 +772,42 @@ public class TicketService {
     // Approval methods
     public Page<MiniJobCard> getPendingApprovals(Pageable pageable) {
         return miniJobCardRepository.findByStatusAndApproved(JobStatus.COMPLETED, false, pageable);
+    }
+
+    /**
+     * Pending approvals (COMPLETED + approved=false) whose endTime falls on the given date.
+     * Used by the admin approvals calendar view when a specific day is clicked.
+     */
+    public Page<MiniJobCard> getPendingApprovalsByDate(LocalDate date, Pageable pageable) {
+        LocalDateTime start = date.atStartOfDay();
+        LocalDateTime end = date.plusDays(1).atStartOfDay();
+        return miniJobCardRepository.findByStatusAndApprovedAndEndTimeBetween(
+                JobStatus.COMPLETED, false, start, end, pageable);
+    }
+
+    /**
+     * Counts of pending approvals (COMPLETED + approved=false), grouped by the
+     * LocalDate of endTime, for every day in the given month that has at least
+     * one such job card. Powers the monthly calendar highlight on the admin
+     * approvals page.
+     *
+     * @param year  calendar year, e.g. 2026
+     * @param month calendar month 1-12
+     * @return map of date -> count, only including dates with count > 0
+     */
+    public Map<LocalDate, Long> getPendingApprovalsCalendar(int year, int month) {
+        LocalDate monthStart = LocalDate.of(year, month, 1);
+        LocalDateTime start = monthStart.atStartOfDay();
+        LocalDateTime end = monthStart.plusMonths(1).atStartOfDay();
+
+        List<MiniJobCard> cards = miniJobCardRepository
+                .findByStatusAndApprovedAndEndTimeBetween(JobStatus.COMPLETED, false, start, end);
+
+        return cards.stream()
+                .filter(c -> c.getEndTime() != null)
+                .collect(Collectors.groupingBy(
+                        c -> c.getEndTime().toLocalDate(),
+                        Collectors.counting()));
     }
 
     @Transactional

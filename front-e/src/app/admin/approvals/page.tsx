@@ -13,7 +13,40 @@ import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 import { formatDateTime, formatMinutes } from '@/lib/utils/format';
 import { getTodayInTimezone } from '@/lib/config/timezone';
-import { Check, X, Star, Eye, Layers, User as UserIcon, Clock, Hash, Calendar } from 'lucide-react';
+import { ApprovalCalendarCounts } from '@/types';
+import { Check, X, Star, Eye, Layers, User as UserIcon, Clock, Hash, Calendar, ChevronLeft, ChevronRight, XCircle } from 'lucide-react';
+
+const WEEKDAY_LABELS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+
+/** Local yyyy-MM-dd (no UTC conversion / timezone shift). */
+function toLocalIsoDate(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+/** Builds a Monday-first calendar grid for the given month as a flat list of cells. */
+function buildCalendarGrid(year: number, month: number /* 0-indexed */) {
+  const firstOfMonth = new Date(year, month, 1);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  // getDay(): 0=Sun..6=Sat -> convert to Monday-first offset (0=Mon..6=Sun)
+  const leadingBlanks = (firstOfMonth.getDay() + 6) % 7;
+
+  const cells: Array<{ day: number; iso: string } | null> = [];
+  for (let i = 0; i < leadingBlanks; i++) cells.push(null);
+  for (let day = 1; day <= daysInMonth; day++) {
+    cells.push({ day, iso: toLocalIsoDate(new Date(year, month, day)) });
+  }
+  // Pad trailing blanks so the grid always completes full weeks
+  while (cells.length % 7 !== 0) cells.push(null);
+  return cells;
+}
 
 export default function AdminApprovals() {
   const [loading, setLoading] = useState(true);
@@ -27,13 +60,66 @@ export default function AdminApprovals() {
   const [scoringCard, setScoringCard] = useState<MiniJobCard | null>(null);
   const [viewingCard, setViewingCard] = useState<MiniJobCard | null>(null);
 
+  // --- Calendar view state ---
+  const today = new Date();
+  const [calendarMonth, setCalendarMonth] = useState<Date>(new Date(today.getFullYear(), today.getMonth(), 1));
+  const [calendarCounts, setCalendarCounts] = useState<ApprovalCalendarCounts>({});
+  const [calendarLoading, setCalendarLoading] = useState(false);
+  // Date (yyyy-MM-dd) selected by clicking a calendar cell. When set, this takes
+  // priority over the plain date-input filter above and calls the server-side,
+  // endTime-based date filter directly.
+  const [calendarSelectedDate, setCalendarSelectedDate] = useState<string | null>(null);
+
   useEffect(() => {
     loadPending(0);
-  }, [selectedDate]);
+  }, [selectedDate, calendarSelectedDate]);
+
+  useEffect(() => {
+    loadCalendarCounts(calendarMonth);
+  }, [calendarMonth]);
+
+  const loadCalendarCounts = async (month: Date) => {
+    try {
+      setCalendarLoading(true);
+      const counts = await approvalService.getCalendar(month.getFullYear(), month.getMonth() + 1);
+      setCalendarCounts(counts);
+    } catch (error) {
+      console.error('Error loading approvals calendar:', error);
+    } finally {
+      setCalendarLoading(false);
+    }
+  };
+
+  const goToPrevMonth = () => {
+    setCalendarMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+  };
+
+  const goToNextMonth = () => {
+    setCalendarMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+  };
+
+  const handleCalendarDateClick = (iso: string) => {
+    setCalendarSelectedDate((prev) => (prev === iso ? null : iso));
+    setCurrentPage(0);
+  };
+
+  const clearCalendarFilter = () => {
+    setCalendarSelectedDate(null);
+    setCurrentPage(0);
+  };
 
   const loadPending = async (page: number) => {
     try {
       setLoading(true);
+
+      if (calendarSelectedDate) {
+        // Server-side filter by endTime's date (matches the calendar counts).
+        const data = await approvalService.getPending({ page, size: 10, date: calendarSelectedDate });
+        setPending(data);
+        setCurrentPage(page);
+        return;
+      }
+
       const data = await approvalService.getPending({ page: 0, size: 1000 });
 
       // Filter by selected date based on start time
@@ -77,6 +163,7 @@ export default function AdminApprovals() {
 
   const handleTodayFilter = () => {
     setSelectedDate(getTodayInTimezone());
+    setCalendarSelectedDate(null);
     setCurrentPage(0);
   };
 
@@ -178,19 +265,106 @@ export default function AdminApprovals() {
           )}
         </div>
 
+        {/* Monthly Approvals Calendar */}
+        <Card className="p-4 border-brand/20 shadow-sm rounded-xl bg-cream">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                aria-label="Previous month"
+                onClick={goToPrevMonth}
+                className="p-2 rounded-lg bg-brand/10 text-brand hover:bg-brand hover:text-cream transition-all"
+              >
+                <ChevronLeft size={16} strokeWidth={3} />
+              </button>
+              <h3 className="text-sm font-black text-black uppercase tracking-widest min-w-[160px] text-center">
+                {MONTH_NAMES[calendarMonth.getMonth()]} {calendarMonth.getFullYear()}
+              </h3>
+              <button
+                type="button"
+                aria-label="Next month"
+                onClick={goToNextMonth}
+                className="p-2 rounded-lg bg-brand/10 text-brand hover:bg-brand hover:text-cream transition-all"
+              >
+                <ChevronRight size={16} strokeWidth={3} />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <span className="flex items-center gap-1.5 text-[10px] font-black text-black/50 uppercase tracking-widest">
+                <span className="w-3 h-3 rounded-sm bg-yellow-300 border border-yellow-500/40 inline-block" />
+                Unreviewed
+              </span>
+              {calendarSelectedDate && (
+                <button
+                  type="button"
+                  onClick={clearCalendarFilter}
+                  className="flex items-center gap-1.5 text-[10px] font-black text-brand uppercase tracking-widest hover:underline"
+                >
+                  <XCircle size={13} /> Clear Date Filter
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-7 gap-1.5">
+            {WEEKDAY_LABELS.map((label) => (
+              <div key={label} className="text-center text-[10px] font-black text-black/40 uppercase tracking-widest py-1">
+                {label}
+              </div>
+            ))}
+
+            {buildCalendarGrid(calendarMonth.getFullYear(), calendarMonth.getMonth()).map((cell, idx) => {
+              if (!cell) {
+                return <div key={`blank-${idx}`} className="aspect-square rounded-lg" />;
+              }
+              const count = calendarCounts[cell.iso] || 0;
+              const hasUnreviewed = count > 0;
+              const isSelected = calendarSelectedDate === cell.iso;
+              const isToday = cell.iso === toLocalIsoDate(today);
+
+              return (
+                <button
+                  key={cell.iso}
+                  type="button"
+                  onClick={() => handleCalendarDateClick(cell.iso)}
+                  className={`aspect-square rounded-lg flex flex-col items-center justify-center gap-0.5 transition-all border-2 ${
+                    hasUnreviewed
+                      ? 'bg-yellow-300 border-yellow-500/50 hover:brightness-95'
+                      : 'bg-brand/5 border-transparent hover:bg-brand/10'
+                  } ${isSelected ? 'ring-2 ring-brand border-brand' : ''} ${isToday && !hasUnreviewed ? 'border-brand/40' : ''}`}
+                  title={hasUnreviewed ? `${count} unreviewed job card${count === 1 ? '' : 's'}` : undefined}
+                >
+                  <span className={`text-xs font-black ${hasUnreviewed ? 'text-black' : 'text-black/70'}`}>
+                    {cell.day}
+                  </span>
+                  {hasUnreviewed && (
+                    <span className="text-[9px] font-black text-black/70 leading-none">{count}</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          {calendarLoading && (
+            <p className="text-[10px] font-black text-black/40 uppercase tracking-widest mt-2">Loading calendar...</p>
+          )}
+        </Card>
+
         {/* Date Filter */}
         <Card className="p-4 border-brand/20 shadow-sm rounded-xl bg-cream">
           <div className="flex items-end gap-3">
             <div className="flex-1 space-y-1.5">
               <label className="text-xs font-black text-black/60 uppercase tracking-widest flex items-center gap-2">
-                <Calendar size={16} className="text-brand" /> Filter by Date
+                <Calendar size={16} className="text-brand" />
+                {calendarSelectedDate ? `Showing ${calendarSelectedDate} (from calendar)` : 'Filter by Date'}
               </label>
               <div className="flex gap-2">
                 <input
                   type="date"
                   value={selectedDate}
-                  onChange={(e) => { setSelectedDate(e.target.value); setCurrentPage(0); }}
-                  className="flex-1 bg-brand/5 border-none rounded-xl py-2.5 px-3 text-sm font-bold text-black focus:ring-2 focus:ring-brand/30"
+                  disabled={!!calendarSelectedDate}
+                  onChange={(e) => { setSelectedDate(e.target.value); setCalendarSelectedDate(null); setCurrentPage(0); }}
+                  className="flex-1 bg-brand/5 border-none rounded-xl py-2.5 px-3 text-sm font-bold text-black focus:ring-2 focus:ring-brand/30 disabled:opacity-40"
                 />
                 <button
                   onClick={handleTodayFilter}

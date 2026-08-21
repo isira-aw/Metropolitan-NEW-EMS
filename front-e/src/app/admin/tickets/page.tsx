@@ -10,11 +10,12 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import Pagination from '@/components/ui/Pagination';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import Avatar from '@/components/ui/Avatar';
 import { formatDate } from '@/lib/utils/format';
 import {
   Plus, Search, Calendar, User as UserIcon,
   Settings2, Filter, X, Clock, Star,
-  MapPin, ClipboardList, ChevronRight, CheckCircle2
+  MapPin, ClipboardList, ChevronRight, CheckCircle2, Trash2
 } from 'lucide-react';
 
 export default function AdminTickets() {
@@ -27,6 +28,7 @@ export default function AdminTickets() {
   const [editMode, setEditMode] = useState(false);
   const [editingTicketId, setEditingTicketId] = useState<number | null>(null);
   const [cancelingId, setCancelingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   // Filters
   const getTodayDate = () => {
@@ -191,6 +193,18 @@ export default function AdminTickets() {
       alert("Failed to cancel ticket");
     } finally {
       setCancelingId(null);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (deletingId == null) return;
+    try {
+      await ticketService.delete(deletingId);
+      loadTickets(currentPage);
+    } catch (error: any) {
+      alert(error.response?.data?.message || "Failed to delete ticket");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -371,6 +385,13 @@ export default function AdminTickets() {
                         <button onClick={() => setCancelingId(ticket.id)} className="px-4 py-2 bg-red-50 text-red-600 rounded-xl font-black uppercase text-[10px] hover:bg-red-100 transition-all">Cancel</button>
                       </>
                     )}
+                    <button
+                      onClick={() => setDeletingId(ticket.id)}
+                      aria-label={`Permanently delete ticket ${ticket.ticketNumber}`}
+                      className="px-4 py-2 bg-red-50 text-red-600 border border-red-100 rounded-xl font-black uppercase text-[10px] hover:bg-red-600 hover:text-white transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <Trash2 size={12} /> Delete
+                    </button>
                   </div>
                 </div>
               </div>
@@ -484,8 +505,19 @@ export default function AdminTickets() {
                         aria-pressed={formData.employeeIds.includes(emp.id)}
                         className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all border-2 text-left ${formData.employeeIds.includes(emp.id) ? 'bg-cream border-brand shadow-sm' : 'bg-cream/50 border-transparent hover:bg-cream'}`}
                       >
-                        <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${formData.employeeIds.includes(emp.id) ? 'bg-brand text-cream' : 'bg-brand/10 text-brand/50'}`}>
-                          {formData.employeeIds.includes(emp.id) ? <CheckCircle2 size={18} /> : <UserIcon size={16} />}
+                        <div className="relative flex-shrink-0">
+                          <Avatar
+                            userId={emp.id}
+                            hasProfilePicture={emp.hasProfilePicture}
+                            fullName={emp.fullName}
+                            size={36}
+                            className="!rounded-full"
+                          />
+                          {formData.employeeIds.includes(emp.id) && (
+                            <span className="absolute -bottom-1 -right-1 bg-brand text-cream rounded-full p-0.5 border-2 border-cream">
+                              <CheckCircle2 size={12} />
+                            </span>
+                          )}
                         </div>
                         <div className="flex flex-col min-w-0">
                           <span className="text-xs font-black uppercase text-black truncate">{emp.fullName}</span>
@@ -518,6 +550,16 @@ export default function AdminTickets() {
         confirmLabel="Cancel Ticket"
         onConfirm={confirmCancel}
         onCancel={() => setCancelingId(null)}
+      />
+
+      <ConfirmDialog
+        open={deletingId !== null}
+        title="Delete Ticket Permanently"
+        message="This will permanently delete this ticket and all of its job cards, logs, and history. This action cannot be undone."
+        confirmLabel="Delete Permanently"
+        danger
+        onConfirm={confirmDelete}
+        onCancel={() => setDeletingId(null)}
       />
     </AdminLayout>
   );

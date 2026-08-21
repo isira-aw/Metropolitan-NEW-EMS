@@ -113,8 +113,10 @@ public class AdminTicketController {
     }
 
     /**
-     * Delete ticket
-     * Only allowed if all mini job cards are in PENDING status
+     * Permanently delete a ticket (hard delete).
+     * Allowed regardless of ticket/job-card status (started, cancelled, completed).
+     * All dependent records (mini job cards, assignments, status logs, activity
+     * logs, employee scores) are removed too, so nothing is left orphaned.
      *
      * @param id Ticket ID
      * @return No content

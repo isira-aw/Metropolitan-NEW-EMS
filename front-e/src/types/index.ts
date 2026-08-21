@@ -54,7 +54,27 @@ export interface User {
   phone?: string;
   email?: string;
   active: boolean;
+  // Cheap denormalized flag - true if a ProfilePicture row exists for this
+  // user. Lets list views decide whether it's worth fetching an avatar
+  // (GET /users/{id}/photo) without ever loading the base64 blob itself.
+  hasProfilePicture?: boolean;
   createdAt: string;
+}
+
+// ===========================
+// PROFILE PICTURE TYPES
+// ===========================
+
+export interface ProfilePictureResponse {
+  // Full data URL (e.g. "data:image/png;base64,...") stored verbatim by the
+  // server - safe to pass straight into an <img src>. Null when the user
+  // has no picture set.
+  imageBase64: string | null;
+}
+
+export interface ProfilePictureRequest {
+  // Full data URL as produced by FileReader.readAsDataURL().
+  imageBase64: string;
 }
 
 // Shape returned by authService.getStoredUser() - the client-side session
@@ -176,6 +196,13 @@ export interface BulkApprovalResult {
   approved: MiniJobCard[];
   failed: { id: number; reason: string }[];
 }
+
+/**
+ * Map of ISO date string (yyyy-MM-dd) -> count of unreviewed (COMPLETED +
+ * approved=false) mini job cards whose endTime falls on that date. Returned
+ * by GET /admin/approvals/calendar. Only dates with count > 0 are included.
+ */
+export type ApprovalCalendarCounts = Record<string, number>;
 
 export interface StatusUpdateRequest {
   newStatus: JobStatus;

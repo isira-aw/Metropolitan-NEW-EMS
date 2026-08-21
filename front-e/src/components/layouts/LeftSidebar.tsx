@@ -19,8 +19,9 @@ import {
   Menu,
   X,
   ChevronLeft,
-  User as UserIcon,
 } from 'lucide-react';
+import Avatar from '@/components/ui/Avatar';
+import Modal from '@/components/ui/Modal';
 
 interface NavItem {
   name: string;
@@ -40,6 +41,7 @@ export default function LeftSidebar({ role, user, pendingJobsCount }: LeftSideba
   const pathname = usePathname();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const adminNavItems: NavItem[] = [
     { name: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
@@ -128,18 +130,41 @@ export default function LeftSidebar({ role, user, pendingJobsCount }: LeftSideba
 
         {/* User Quick Profile */}
         <div className={`px-3 mb-4 ${isCollapsed ? 'lg:px-3' : ''}`}>
-          <div className={`bg-cream/10 border border-cream/10 rounded-2xl p-3 flex items-center gap-3 ${isCollapsed ? 'lg:justify-center' : ''}`}>
-            <div className="w-9 h-9 rounded-full bg-cream/15 border border-cream/20 flex items-center justify-center text-cream flex-shrink-0">
-              <UserIcon size={18} />
-            </div>
+          <button
+            onClick={() => setIsProfileOpen(true)}
+            aria-label="View profile"
+            className={`w-full bg-cream/10 border border-cream/10 rounded-2xl p-3 flex items-center gap-3 hover:bg-cream/20 transition-colors ${isCollapsed ? 'lg:justify-center' : ''}`}
+          >
+            <Avatar self hasProfilePicture size={36} className="!rounded-full !bg-cream/15 !border-cream/20" />
             {!isCollapsed && (
-              <div className="min-w-0">
+              <div className="min-w-0 text-left">
                 <p className="text-xs font-black truncate">{user?.fullName || 'Operator'}</p>
                 <p className="text-[10px] font-bold text-cream/60 truncate uppercase tracking-tighter">System Verified</p>
               </div>
             )}
-          </div>
+          </button>
         </div>
+
+        {/* Profile Popup */}
+        <Modal open={isProfileOpen} onClose={() => setIsProfileOpen(false)} title="My Profile" maxWidth="max-w-sm">
+          <div className="flex flex-col items-center gap-4 py-2">
+            <Avatar self hasProfilePicture size={96} className="!rounded-full" />
+            <div className="text-center">
+              <p className="text-lg font-black text-black">{user?.fullName || 'Operator'}</p>
+              <p className="text-[10px] font-black text-black/50 uppercase tracking-widest mt-1">{role}</p>
+            </div>
+            <div className="w-full space-y-2 pt-2 border-t border-brand/10">
+              <div className="flex justify-between items-center py-1.5">
+                <span className="text-[10px] font-black text-black/50 uppercase tracking-widest">Username</span>
+                <span className="text-sm font-bold text-black">{user?.username || '-'}</span>
+              </div>
+              <div className="flex justify-between items-center py-1.5">
+                <span className="text-[10px] font-black text-black/50 uppercase tracking-widest">Email</span>
+                <span className="text-sm font-bold text-black truncate max-w-[60%]">{user?.email || '-'}</span>
+              </div>
+            </div>
+          </div>
+        </Modal>
 
         {/* Navigation */}
         <nav className="flex-1 px-3 space-y-1.5 overflow-y-auto">

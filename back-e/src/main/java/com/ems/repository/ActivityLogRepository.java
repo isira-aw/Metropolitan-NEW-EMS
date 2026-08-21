@@ -40,6 +40,9 @@ public interface ActivityLogRepository extends JpaRepository<ActivityLog, Long> 
     // Find logs for a specific mini job card
     List<ActivityLog> findByMiniJobCardIdOrderByTimestampDesc(Long miniJobCardId);
 
+    // Find logs for a specific main ticket (not tied to any one mini job card)
+    List<ActivityLog> findByMainTicketId(Long mainTicketId);
+
     // Find recent logs for an employee
     List<ActivityLog> findTop10ByEmployeeIdOrderByTimestampDesc(Long employeeId);
 }
