@@ -86,12 +86,52 @@ export default function AdminUsers() {
     } catch (error: any) { alert(error.response?.data?.message || 'Error saving user'); }
   };
 
-  const readFileAsDataUrl = (file: File): Promise<string> =>
+  // Base64 grows the raw byte size by ~4/3, so a data URL's payload length
+  // (excluding the "data:...base64," prefix) times 0.75 approximates the
+  // actual encoded byte count without decoding it.
+  const dataUrlByteSize = (dataUrl: string) => (dataUrl.length - dataUrl.indexOf(',') - 1) * 0.75;
+
+  // Downscales/re-encodes as JPEG until the stored image is under maxBytes -
+  // profile pictures are stored as base64 blobs directly on a DB row, so
+  // keeping them small matters far more than for a one-off file download.
+  const compressImage = (file: File, maxBytes = 100 * 1024): Promise<string> =>
     new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = () => reject(reader.error);
-      reader.readAsDataURL(file);
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { reject(new Error('Canvas not supported')); return; }
+
+        let width = img.naturalWidth;
+        let height = img.naturalHeight;
+        const maxDimension = 512;
+        if (width > maxDimension || height > maxDimension) {
+          const scale = maxDimension / Math.max(width, height);
+          width = Math.round(width * scale);
+          height = Math.round(height * scale);
+        }
+
+        let dataUrl = '';
+        for (let attempt = 0; attempt < 8; attempt++) {
+          canvas.width = width;
+          canvas.height = height;
+          ctx.clearRect(0, 0, width, height);
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const quality = Math.max(0.4, 0.9 - attempt * 0.1);
+          dataUrl = canvas.toDataURL('image/jpeg', quality);
+          if (dataUrlByteSize(dataUrl) <= maxBytes) break;
+
+          // Quality alone wasn't enough - shrink the dimensions and try again.
+          width = Math.round(width * 0.8);
+          height = Math.round(height * 0.8);
+        }
+        resolve(dataUrl);
+      };
+      img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error('Could not load image')); };
+      img.src = objectUrl;
     });
 
   const handlePhotoSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -101,7 +141,7 @@ export default function AdminUsers() {
 
     try {
       setUploadingPhoto(true);
-      const dataUrl = await readFileAsDataUrl(file);
+      const dataUrl = await compressImage(file);
       await profilePictureService.uploadPhoto(editingUser.id, { imageBase64: dataUrl });
       invalidateAvatarCache(editingUser.id);
       setAvatarVersion((v) => v + 1);
