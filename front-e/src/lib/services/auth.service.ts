@@ -25,6 +25,7 @@ export const authService = {
       fullName: localStorage.getItem('fullName'),
       username: localStorage.getItem('username'),
       email: localStorage.getItem('email'),
+      phone: localStorage.getItem('phone'),
     };
   },
 
