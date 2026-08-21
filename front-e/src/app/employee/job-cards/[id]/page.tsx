@@ -12,11 +12,11 @@ import { Star, CheckCircle, Clock, MapPin, AlertTriangle, ChevronLeft, Camera, S
 import EmployeeLayout from '@/components/layouts/EmployeeLayout';
 
 const STEPS: { key: JobStatus; label: string }[] = [
-  { key: 'PENDING', label: 'Pending' },
-  { key: 'TRAVELING', label: 'Traveling' },
-  { key: 'STARTED', label: 'Started' },
-  { key: 'ON_HOLD', label: 'On Hold' },
-  { key: 'COMPLETED', label: 'Completed' },
+  { key: 'PENDING' as JobStatus, label: 'Pending' },
+  { key: 'TRAVELING' as JobStatus, label: 'Traveling' },
+  { key: 'STARTED' as JobStatus, label: 'Started' },
+  { key: 'ON_HOLD' as JobStatus, label: 'On Hold' },
+  { key: 'COMPLETED' as JobStatus, label: 'Completed' },
 ];
 
 /** Horizontal linear progress stepper showing where the job stands. */

@@ -12,7 +12,7 @@ import { formatMinutes } from '@/lib/utils/format';
 import { Calendar, Star, Clock, ChevronRight, Filter } from 'lucide-react';
 import EmployeeLayout from '@/components/layouts/EmployeeLayout';
 
-const STEPS: JobStatus[] = ['PENDING', 'TRAVELING', 'STARTED', 'ON_HOLD', 'COMPLETED'];
+const STEPS = ['PENDING', 'TRAVELING', 'STARTED', 'ON_HOLD', 'COMPLETED'] as JobStatus[];
 
 /** Compact linear stepper for the job card list rows. */
 function MiniStepper({ status }: { status: JobStatus }) {
