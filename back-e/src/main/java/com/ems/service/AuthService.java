@@ -43,10 +43,11 @@ public class AuthService {
                 user.getUsername(),
                 user.getFullName(),
                 user.getRole(),
-                user.getEmail()
+                user.getEmail(),
+                user.getPhone()
         );
     }
-    
+
     public AuthResponse refreshToken(String refreshToken) {
         String username;
         try {
@@ -75,7 +76,8 @@ public class AuthService {
                 user.getUsername(),
                 user.getFullName(),
                 user.getRole(),
-                user.getEmail()
+                user.getEmail(),
+                user.getPhone()
         );
     }
 }

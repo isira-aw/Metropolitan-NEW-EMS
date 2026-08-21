@@ -162,7 +162,14 @@ export default function LeftSidebar({ role, user, pendingJobsCount }: LeftSideba
                 <span className="text-[10px] font-black text-black/50 uppercase tracking-widest">Email</span>
                 <span className="text-sm font-bold text-black truncate max-w-[60%]">{user?.email || '-'}</span>
               </div>
+              <div className="flex justify-between items-center py-1.5">
+                <span className="text-[10px] font-black text-black/50 uppercase tracking-widest">Mobile</span>
+                <span className="text-sm font-bold text-black truncate max-w-[60%]">{user?.phone || '-'}</span>
+              </div>
             </div>
+            <p className="text-[10px] font-bold text-black/40 text-center pt-2">
+              If any detail above is missing or incorrect, please contact an admin.
+            </p>
           </div>
         </Modal>
 

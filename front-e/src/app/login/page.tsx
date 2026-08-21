@@ -25,13 +25,15 @@ export default function LoginPage() {
         password,
       }, { skipGlobalError: true });
 
-      const { accessToken, refreshToken, role, fullName } = response.data;
+      const { accessToken, refreshToken, role, fullName, email, phone } = response.data;
 
       localStorage.setItem('accessToken', accessToken);
       localStorage.setItem('refreshToken', refreshToken);
       localStorage.setItem('role', role);
       localStorage.setItem('fullName', fullName);
       localStorage.setItem('username', username);
+      if (email) localStorage.setItem('email', email); else localStorage.removeItem('email');
+      if (phone) localStorage.setItem('phone', phone); else localStorage.removeItem('phone');
 
       router.push(role === 'ADMIN' ? '/admin/dashboard' : '/employee/dashboard');
     } catch (err: any) {

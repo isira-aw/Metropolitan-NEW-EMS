@@ -39,7 +39,8 @@ export interface AuthResponse {
   username: string;
   fullName: string;
   role: UserRole;
-  email: string;
+  email: string | null;
+  phone: string | null;
 }
 
 // ===========================
@@ -86,6 +87,7 @@ export interface StoredUser {
   fullName: string | null;
   username: string | null;
   email: string | null;
+  phone: string | null;
 }
 
 export interface UserRequest {
