@@ -166,6 +166,15 @@ export default function AdminTickets() {
     }
   }, [modalEmployeeSearch]);
 
+  // Job Title is derived, not typed: Primary Asset must be picked first, then
+  // Type, and only then does "(Type)-Asset" become available to generate.
+  useEffect(() => {
+    if (selectedGenerator && formData.type) {
+      const generatedTitle = `(${formData.type})-${selectedGenerator.name}`;
+      setFormData(prev => prev.title === generatedTitle ? prev : { ...prev, title: generatedTitle });
+    }
+  }, [selectedGenerator, formData.type]);
+
   // --- Event Handlers ---
 
   const handleTodayFilter = () => {
@@ -380,96 +389,118 @@ export default function AdminTickets() {
       {/* --- MODAL --- */}
       {showModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[100] p-4">
-          <div className="bg-cream rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col border border-brand/20">
+          <div className="bg-cream rounded-2xl shadow-xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col border border-brand/20">
             <div className="p-5 border-b border-brand/10 flex justify-between items-center bg-brand/5">
               <h3 className="text-xl font-black text-black uppercase tracking-tighter">{editMode ? 'Modify Dispatch' : 'New Dispatch'}</h3>
               <button onClick={() => setShowModal(false)} className="p-2 hover:bg-cream rounded-xl transition-colors border border-brand/20"><X size={20} /></button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-5">
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                 <div className="space-y-2">
-                   <label className="text-xs font-black text-black/60 uppercase tracking-widest">Job Title *</label>
-                   <input required value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} className="w-full bg-brand/5 border-none rounded-xl p-3 text-sm font-bold text-black focus:ring-2 focus:ring-brand/30" />
-                 </div>
-                 <div className="space-y-2">
-                    <label className="text-xs font-black text-black/60 uppercase tracking-widest">Type</label>
-                    <select value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value as JobCardType })} className="w-full bg-brand/5 border-none rounded-xl p-3 text-sm font-bold text-black focus:ring-2 focus:ring-brand/30">
+            <form onSubmit={handleSubmit} className="p-6 overflow-y-auto flex-1 flex flex-col">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch flex-1 min-h-0">
+                {/* LEFT COLUMN - other dispatch details */}
+                <div className="space-y-5">
+                  <div className="relative space-y-2">
+                    <label className="text-xs font-black text-black/60 uppercase tracking-widest">1. Primary Asset (Generator) *</label>
+                    <div className="relative">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-black/40" size={18} />
+                      <input
+                        type="text"
+                        placeholder={selectedGenerator ? `Selected: ${selectedGenerator.name}` : "Search Asset Name..."}
+                        value={showGeneratorDropdown ? modalGeneratorSearch : (selectedGenerator?.name || "")}
+                        onFocus={() => { setShowGeneratorDropdown(true); setModalGeneratorSearch(""); }}
+                        onChange={(e) => setModalGeneratorSearch(e.target.value)}
+                        className="w-full bg-brand/5 border-none rounded-xl pl-12 pr-4 py-3 text-sm font-bold text-black focus:ring-2 focus:ring-brand/30"
+                      />
+                    </div>
+                    {showGeneratorDropdown && modalGeneratorSearch.length >= 3 && (
+                      <div className="absolute z-[110] w-full mt-2 bg-cream border border-brand/20 rounded-xl shadow-xl max-h-56 overflow-y-auto p-2">
+                        {modalGenerators.map((gen) => (
+                          <button
+                            type="button"
+                            key={gen.id}
+                            onClick={() => { setSelectedGenerator(gen); setFormData({ ...formData, generatorId: gen.id }); setShowGeneratorDropdown(false); }}
+                            className="w-full text-left p-3 hover:bg-brand/10 rounded-xl border-b border-brand/10 last:border-0"
+                          >
+                            <div className="font-black text-sm text-black uppercase">{gen.name}</div>
+                            <div className="text-[10px] font-bold text-black/50 uppercase tracking-wider">{gen.locationName}</div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-black text-black/60 uppercase tracking-widest">
+                      2. Type {!selectedGenerator && <span className="normal-case font-bold text-black/40">(select asset first)</span>}
+                    </label>
+                    <select
+                      required
+                      disabled={!selectedGenerator}
+                      value={formData.type}
+                      onChange={(e) => setFormData({ ...formData, type: e.target.value as JobCardType })}
+                      className="w-full bg-brand/5 border-none rounded-xl p-3 text-sm font-bold text-black focus:ring-2 focus:ring-brand/30 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
                       {Object.values(JobCardType).map((type) => <option key={type} value={type}>{type}</option>)}
                     </select>
-                 </div>
-               </div>
+                  </div>
 
-               <div className="space-y-2">
-                 <label className="text-xs font-black text-black/60 uppercase tracking-widest">Job Description</label>
-                 <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full bg-brand/5 border-none rounded-xl p-3 text-sm font-bold text-black focus:ring-2 focus:ring-brand/30" rows={3} />
-               </div>
-
-               <div className="relative space-y-2">
-                  <label className="text-xs font-black text-black/60 uppercase tracking-widest">Primary Asset (Generator) *</label>
-                  <div className="relative">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-black/40" size={18} />
+                  <div className="space-y-2">
+                    <label className="text-xs font-black text-black/60 uppercase tracking-widest">Job Title (Auto-Generated)</label>
                     <input
-                      type="text"
-                      placeholder={selectedGenerator ? `Selected: ${selectedGenerator.name}` : "Search Asset Name..."}
-                      value={showGeneratorDropdown ? modalGeneratorSearch : (selectedGenerator?.name || "")}
-                      onFocus={() => { setShowGeneratorDropdown(true); setModalGeneratorSearch(""); }}
-                      onChange={(e) => setModalGeneratorSearch(e.target.value)}
-                      className="w-full bg-brand/5 border-none rounded-xl pl-12 pr-4 py-3 text-sm font-bold text-black focus:ring-2 focus:ring-brand/30"
+                      readOnly
+                      disabled
+                      value={formData.title}
+                      placeholder="Select asset & type above to generate"
+                      className="w-full bg-brand/10 border-none rounded-xl p-3 text-sm font-bold text-black/70 cursor-not-allowed"
                     />
                   </div>
-                  {showGeneratorDropdown && modalGeneratorSearch.length >= 3 && (
-                    <div className="absolute z-[110] w-full mt-2 bg-cream border border-brand/20 rounded-xl shadow-xl max-h-56 overflow-y-auto p-2">
-                      {modalGenerators.map((gen) => (
-                        <button
-                          type="button"
-                          key={gen.id}
-                          onClick={() => { setSelectedGenerator(gen); setFormData({ ...formData, generatorId: gen.id }); setShowGeneratorDropdown(false); }}
-                          className="w-full text-left p-3 hover:bg-brand/10 rounded-xl border-b border-brand/10 last:border-0"
-                        >
-                          <div className="font-black text-sm text-black uppercase">{gen.name}</div>
-                          <div className="text-[10px] font-bold text-black/50 uppercase tracking-wider">{gen.locationName}</div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-               </div>
 
-               <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2"><label className="text-xs font-black text-black/60 uppercase tracking-widest">Priority</label><input type="number" min="1" max="5" required value={formData.weight} onChange={(e) => setFormData({ ...formData, weight: parseInt(e.target.value) })} className="w-full bg-brand/5 border-none rounded-xl p-3 text-sm font-bold text-black" /></div>
-                  <div className="space-y-2"><label className="text-xs font-black text-black/60 uppercase tracking-widest">Date</label><input type="date" required value={formData.scheduledDate} onChange={(e) => setFormData({ ...formData, scheduledDate: e.target.value })} className="w-full bg-brand/5 border-none rounded-xl p-3 text-sm font-bold text-black" /></div>
-                  <div className="space-y-2"><label className="text-xs font-black text-black/60 uppercase tracking-widest">Time</label><input type="time" required value={formData.scheduledTime.substring(0, 5)} onChange={(e) => setFormData({ ...formData, scheduledTime: e.target.value + ':00' })} className="w-full bg-brand/5 border-none rounded-xl p-3 text-sm font-bold text-black" /></div>
-               </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-black text-black/60 uppercase tracking-widest">Job Description</label>
+                    <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full bg-brand/5 border-none rounded-xl p-3 text-sm font-bold text-black focus:ring-2 focus:ring-brand/30" rows={3} />
+                  </div>
 
-               <div className="space-y-3">
-                  <label className="text-xs font-black text-black/60 uppercase tracking-widest flex justify-between">
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-2"><label className="text-xs font-black text-black/60 uppercase tracking-widest">Priority</label><input type="number" min="1" max="5" required value={formData.weight} onChange={(e) => setFormData({ ...formData, weight: parseInt(e.target.value) })} className="w-full bg-brand/5 border-none rounded-xl p-3 text-sm font-bold text-black" /></div>
+                    <div className="space-y-2"><label className="text-xs font-black text-black/60 uppercase tracking-widest">Date</label><input type="date" required value={formData.scheduledDate} onChange={(e) => setFormData({ ...formData, scheduledDate: e.target.value })} className="w-full bg-brand/5 border-none rounded-xl p-3 text-sm font-bold text-black" /></div>
+                    <div className="space-y-2"><label className="text-xs font-black text-black/60 uppercase tracking-widest">Time</label><input type="time" required value={formData.scheduledTime.substring(0, 5)} onChange={(e) => setFormData({ ...formData, scheduledTime: e.target.value + ':00' })} className="w-full bg-brand/5 border-none rounded-xl p-3 text-sm font-bold text-black" /></div>
+                  </div>
+                </div>
+
+                {/* RIGHT COLUMN - Personnel Assignment */}
+                <div className="flex flex-col bg-brand/5 rounded-xl border border-brand/10 p-4 space-y-3">
+                  <label className="text-xs font-black text-black/60 uppercase tracking-widest flex justify-between items-center">
                     <span>Personnel Assignment (Max 5)</span>
                     <span className={`px-2 py-0.5 rounded ${formData.employeeIds.length === 0 ? 'bg-red-50 text-red-500' : 'bg-brand/10 text-brand'}`}>{formData.employeeIds.length}/5 Selected</span>
                   </label>
-                  <input type="text" value={modalEmployeeSearch} onChange={(e) => setModalEmployeeSearch(e.target.value)} placeholder="Type name to find team members..." className="w-full bg-brand/5 border-none rounded-xl p-3 text-sm font-bold text-black focus:ring-2 focus:ring-brand/30" />
+                  <input type="text" value={modalEmployeeSearch} onChange={(e) => setModalEmployeeSearch(e.target.value)} placeholder="Type name to find team members..." className="w-full bg-cream border-none rounded-xl p-3 text-sm font-bold text-black focus:ring-2 focus:ring-brand/30" />
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 max-h-60 overflow-y-auto p-2 bg-brand/5 rounded-xl border border-brand/10">
+                  <div className="flex-1 min-h-[18rem] md:min-h-0 space-y-2.5 overflow-y-auto p-1">
                     {(modalEmployeeSearch.length >= 3 ? modalEmployees : (editMode ? modalEmployees : [])).map((emp) => (
                       <button
                         type="button"
                         key={emp.id}
                         onClick={() => toggleEmployee(emp.id)}
                         aria-pressed={formData.employeeIds.includes(emp.id)}
-                        className={`flex items-center gap-3 p-3 rounded-xl transition-all border-2 text-left ${formData.employeeIds.includes(emp.id) ? 'bg-cream border-brand shadow-sm' : 'bg-cream/50 border-transparent hover:bg-cream'}`}
+                        className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all border-2 text-left ${formData.employeeIds.includes(emp.id) ? 'bg-cream border-brand shadow-sm' : 'bg-cream/50 border-transparent hover:bg-cream'}`}
                       >
-                        <div className={`w-9 h-9 rounded-full flex items-center justify-center ${formData.employeeIds.includes(emp.id) ? 'bg-brand text-cream' : 'bg-brand/10 text-brand/50'}`}>
+                        <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${formData.employeeIds.includes(emp.id) ? 'bg-brand text-cream' : 'bg-brand/10 text-brand/50'}`}>
                           {formData.employeeIds.includes(emp.id) ? <CheckCircle2 size={18} /> : <UserIcon size={16} />}
                         </div>
-                        <div className="flex flex-col">
-                          <span className="text-xs font-black uppercase text-black">{emp.fullName}</span>
-                          <span className="text-[10px] font-bold text-black/50">{emp.username}</span>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-xs font-black uppercase text-black truncate">{emp.fullName}</span>
+                          <span className="text-[10px] font-bold text-black/50 truncate">{emp.username}</span>
                         </div>
                       </button>
                     ))}
+                    {(modalEmployeeSearch.length >= 3 ? modalEmployees : (editMode ? modalEmployees : [])).length === 0 && (
+                      <p className="text-[10px] font-bold text-black/40 uppercase tracking-widest text-center py-6">Type at least 3 letters to find team members</p>
+                    )}
                   </div>
-               </div>
+                </div>
+              </div>
 
-               <div className="flex gap-4 pt-3">
+               <div className="flex gap-4 pt-6">
                  <button type="button" onClick={() => setShowModal(false)} className="flex-1 p-3.5 bg-cream border border-brand/30 text-black rounded-xl font-black uppercase text-sm hover:bg-brand/10 transition-colors">Dismiss</button>
                  <button type="submit" className="flex-1 p-3.5 bg-brand text-cream rounded-xl font-black uppercase text-sm hover:shadow-lg transition-all">
                    {editMode ? 'Update Dispatch' : 'Confirm Dispatch'}
