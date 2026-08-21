@@ -159,18 +159,18 @@ export default function AdminApprovals() {
 
   return (
     <AdminLayout>
-      <div className="max-w-7xl mx-auto space-y-8 pb-20">
+      <div className="max-w-[1600px] mx-auto space-y-4 pb-10">
         {/* Header Section */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 px-2">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
           <div>
-            <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase">Approvals Queue</h2>
-            <p className="text-xs font-black text-slate-400 uppercase tracking-widest italic mt-1">Review and Score Technician Job Cards</p>
+            <h2 className="text-2xl font-black text-black tracking-tighter uppercase">Approvals Queue</h2>
+            <p className="text-xs font-black text-black/50 uppercase tracking-widest italic mt-0.5">Review and Score Technician Job Cards</p>
           </div>
 
           {selectedIds.length > 0 && (
             <button
               onClick={() => setConfirmingBulkApprove(true)}
-              className="flex items-center gap-3 bg-corporate-blue text-white px-8 py-4 rounded-2xl font-black uppercase text-sm hover:bg-slate-900 transition-all shadow-xl hover:-translate-y-1"
+              className="flex items-center gap-2 bg-brand text-cream px-5 py-2.5 rounded-xl font-black uppercase text-sm hover:shadow-lg transition-all"
             >
               <Check size={20} strokeWidth={3} />
               Bulk Approve ({selectedIds.length})
@@ -179,52 +179,52 @@ export default function AdminApprovals() {
         </div>
 
         {/* Date Filter */}
-        <Card className="p-6 border-slate-100 shadow-2xl rounded-[2.5rem] bg-white">
-          <div className="flex items-end gap-4">
-            <div className="flex-1 space-y-3">
-              <label className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                <Calendar size={16} className="text-corporate-blue" /> Filter by Date
+        <Card className="p-4 border-brand/20 shadow-sm rounded-xl bg-cream">
+          <div className="flex items-end gap-3">
+            <div className="flex-1 space-y-1.5">
+              <label className="text-xs font-black text-black/60 uppercase tracking-widest flex items-center gap-2">
+                <Calendar size={16} className="text-brand" /> Filter by Date
               </label>
               <div className="flex gap-2">
                 <input
                   type="date"
                   value={selectedDate}
                   onChange={(e) => { setSelectedDate(e.target.value); setCurrentPage(0); }}
-                  className="flex-1 bg-slate-50 border-none rounded-xl py-3 px-4 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-corporate-blue"
+                  className="flex-1 bg-brand/5 border-none rounded-xl py-2.5 px-3 text-sm font-bold text-black focus:ring-2 focus:ring-brand/30"
                 />
                 <button
                   onClick={handleTodayFilter}
-                  className="bg-slate-900 text-white px-6 py-3 rounded-xl text-xs font-black uppercase hover:bg-corporate-blue transition-colors active:scale-95 whitespace-nowrap"
+                  className="bg-brand text-cream px-5 py-2.5 rounded-xl text-xs font-black uppercase hover:shadow-md transition-all whitespace-nowrap"
                 >
                   Today
                 </button>
               </div>
             </div>
-            <div className="bg-slate-100 px-6 py-3 rounded-xl border border-slate-200 text-right">
-              <p className="text-[10px] font-black text-slate-400 uppercase">Results</p>
-              <p className="text-lg font-black text-slate-700">{pending?.totalElements || 0}</p>
+            <div className="bg-brand/10 px-5 py-2.5 rounded-xl border border-brand/20 text-right">
+              <p className="text-[10px] font-black text-black/50 uppercase">Results</p>
+              <p className="text-lg font-black text-black">{pending?.totalElements || 0}</p>
             </div>
           </div>
         </Card>
 
         {/* Pending Cards List */}
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {pending && pending.content.length > 0 ? (
             pending.content.map((card) => (
               <div
                 key={card.id}
-                className={`bg-white border-2 rounded-2xl p-4 transition-all group ${
-                  selectedIds.includes(card.id) ? 'border-corporate-blue shadow-lg' : 'border-slate-100 shadow-sm hover:shadow-md'
+                className={`bg-cream border-2 rounded-xl p-3.5 transition-all group ${
+                  selectedIds.includes(card.id) ? 'border-brand shadow-md' : 'border-brand/20 shadow-sm hover:shadow-md'
                 }`}
               >
-                <div className="flex items-start gap-4">
+                <div className="flex items-start gap-3">
                   {/* Selection Checkbox */}
                   <div className="pt-1">
                     <input
                       type="checkbox"
                       checked={selectedIds.includes(card.id)}
                       onChange={() => toggleSelection(card.id)}
-                      className="w-5 h-5 rounded-md border-2 border-slate-300 text-corporate-blue focus:ring-corporate-blue cursor-pointer"
+                      className="w-5 h-5 rounded-md border-2 border-brand/30 text-brand focus:ring-brand cursor-pointer"
                     />
                   </div>
 
@@ -232,7 +232,7 @@ export default function AdminApprovals() {
                     <img
                       src={card.imageUrl}
                       alt="Job review"
-                      className="w-16 h-16 rounded-xl object-cover border border-slate-100 flex-shrink-0"
+                      className="w-16 h-16 rounded-xl object-cover border border-brand/20 flex-shrink-0"
                     />
                   )}
 
@@ -241,17 +241,17 @@ export default function AdminApprovals() {
                     <div className="flex flex-col md:flex-row justify-between items-start gap-2">
                       <div className="min-w-0 space-y-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-[10px] font-black text-corporate-blue uppercase bg-corporate-blue/10 px-2 py-0.5 rounded-md flex items-center gap-1">
+                          <span className="text-[10px] font-black text-brand uppercase bg-brand/10 px-2 py-0.5 rounded-md flex items-center gap-1">
                             <Hash size={10} /> {card.mainTicket.ticketNumber}
                           </span>
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{card.mainTicket.type}</span>
+                          <span className="text-[10px] font-black text-black/50 uppercase tracking-widest">{card.mainTicket.type}</span>
                         </div>
-                        <h3 className="text-base font-black text-slate-900 uppercase leading-tight truncate group-hover:text-corporate-blue transition-colors">
+                        <h3 className="text-base font-black text-black uppercase leading-tight truncate group-hover:text-brand transition-colors">
                           {card.mainTicket.title}
                         </h3>
                         <div className="flex items-center gap-3 flex-wrap">
-                          <div className="flex items-center gap-1.5 text-slate-600">
-                            <UserIcon size={12} className="text-corporate-blue" />
+                          <div className="flex items-center gap-1.5 text-black/70">
+                            <UserIcon size={12} className="text-brand" />
                             <span className="text-xs font-black uppercase tracking-tight">{card.employee.fullName}</span>
                           </div>
                           <div className="flex items-center gap-0.5">
@@ -259,11 +259,11 @@ export default function AdminApprovals() {
                               <Star
                                 key={i}
                                 size={11}
-                                className={`${i < card.mainTicket.weight ? 'text-yellow-500 fill-yellow-500' : 'text-slate-200'}`}
+                                className={`${i < card.mainTicket.weight ? 'text-brand fill-brand' : 'text-brand/20'}`}
                               />
                             ))}
                           </div>
-                          <span className="flex items-center gap-1 text-[10px] font-bold text-slate-500">
+                          <span className="flex items-center gap-1 text-[10px] font-bold text-black/60">
                             <Clock size={10} /> {formatMinutes(card.workMinutes)}
                           </span>
                         </div>
@@ -277,7 +277,7 @@ export default function AdminApprovals() {
                         onClick={() => handleApprove(card.id)}
                         disabled={card.approved}
                         className={`px-3 py-2 rounded-lg font-black uppercase text-[10px] flex items-center justify-center gap-1.5 transition-all ${
-                          card.approved ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-green-600 text-white hover:bg-green-700'
+                          card.approved ? 'bg-brand/10 text-black/30 cursor-not-allowed' : 'bg-brand text-cream hover:shadow-md'
                         }`}
                       >
                         <Check size={14} strokeWidth={3} /> Approve
@@ -294,8 +294,8 @@ export default function AdminApprovals() {
                         onClick={() => openScoreDialog(card)}
                         className={`px-3 py-2 rounded-lg font-black uppercase text-[10px] flex items-center justify-center gap-1.5 transition-all border-2 ${
                           card.approved
-                          ? 'bg-yellow-50 border-yellow-200 text-yellow-700 hover:bg-yellow-500 hover:text-white'
-                          : 'bg-slate-50 border-slate-100 text-slate-400 cursor-not-allowed'
+                          ? 'bg-brand/10 border-brand/30 text-brand hover:bg-brand hover:text-cream'
+                          : 'bg-brand/5 border-brand/10 text-black/30 cursor-not-allowed'
                         }`}
                       >
                         <Star size={14} className={card.approved ? 'fill-current' : ''} />
@@ -304,7 +304,7 @@ export default function AdminApprovals() {
 
                       <button
                         onClick={() => setViewingCard(card)}
-                        className="px-3 py-2 bg-slate-900 text-white rounded-lg font-black uppercase text-[10px] hover:bg-corporate-blue transition-all flex items-center justify-center gap-1.5"
+                        className="px-3 py-2 bg-cream border border-brand/30 text-black rounded-lg font-black uppercase text-[10px] hover:bg-brand/10 transition-all flex items-center justify-center gap-1.5"
                       >
                         <Eye size={14} /> View Card
                       </button>
@@ -314,19 +314,19 @@ export default function AdminApprovals() {
               </div>
             ))
           ) : (
-            <div className="bg-slate-50 border-4 border-dashed border-slate-200 rounded-[3rem] py-32 text-center">
-               <Layers size={60} className="mx-auto text-slate-200 mb-6" />
-               <p className="text-sm font-black text-slate-400 uppercase tracking-[0.3em]">All Job Cards Have Been Processed</p>
+            <div className="bg-brand/5 border-2 border-dashed border-brand/20 rounded-2xl py-20 text-center">
+               <Layers size={48} className="mx-auto text-brand/30 mb-4" />
+               <p className="text-sm font-black text-black/50 uppercase tracking-[0.3em]">All Job Cards Have Been Processed</p>
             </div>
           )}
         </div>
 
         {pending && (
-          <div className="mt-8">
-            <Pagination 
-              currentPage={currentPage} 
-              totalPages={pending.totalPages} 
-              onPageChange={loadPending} 
+          <div className="mt-4">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={pending.totalPages}
+              onPageChange={loadPending}
             />
           </div>
         )}
@@ -338,13 +338,13 @@ export default function AdminApprovals() {
         title="Reject Job Card"
         maxWidth="max-w-md"
       >
-        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">
+        <label className="text-[10px] font-black text-black/50 uppercase tracking-widest mb-2 block">
           Rejection Reason
         </label>
         <textarea
           value={rejectionNoteInput}
           onChange={(e) => setRejectionNoteInput(e.target.value)}
-          className="w-full bg-slate-50 rounded-xl p-4 text-sm font-bold border-none outline-none focus:ring-2 focus:ring-corporate-blue/20 min-h-[100px]"
+          className="w-full bg-brand/5 rounded-xl p-4 text-sm font-bold text-black border-none outline-none focus:ring-2 focus:ring-brand/30 min-h-[100px]"
           placeholder="Explain what needs to be corrected..."
           autoFocus
         />
@@ -382,12 +382,12 @@ export default function AdminApprovals() {
         maxWidth="max-w-2xl"
       >
         {viewingCard && (
-          <div className="space-y-6">
+          <div className="space-y-5">
             <div>
-              <h3 className="text-xl font-black text-slate-900 uppercase leading-tight">{viewingCard.mainTicket.title}</h3>
+              <h3 className="text-xl font-black text-black uppercase leading-tight">{viewingCard.mainTicket.title}</h3>
               <div className="flex items-center gap-3 mt-2">
-                <div className="flex items-center gap-1.5 text-slate-600">
-                  <UserIcon size={14} className="text-corporate-blue" />
+                <div className="flex items-center gap-1.5 text-black/70">
+                  <UserIcon size={14} className="text-brand" />
                   <span className="text-xs font-black uppercase">{viewingCard.employee.fullName}</span>
                 </div>
                 <StatusBadge status={viewingCard.status} />
@@ -398,35 +398,35 @@ export default function AdminApprovals() {
               <img
                 src={viewingCard.imageUrl}
                 alt="Job review"
-                className="w-full max-h-[320px] object-contain rounded-2xl border border-slate-100 bg-slate-50"
+                className="w-full max-h-[320px] object-contain rounded-2xl border border-brand/20 bg-brand/5"
               />
             )}
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-50 p-5 rounded-2xl border border-slate-100">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-brand/5 p-4 rounded-xl border border-brand/10">
               <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Work Duration</span>
-                <span className="text-sm font-black text-slate-800">{formatMinutes(viewingCard.workMinutes)}</span>
+                <span className="text-[10px] font-black text-black/50 uppercase tracking-widest">Work Duration</span>
+                <span className="text-sm font-black text-black">{formatMinutes(viewingCard.workMinutes)}</span>
               </div>
               <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Approved State</span>
-                <span className={`text-sm font-black uppercase ${viewingCard.approved ? 'text-green-600' : 'text-red-500'}`}>
+                <span className="text-[10px] font-black text-black/50 uppercase tracking-widest">Approved State</span>
+                <span className={`text-sm font-black uppercase ${viewingCard.approved ? 'text-brand' : 'text-red-500'}`}>
                   {viewingCard.approved ? 'Verified' : 'Pending'}
                 </span>
               </div>
               <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Start Time</span>
-                <span className="text-[11px] font-bold text-slate-700">{viewingCard.startTime ? formatDateTime(viewingCard.startTime) : 'N/A'}</span>
+                <span className="text-[10px] font-black text-black/50 uppercase tracking-widest">Start Time</span>
+                <span className="text-[11px] font-bold text-black/70">{viewingCard.startTime ? formatDateTime(viewingCard.startTime) : 'N/A'}</span>
               </div>
               <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">End Time</span>
-                <span className="text-[11px] font-bold text-slate-700">{viewingCard.endTime ? formatDateTime(viewingCard.endTime) : 'N/A'}</span>
+                <span className="text-[10px] font-black text-black/50 uppercase tracking-widest">End Time</span>
+                <span className="text-[11px] font-bold text-black/70">{viewingCard.endTime ? formatDateTime(viewingCard.endTime) : 'N/A'}</span>
               </div>
             </div>
 
             {viewingCard.status === 'ON_HOLD' && viewingCard.rejectionNote && (
-              <div className="p-4 bg-rose-50 border border-rose-100 rounded-2xl">
-                <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-1">Rejection Reason</p>
-                <p className="text-sm font-bold text-rose-700">{viewingCard.rejectionNote}</p>
+              <div className="p-4 bg-red-50 border border-red-100 rounded-xl">
+                <p className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1">Rejection Reason</p>
+                <p className="text-sm font-bold text-red-700">{viewingCard.rejectionNote}</p>
               </div>
             )}
           </div>
