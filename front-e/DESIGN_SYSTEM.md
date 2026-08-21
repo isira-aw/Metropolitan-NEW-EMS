@@ -121,8 +121,7 @@ reading table columns.
 
 ## Logo
 
-- `public/metrosmall.png` - icon-only mark, used in the collapsed sidebar and browser tab favicon.
-- `public/metro.png` - full logo with wordmark, used on the login screen.
+- `public/MetropolitanLOGO.png` - the company mark, used in the sidebar (expanded and collapsed), the browser tab favicon, and the login screen.
 
 ## Accessibility
 
