@@ -89,23 +89,22 @@ export default function EmployeeWorkReportPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-7xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">
+      <div className="max-w-[1600px] mx-auto space-y-4 pb-10">
+      <div>
+        <h1 className="text-2xl font-black text-black tracking-tighter uppercase">
           Employee Work Report
         </h1>
-        <p className="text-gray-600 mt-2">
-          Comprehensive work report including attendance, jobs, and performance
-          scores
+        <p className="text-black/50 text-xs font-black uppercase tracking-widest italic mt-0.5">
+          Comprehensive work report including attendance, jobs, and performance scores
         </p>
       </div>
 
       {/* Report Filters */}
-      <Card className="mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <Card className="p-4 border-brand/20 shadow-sm rounded-xl bg-cream">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           {/* Employee Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-xs font-black text-black/60 uppercase tracking-widest mb-1.5">
               Employee
             </label>
             <select
@@ -115,7 +114,7 @@ export default function EmployeeWorkReportPage() {
                   e.target.value ? Number(e.target.value) : null
                 )
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2.5 bg-brand/5 border-none rounded-xl text-sm font-bold text-black focus:outline-none focus:ring-2 focus:ring-brand/30"
             >
               <option value="">Select Employee</option>
               {employees.map((emp) => (
@@ -128,27 +127,27 @@ export default function EmployeeWorkReportPage() {
 
           {/* Start Date */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-xs font-black text-black/60 uppercase tracking-widest mb-1.5">
               Start Date
             </label>
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2.5 bg-brand/5 border-none rounded-xl text-sm font-bold text-black focus:outline-none focus:ring-2 focus:ring-brand/30"
             />
           </div>
 
           {/* End Date */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-xs font-black text-black/60 uppercase tracking-widest mb-1.5">
               End Date
             </label>
             <input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2.5 bg-brand/5 border-none rounded-xl text-sm font-bold text-black focus:outline-none focus:ring-2 focus:ring-brand/30"
             />
           </div>
 
@@ -157,7 +156,7 @@ export default function EmployeeWorkReportPage() {
             <button
               onClick={handleGenerateReport}
               disabled={loading || !selectedEmployeeId}
-              className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="w-full px-4 py-2.5 bg-brand text-cream rounded-xl font-black uppercase text-xs tracking-widest hover:shadow-md transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {loading ? 'Generating...' : 'Generate Report'}
             </button>
@@ -165,7 +164,7 @@ export default function EmployeeWorkReportPage() {
         </div>
 
         {error && (
-          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700">
+          <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm font-bold">
             {error}
           </div>
         )}
@@ -180,86 +179,86 @@ export default function EmployeeWorkReportPage() {
 
       {/* Report Display */}
       {!loading && report && (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {/* Report Header */}
-          <Card>
-            <div className="flex justify-between items-start mb-4">
+          <Card className="p-4 border-brand/20 shadow-sm rounded-xl bg-cream">
+            <div className="flex justify-between items-start mb-3">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">
+                <h2 className="text-xl font-black text-black uppercase tracking-tight">
                   {report.employeeName}
                 </h2>
-                <p className="text-gray-600">{report.employeeEmail}</p>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-black/60 text-sm font-bold">{report.employeeEmail}</p>
+                <p className="text-xs font-bold text-black/50 mt-1">
                   Report Period: {formatDate(report.reportStartDate)} to{' '}
                   {formatDate(report.reportEndDate)}
                 </p>
               </div>
               <button
                 onClick={handlePrint}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 print:hidden"
+                className="px-4 py-2 bg-cream border border-brand/30 text-black rounded-xl font-black uppercase text-xs hover:bg-brand/10 transition-all print:hidden"
               >
                 Print Report
               </button>
             </div>
 
             {/* Summary Statistics */}
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mt-4">
-              <div className="bg-blue-50 p-3 rounded-lg">
-                <div className="flex items-center text-blue-600 mb-1.5">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2.5 mt-3">
+              <div className="bg-brand/5 border border-brand/10 p-3 rounded-xl">
+                <div className="flex items-center text-brand mb-1.5">
                   <Calendar className="w-4 h-4 mr-1.5" />
-                  <span className="text-xs font-medium">Days Worked</span>
+                  <span className="text-xs font-black uppercase tracking-widest">Days Worked</span>
                 </div>
-                <p className="text-xl font-bold text-blue-900">
+                <p className="text-xl font-black text-black">
                   {report.summary.totalDaysWorked}
                 </p>
               </div>
 
-              <div className="bg-green-50 p-3 rounded-lg">
-                <div className="flex items-center text-green-600 mb-1.5">
+              <div className="bg-brand/5 border border-brand/10 p-3 rounded-xl">
+                <div className="flex items-center text-brand mb-1.5">
                   <Clock className="w-4 h-4 mr-1.5" />
-                  <span className="text-xs font-medium">Total Hours</span>
+                  <span className="text-xs font-black uppercase tracking-widest">Total Hours</span>
                 </div>
-                <p className="text-xl font-bold text-green-900">
+                <p className="text-xl font-black text-black">
                   {formatMinutes(report.summary.totalWorkMinutes)}
                 </p>
               </div>
 
-              <div className="bg-orange-50 p-3 rounded-lg">
-                <div className="flex items-center text-orange-600 mb-1.5">
+              <div className="bg-brand/5 border border-brand/10 p-3 rounded-xl">
+                <div className="flex items-center text-brand mb-1.5">
                   <TrendingUp className="w-4 h-4 mr-1.5" />
-                  <span className="text-xs font-medium">OT Hours</span>
+                  <span className="text-xs font-black uppercase tracking-widest">OT Hours</span>
                 </div>
-                <p className="text-xl font-bold text-orange-900">
+                <p className="text-xl font-black text-black">
                   {formatMinutes(report.summary.totalOtMinutes)}
                 </p>
               </div>
 
-              <div className="bg-purple-50 p-3 rounded-lg">
-                <div className="flex items-center text-purple-600 mb-1.5">
+              <div className="bg-brand/5 border border-brand/10 p-3 rounded-xl">
+                <div className="flex items-center text-brand mb-1.5">
                   <Briefcase className="w-4 h-4 mr-1.5" />
-                  <span className="text-xs font-medium">Jobs Done</span>
+                  <span className="text-xs font-black uppercase tracking-widest">Jobs Done</span>
                 </div>
-                <p className="text-xl font-bold text-purple-900">
+                <p className="text-xl font-black text-black">
                   {report.summary.totalJobsCompleted}
                 </p>
               </div>
 
-              <div className="bg-yellow-50 p-3 rounded-lg">
-                <div className="flex items-center text-yellow-600 mb-1.5">
+              <div className="bg-brand/5 border border-brand/10 p-3 rounded-xl">
+                <div className="flex items-center text-brand mb-1.5">
                   <Award className="w-4 h-4 mr-1.5" />
-                  <span className="text-xs font-medium">Avg Score</span>
+                  <span className="text-xs font-black uppercase tracking-widest">Avg Score</span>
                 </div>
-                <p className="text-xl font-bold text-yellow-900">
+                <p className="text-xl font-black text-black">
                   {report.summary.overallAverageScore.toFixed(1)}
                 </p>
               </div>
 
-              <div className="bg-pink-50 p-3 rounded-lg">
-                <div className="flex items-center text-pink-600 mb-1.5">
+              <div className="bg-brand/5 border border-brand/10 p-3 rounded-xl">
+                <div className="flex items-center text-brand mb-1.5">
                   <Star className="w-4 h-4 mr-1.5" />
-                  <span className="text-xs font-medium">Total Points</span>
+                  <span className="text-xs font-black uppercase tracking-widest">Total Points</span>
                 </div>
-                <p className="text-xl font-bold text-pink-900">
+                <p className="text-xl font-black text-black">
                   {report.summary.totalWeightedScore}
                 </p>
               </div>
@@ -267,20 +266,20 @@ export default function EmployeeWorkReportPage() {
           </Card>
 
           {/* Daily Records */}
-          <div className="space-y-3">
-            <h3 className="text-lg font-bold text-gray-900">
+          <div className="space-y-2.5">
+            <h3 className="text-base font-black text-black uppercase tracking-tight">
               Daily Work Records
             </h3>
 
             {report.dailyRecords.map((day: DailyWorkRecord) => (
-              <Card key={day.date} className="p-4">
-                <div className="border-b border-gray-200 pb-3 mb-3">
+              <Card key={day.date} className="p-3.5 border-brand/20 shadow-sm rounded-xl bg-cream">
+                <div className="border-b border-brand/10 pb-2.5 mb-2.5">
                   <div className="flex justify-between items-start">
                     <div>
-                      <h4 className="text-base font-bold text-gray-900">
+                      <h4 className="text-sm font-black text-black uppercase">
                         {formatDate(day.date)}
                       </h4>
-                      <div className="flex gap-4 mt-1 text-xs text-gray-600">
+                      <div className="flex gap-4 mt-1 text-xs font-bold text-black/60">
                         <span>
                           Check-in:{' '}
                           {day.checkInTime
@@ -296,12 +295,12 @@ export default function EmployeeWorkReportPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-xs text-gray-600">
+                      <div className="text-xs font-bold text-black/60">
                         Work: {formatMinutes(day.totalWorkMinutes)} | OT:{' '}
                         {formatMinutes(day.totalOtMinutes)}
                       </div>
                       {day.dailyScore && (
-                        <div className="text-xs font-medium text-blue-600 mt-1">
+                        <div className="text-xs font-black text-brand mt-1">
                           Daily Score: {day.dailyScore} (Avg:{' '}
                           {day.dailyAverageScore?.toFixed(1)})
                         </div>
@@ -316,54 +315,54 @@ export default function EmployeeWorkReportPage() {
                     {day.jobs.map((job) => (
                       <div
                         key={job.miniJobCardId}
-                        className="bg-gray-50 p-3 rounded-lg"
+                        className="bg-brand/5 border border-brand/10 p-3 rounded-xl"
                       >
                         <div className="flex justify-between items-start mb-1.5">
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="font-medium text-sm text-gray-900">
+                              <span className="font-black text-sm text-black">
                                 {job.ticketNumber}
                               </span>
                               <StatusBadge status={job.jobStatus as any} />
                               {job.approved && (
-                                <CheckCircle className="w-4 h-4 text-green-500" />
+                                <CheckCircle className="w-4 h-4 text-brand" />
                               )}
                               {job.scored && (
-                                <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                                <Star className="w-4 h-4 text-brand fill-current" />
                               )}
                             </div>
-                            <p className="text-xs text-gray-700 mt-1">
+                            <p className="text-xs font-bold text-black/70 mt-1">
                               {job.ticketTitle}
                             </p>
                           </div>
                           <div className="text-right">
-                            <div className="text-xs font-medium text-gray-900">
+                            <div className="text-xs font-black text-black">
                               {formatMinutes(job.workMinutes)} worked
                             </div>
                             {job.scored && (
-                              <div className="text-xs text-blue-600 mt-1">
+                              <div className="text-xs font-bold text-brand mt-1">
                                 Score: {job.weight} {'⭐'.repeat(job.weight)}
                               </div>
                             )}
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-3 text-xs text-gray-600 mt-1.5">
+                        <div className="flex items-center gap-3 text-xs font-bold text-black/60 mt-1.5">
                           <div className="flex items-center">
                             <MapPin className="w-3.5 h-3.5 mr-1" />
                             {job.generatorName} - {job.generatorLocation}
                           </div>
-                          <div className="bg-gray-200 px-2 py-0.5 rounded text-[11px]">
+                          <div className="bg-brand/10 px-2 py-0.5 rounded text-[11px] text-black">
                             {job.jobType}
                           </div>
-                          <div className="bg-gray-200 px-2 py-0.5 rounded text-[11px]">
+                          <div className="bg-brand/10 px-2 py-0.5 rounded text-[11px] text-black">
                             Weight: {job.weight}
                           </div>
                         </div>
 
                         {!job.scored && job.approved && (
-                          <div className="mt-1.5 flex items-center text-xs text-orange-600">
-                            <AlertCircle className="w-3.5 h-3.5 mr-1" />
+                          <div className="mt-1.5 flex items-center text-xs font-bold text-black/60">
+                            <AlertCircle className="w-3.5 h-3.5 mr-1 text-brand" />
                             Approved but not scored yet
                           </div>
                         )}
@@ -371,7 +370,7 @@ export default function EmployeeWorkReportPage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-gray-500 text-xs">
+                  <p className="text-black/50 text-xs font-bold">
                     No jobs completed on this day
                   </p>
                 )}
@@ -380,67 +379,67 @@ export default function EmployeeWorkReportPage() {
           </div>
 
           {/* Summary Footer */}
-          <Card>
-            <h3 className="text-lg font-bold text-gray-900 mb-4">
+          <Card className="p-4 border-brand/20 shadow-sm rounded-xl bg-cream">
+            <h3 className="text-base font-black text-black uppercase tracking-tight mb-3">
               Period Summary
             </h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
               <div>
-                <span className="text-gray-600">Total Work Time:</span>
-                <p className="font-medium text-gray-900">
+                <span className="text-black/50 text-xs font-bold uppercase tracking-wide">Total Work Time:</span>
+                <p className="font-black text-black">
                   {formatMinutes(report.summary.totalWorkMinutes)}
                 </p>
               </div>
               <div>
-                <span className="text-gray-600">Total OT:</span>
-                <p className="font-medium text-gray-900">
+                <span className="text-black/50 text-xs font-bold uppercase tracking-wide">Total OT:</span>
+                <p className="font-black text-black">
                   {formatMinutes(report.summary.totalOtMinutes)}
                 </p>
               </div>
               <div>
-                <span className="text-gray-600">Jobs Completed:</span>
-                <p className="font-medium text-gray-900">
+                <span className="text-black/50 text-xs font-bold uppercase tracking-wide">Jobs Completed:</span>
+                <p className="font-black text-black">
                   {report.summary.totalJobsCompleted}
                 </p>
               </div>
               <div>
-                <span className="text-gray-600">Jobs Scored:</span>
-                <p className="font-medium text-gray-900">
+                <span className="text-black/50 text-xs font-bold uppercase tracking-wide">Jobs Scored:</span>
+                <p className="font-black text-black">
                   {report.summary.totalJobsScored}
                 </p>
               </div>
               <div>
-                <span className="text-gray-600">Pending Scores:</span>
-                <p className="font-medium text-gray-900">
+                <span className="text-black/50 text-xs font-bold uppercase tracking-wide">Pending Scores:</span>
+                <p className="font-black text-black">
                   {report.summary.totalJobsPending}
                 </p>
               </div>
               <div>
-                <span className="text-gray-600">Overall Average Score:</span>
-                <p className="font-medium text-gray-900">
+                <span className="text-black/50 text-xs font-bold uppercase tracking-wide">Overall Average Score:</span>
+                <p className="font-black text-black">
                   {report.summary.overallAverageScore.toFixed(2)} / 10
                 </p>
               </div>
               {report.summary.maxDailyScore && (
                 <div>
-                  <span className="text-gray-600">Highest Daily Score:</span>
-                  <p className="font-medium text-gray-900">
+                  <span className="text-black/50 text-xs font-bold uppercase tracking-wide">Highest Daily Score:</span>
+                  <p className="font-black text-black">
                     {report.summary.maxDailyScore}
                   </p>
                 </div>
               )}
               {report.summary.minDailyScore && (
                 <div>
-                  <span className="text-gray-600">Lowest Daily Score:</span>
-                  <p className="font-medium text-gray-900">
+                  <span className="text-black/50 text-xs font-bold uppercase tracking-wide">Lowest Daily Score:</span>
+                  <p className="font-black text-black">
                     {report.summary.minDailyScore}
                   </p>
                 </div>
               )}
               {report.summary.averageDailyScore && (
                 <div>
-                  <span className="text-gray-600">Average Daily Score:</span>
-                  <p className="font-medium text-gray-900">
+                  <span className="text-black/50 text-xs font-bold uppercase tracking-wide">Average Daily Score:</span>
+                  <p className="font-black text-black">
                     {report.summary.averageDailyScore.toFixed(1)}
                   </p>
                 </div>
@@ -452,13 +451,13 @@ export default function EmployeeWorkReportPage() {
 
       {/* No Report State */}
       {!loading && !report && !error && (
-        <Card>
+        <Card className="border-brand/20 shadow-sm rounded-xl bg-cream">
           <div className="text-center py-12">
-            <Briefcase className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+            <Briefcase className="w-16 h-16 text-brand/20 mx-auto mb-4" />
+            <h3 className="text-lg font-black text-black uppercase mb-2">
               No Report Generated
             </h3>
-            <p className="text-gray-600">
+            <p className="text-black/50 text-sm font-bold">
               Select an employee and date range, then click &quot;Generate
               Report&quot;
             </p>

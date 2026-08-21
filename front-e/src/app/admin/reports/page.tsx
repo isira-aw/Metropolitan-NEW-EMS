@@ -124,24 +124,24 @@ export default function AdminReports() {
 
   return (
     <AdminLayout>
-      <div className="max-w-7xl mx-auto space-y-8 pb-20">
+      <div className="max-w-[1600px] mx-auto space-y-4 pb-10">
         {/* Header */}
-        <div className="px-2">
-          <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase">Analytics & Reports</h2>
-          <p className="text-xs font-black text-slate-400 uppercase tracking-widest italic mt-1">Operational Performance Insights</p>
+        <div>
+          <h2 className="text-2xl font-black text-black tracking-tighter uppercase">Analytics & Reports</h2>
+          <p className="text-xs font-black text-black/50 uppercase tracking-widest italic mt-0.5">Operational Performance Insights</p>
         </div>
 
         {/* Filters Card */}
-        <Card className="p-6 border-slate-100 shadow-2xl rounded-[2.5rem] bg-white">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="space-y-3">
-              <label className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                <UserIcon size={16} className="text-corporate-blue" /> Target Personnel
+        <Card className="p-4 border-brand/20 shadow-sm rounded-xl bg-cream">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-black text-black/60 uppercase tracking-widest flex items-center gap-2">
+                <UserIcon size={16} className="text-brand" /> Target Personnel
               </label>
               <select
                 value={selectedEmployee}
                 onChange={(e) => setSelectedEmployee(e.target.value)}
-                className="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-corporate-blue appearance-none"
+                className="w-full bg-brand/5 border-none rounded-xl p-2.5 text-sm font-bold text-black focus:ring-2 focus:ring-brand/30 appearance-none"
               >
                 <option value="">All Employees</option>
                 {employees.map((emp) => (
@@ -150,128 +150,128 @@ export default function AdminReports() {
               </select>
             </div>
 
-            <div className="space-y-3">
-              <label className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                <Calendar size={16} className="text-corporate-blue" /> From Date
+            <div className="space-y-1.5">
+              <label className="text-xs font-black text-black/60 uppercase tracking-widest flex items-center gap-2">
+                <Calendar size={16} className="text-brand" /> From Date
               </label>
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-corporate-blue"
+                className="w-full bg-brand/5 border-none rounded-xl p-2.5 text-sm font-bold text-black focus:ring-2 focus:ring-brand/30"
               />
             </div>
 
-            <div className="space-y-3">
-              <label className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                <Calendar size={16} className="text-corporate-blue" /> To Date
+            <div className="space-y-1.5">
+              <label className="text-xs font-black text-black/60 uppercase tracking-widest flex items-center gap-2">
+                <Calendar size={16} className="text-brand" /> To Date
               </label>
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-corporate-blue"
+                className="w-full bg-brand/5 border-none rounded-xl p-2.5 text-sm font-bold text-black focus:ring-2 focus:ring-brand/30"
               />
             </div>
           </div>
         </Card>
 
         {/* Report Selection Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <button 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <button
             onClick={handleGenerateReport1}
             disabled={loadingReport1}
-            className="group text-left p-8 bg-white border-2 border-slate-100 rounded-[2.5rem] shadow-md hover:shadow-2xl hover:border-corporate-blue transition-all relative overflow-hidden"
+            className="group text-left p-5 bg-cream border-2 border-brand/20 rounded-xl shadow-sm hover:shadow-md hover:border-brand transition-all relative overflow-hidden"
           >
-            <div className="flex justify-between items-start mb-4">
-              <div className="p-4 bg-slate-50 rounded-2xl group-hover:bg-corporate-blue/10 transition-colors">
-                <Clock className="text-corporate-blue" size={32} />
+            <div className="flex justify-between items-start mb-3">
+              <div className="p-3 bg-brand/10 rounded-xl group-hover:bg-brand/20 transition-colors">
+                <Clock className="text-brand" size={28} />
               </div>
-              <ChevronRight className="text-slate-200 group-hover:text-corporate-blue group-hover:translate-x-2 transition-all" />
+              <ChevronRight className="text-brand/20 group-hover:text-brand group-hover:translate-x-2 transition-all" />
             </div>
-            <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight mb-2">Daily Time Tracking</h3>
-            <p className="text-sm font-bold text-slate-400 leading-relaxed uppercase">Log of start/end times, location, and productivity metrics.</p>
-            {loadingReport1 && <div className="absolute inset-0 bg-white/60 backdrop-blur-sm flex items-center justify-center font-black uppercase text-xs">Processing...</div>}
+            <h3 className="text-lg font-black text-black uppercase tracking-tight mb-1.5">Daily Time Tracking</h3>
+            <p className="text-sm font-bold text-black/50 leading-relaxed uppercase">Log of start/end times, location, and productivity metrics.</p>
+            {loadingReport1 && <div className="absolute inset-0 bg-cream/70 backdrop-blur-sm flex items-center justify-center font-black uppercase text-xs text-black">Processing...</div>}
           </button>
 
-          <button 
+          <button
             onClick={handleGenerateReport2}
             disabled={loadingReport2 || !selectedEmployee}
-            className={`group text-left p-8 bg-white border-2 rounded-[2.5rem] shadow-md transition-all relative overflow-hidden ${!selectedEmployee ? 'opacity-60 cursor-not-allowed grayscale' : 'hover:shadow-2xl hover:border-green-500 border-slate-100'}`}
+            className={`group text-left p-5 bg-cream border-2 rounded-xl shadow-sm transition-all relative overflow-hidden ${!selectedEmployee ? 'opacity-60 cursor-not-allowed' : 'hover:shadow-md hover:border-brand border-brand/20'}`}
           >
-            <div className="flex justify-between items-start mb-4">
-              <div className="p-4 bg-slate-50 rounded-2xl group-hover:bg-green-50 transition-colors">
-                <TrendingUp className="text-green-600" size={32} />
+            <div className="flex justify-between items-start mb-3">
+              <div className="p-3 bg-brand/10 rounded-xl group-hover:bg-brand/20 transition-colors">
+                <TrendingUp className="text-brand" size={28} />
               </div>
-              <ChevronRight className="text-slate-200 group-hover:text-green-500 group-hover:translate-x-2 transition-all" />
+              <ChevronRight className="text-brand/20 group-hover:text-brand group-hover:translate-x-2 transition-all" />
             </div>
-            <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight mb-2">Performance & OT Report</h3>
-            <p className="text-sm font-bold text-slate-400 leading-relaxed uppercase">Overtime calculation and weight points for individual employees.</p>
-            {!selectedEmployee && <div className="mt-4 text-[10px] font-black text-red-500 uppercase italic">Select an employee to unlock</div>}
-            {loadingReport2 && <div className="absolute inset-0 bg-white/60 backdrop-blur-sm flex items-center justify-center font-black uppercase text-xs">Processing...</div>}
+            <h3 className="text-lg font-black text-black uppercase tracking-tight mb-1.5">Performance & OT Report</h3>
+            <p className="text-sm font-bold text-black/50 leading-relaxed uppercase">Overtime calculation and weight points for individual employees.</p>
+            {!selectedEmployee && <div className="mt-3 text-[10px] font-black text-red-500 uppercase italic">Select an employee to unlock</div>}
+            {loadingReport2 && <div className="absolute inset-0 bg-cream/70 backdrop-blur-sm flex items-center justify-center font-black uppercase text-xs text-black">Processing...</div>}
           </button>
         </div>
 
         {/* Results Section */}
         {(showReport1 || showReport2) && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <Card className="p-0 border-slate-100 shadow-2xl rounded-[2.5rem] bg-white overflow-hidden">
-              <div className="p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
-                <div className="flex items-center gap-4">
-                   <div className="p-3 bg-white rounded-xl shadow-sm"><FileText size={24} className="text-corporate-blue" /></div>
+            <Card className="p-0 border-brand/20 shadow-sm rounded-xl bg-cream overflow-hidden">
+              <div className="p-4 border-b border-brand/10 flex justify-between items-center bg-brand/5">
+                <div className="flex items-center gap-3">
+                   <div className="p-2.5 bg-cream rounded-xl shadow-sm border border-brand/10"><FileText size={22} className="text-brand" /></div>
                    <div>
-                     <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Generated Data</h3>
-                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{formatDateLabel(startDate)} — {formatDateLabel(endDate)}</p>
+                     <h3 className="text-lg font-black text-black uppercase tracking-tighter">Generated Data</h3>
+                     <p className="text-[10px] font-black text-black/50 uppercase tracking-[0.2em]">{formatDateLabel(startDate)} — {formatDateLabel(endDate)}</p>
                    </div>
                 </div>
-                <button onClick={() => { setShowReport1(false); setShowReport2(false); }} className="p-3 hover:bg-white rounded-2xl transition-colors shadow-sm text-slate-400 hover:text-red-500"><X size={24} /></button>
+                <button onClick={() => { setShowReport1(false); setShowReport2(false); }} className="p-2 hover:bg-cream rounded-xl transition-colors border border-brand/20 text-black/50 hover:text-red-500"><X size={20} /></button>
               </div>
 
               {/* Report 1 Table */}
               {showReport1 && (
-                <div className="p-6">
+                <div className="p-4">
                   {timeTrackingReport.length === 0 ? (
-                    <div className="py-20 text-center"><BarChart3 size={48} className="mx-auto text-slate-200 mb-4" /><p className="font-black text-slate-400 uppercase">No data for this range</p></div>
+                    <div className="py-16 text-center"><BarChart3 size={40} className="mx-auto text-brand/20 mb-3" /><p className="font-black text-black/40 uppercase">No data for this range</p></div>
                   ) : (
                     <div className="overflow-x-auto">
                       <table className="w-full">
                         <thead>
-                          <tr className="border-b-2 border-slate-100">
+                          <tr className="bg-brand text-cream">
                             {['Employee', 'Date', 'Shift', 'Location', 'Working', 'Idle', 'Travel', 'Total', 'Location Map'].map((h) => (
-                              <th key={h} className="pb-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>
+                              <th key={h} className="px-3 py-2.5 text-left text-[10px] font-black uppercase tracking-widest">{h}</th>
                             ))}
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-50">
+                        <tbody className="divide-y divide-brand/10">
                           {timeTrackingReport.map((row, i) => {
                             const mapUrl = generateMapUrl(row.locationPath);
                             return (
-                              <tr key={i} className="hover:bg-slate-50/50 transition-colors">
-                                <td className="py-3 text-xs font-black text-slate-900 uppercase">{row.employeeName}</td>
-                                <td className="py-3 text-xs font-bold text-slate-600">{formatDateLabel(row.date)}</td>
-                                <td className="py-3">
-                                  <div className="text-[10px] font-black text-corporate-blue uppercase">{formatTime(row.startTime)}</div>
-                                  <div className="text-[10px] font-black text-slate-300 uppercase">{formatTime(row.endTime)}</div>
+                              <tr key={i} className="hover:bg-brand/10 transition-colors">
+                                <td className="px-3 py-2.5 text-xs font-black text-black uppercase">{row.employeeName}</td>
+                                <td className="px-3 py-2.5 text-xs font-bold text-black/70">{formatDateLabel(row.date)}</td>
+                                <td className="px-3 py-2.5">
+                                  <div className="text-[10px] font-black text-brand uppercase">{formatTime(row.startTime)}</div>
+                                  <div className="text-[10px] font-black text-black/30 uppercase">{formatTime(row.endTime)}</div>
                                 </td>
-                                <td className="py-3 text-xs font-bold text-slate-600 flex items-center gap-1"><MapPin size={14} className="text-slate-300" /> {row.location || '—'}</td>
-                                <td className="py-3 text-xs font-black text-slate-700">{formatMinutesLocal(row.dailyWorkingMinutes)}</td>
-                                <td className="py-3 text-xs font-black text-orange-500">{formatMinutesLocal(row.idleMinutes)}</td>
-                                <td className="py-3 text-xs font-black text-blue-500">{formatMinutesLocal(row.travelMinutes)}</td>
-                                <td className="py-3 text-xs font-black text-slate-900">{formatMinutesLocal(row.totalMinutes)}</td>
-                                <td className="py-3">
+                                <td className="px-3 py-2.5 text-xs font-bold text-black/70 flex items-center gap-1"><MapPin size={14} className="text-black/30" /> {row.location || '—'}</td>
+                                <td className="px-3 py-2.5 text-xs font-black text-black">{formatMinutesLocal(row.dailyWorkingMinutes)}</td>
+                                <td className="px-3 py-2.5 text-xs font-black text-black/60">{formatMinutesLocal(row.idleMinutes)}</td>
+                                <td className="px-3 py-2.5 text-xs font-black text-black/60">{formatMinutesLocal(row.travelMinutes)}</td>
+                                <td className="px-3 py-2.5 text-xs font-black text-black">{formatMinutesLocal(row.totalMinutes)}</td>
+                                <td className="px-3 py-2.5">
                                   {mapUrl ? (
                                     <a
                                       href={mapUrl}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="inline-flex items-center gap-2 px-3 py-1.5 bg-corporate-blue text-white rounded-xl text-[10px] font-black uppercase hover:bg-blue-700 transition-colors shadow-sm"
+                                      className="inline-flex items-center gap-2 px-3 py-1.5 bg-brand text-cream rounded-xl text-[10px] font-black uppercase hover:shadow-md transition-colors"
                                     >
                                       <Map size={12} />
                                       View Path
                                       <ExternalLink size={10} />
                                     </a>
                                   ) : (
-                                    <span className="text-[10px] font-bold text-slate-300 uppercase">No data</span>
+                                    <span className="text-[10px] font-bold text-black/30 uppercase">No data</span>
                                   )}
                                 </td>
                               </tr>
@@ -286,17 +286,17 @@ export default function AdminReports() {
 
               {/* Report 2 Content */}
               {showReport2 && (
-                <div className="p-6 space-y-6">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="p-4 space-y-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {[
-                      { label: 'Total Days', val: workTimeReport.length, color: 'text-slate-900' },
-                      { label: 'Active Duty', val: formatMinutesLocal(workTimeReport.reduce((sum, r) => sum + r.workingMinutes, 0)), color: 'text-corporate-blue' },
-                      { label: 'Total OT', val: formatMinutesLocal(workTimeReport.reduce((sum, r) => sum + r.totalOtMinutes, 0)), color: 'text-orange-500' },
-                      { label: 'Weight Score', val: workTimeReport.reduce((sum, r) => sum + r.totalWeightEarned, 0), color: 'text-green-600' }
+                      { label: 'Total Days', val: workTimeReport.length },
+                      { label: 'Active Duty', val: formatMinutesLocal(workTimeReport.reduce((sum, r) => sum + r.workingMinutes, 0)) },
+                      { label: 'Total OT', val: formatMinutesLocal(workTimeReport.reduce((sum, r) => sum + r.totalOtMinutes, 0)) },
+                      { label: 'Weight Score', val: workTimeReport.reduce((sum, r) => sum + r.totalWeightEarned, 0) }
                     ].map((s, i) => (
-                      <div key={i} className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{s.label}</p>
-                        <p className={`text-xl font-black ${s.color}`}>{s.val}</p>
+                      <div key={i} className="bg-brand/5 p-3 rounded-xl border border-brand/10">
+                        <p className="text-[10px] font-black text-black/50 uppercase tracking-widest mb-1">{s.label}</p>
+                        <p className="text-xl font-black text-black">{s.val}</p>
                       </div>
                     ))}
                   </div>
@@ -304,22 +304,22 @@ export default function AdminReports() {
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead>
-                        <tr className="border-b-2 border-slate-100">
+                        <tr className="bg-brand text-cream">
                           {['Date', 'Time In', 'Time Out', 'Morning OT', 'Evening OT', 'Work Hours', 'Weight'].map((h) => (
-                            <th key={h} className="pb-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>
+                            <th key={h} className="px-3 py-2.5 text-left text-[10px] font-black uppercase tracking-widest">{h}</th>
                           ))}
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-50">
+                      <tbody className="divide-y divide-brand/10">
                         {workTimeReport.map((row, i) => (
-                          <tr key={i} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="py-3 text-xs font-black text-slate-900 uppercase">{formatDateLabel(row.date)}</td>
-                            <td className="py-3 text-xs font-bold text-slate-600">{formatTime(row.startTime)}</td>
-                            <td className="py-3 text-xs font-bold text-slate-600">{formatTime(row.endTime)}</td>
-                            <td className="py-3 text-xs font-black text-slate-700">{formatMinutesLocal(row.morningOtMinutes)}</td>
-                            <td className="py-3 text-xs font-black text-slate-700">{formatMinutesLocal(row.eveningOtMinutes)}</td>
-                            <td className="py-3 text-xs font-black text-corporate-blue">{formatMinutesLocal(row.workingMinutes)}</td>
-                            <td className="py-3"><span className="bg-green-100 text-green-700 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase">+{row.totalWeightEarned} pts</span></td>
+                          <tr key={i} className="hover:bg-brand/10 transition-colors">
+                            <td className="px-3 py-2.5 text-xs font-black text-black uppercase">{formatDateLabel(row.date)}</td>
+                            <td className="px-3 py-2.5 text-xs font-bold text-black/70">{formatTime(row.startTime)}</td>
+                            <td className="px-3 py-2.5 text-xs font-bold text-black/70">{formatTime(row.endTime)}</td>
+                            <td className="px-3 py-2.5 text-xs font-black text-black/70">{formatMinutesLocal(row.morningOtMinutes)}</td>
+                            <td className="px-3 py-2.5 text-xs font-black text-black/70">{formatMinutesLocal(row.eveningOtMinutes)}</td>
+                            <td className="px-3 py-2.5 text-xs font-black text-brand">{formatMinutesLocal(row.workingMinutes)}</td>
+                            <td className="px-3 py-2.5"><span className="bg-brand/10 text-brand px-2.5 py-1 rounded-lg text-[10px] font-black uppercase">+{row.totalWeightEarned} pts</span></td>
                           </tr>
                         ))}
                       </tbody>

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import apiClient from '@/lib/api';
-import { Zap, Lock, User, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
+import { Lock, User, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -42,30 +42,26 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-cream relative overflow-hidden">
       {/* Background Decorative Elements */}
-      <div className="absolute top-0 left-0 w-full h-1/2 bg-slate-900" />
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-corporate-blue/10 rounded-full blur-3xl" />
+      <div className="absolute top-0 left-0 w-full h-1/2 bg-brand" />
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-cream/10 rounded-full blur-3xl" />
 
       <div className="relative w-full max-w-[440px] px-6">
         {/* Logo Section */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 bg-corporate-blue rounded-[2rem] flex items-center justify-center shadow-2xl shadow-blue-500/40 mb-4">
-            <Zap size={32} className="text-white" fill="currentColor" />
-          </div>
-          <h1 className="text-2xl font-black text-white tracking-tighter uppercase">
-            EMS <span className="text-corporate-blue">Portal</span>
-          </h1>
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.3em] mt-1">
-            Metropolitan Management
-          </p>
+          <img
+            src="/metro.png"
+            alt="Metropolitan"
+            className="h-16 object-contain mb-4"
+          />
         </div>
 
         {/* Login Card */}
-        <div className="bg-white rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] p-8 md:p-10 border border-slate-100">
+        <div className="bg-cream rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.15)] p-8 md:p-10 border border-brand/20">
           <div className="mb-8">
-            <h2 className="text-xl font-black text-slate-900">Sign In</h2>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-tight">Enter your system credentials</p>
+            <h2 className="text-xl font-black text-black">Sign In</h2>
+            <p className="text-xs font-bold text-black/50 uppercase tracking-tight">Enter your system credentials</p>
           </div>
 
           {error && (
@@ -77,14 +73,14 @@ export default function LoginPage() {
 
           <form onSubmit={handleLogin} className="space-y-5">
             <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">
+              <label className="block text-[10px] font-black text-black/50 uppercase tracking-widest mb-2 ml-1">
                 Username
               </label>
               <div className="relative">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-brand" size={18} />
                 <input
                   type="text"
-                  className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl py-4 pl-12 pr-4 text-sm font-bold text-slate-900 focus:bg-white focus:border-corporate-blue transition-all outline-none"
+                  className="w-full bg-cream border-2 border-brand/30 rounded-2xl py-4 pl-12 pr-4 text-sm font-bold text-black focus:border-brand transition-all outline-none"
                   placeholder="e.g. j.doe"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
@@ -94,14 +90,14 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">
+              <label className="block text-[10px] font-black text-black/50 uppercase tracking-widest mb-2 ml-1">
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-brand" size={18} />
                 <input
                   type={showPassword ? 'text' : 'password'}
-                  className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl py-4 pl-12 pr-12 text-sm font-bold text-slate-900 focus:bg-white focus:border-corporate-blue transition-all outline-none"
+                  className="w-full bg-cream border-2 border-brand/30 rounded-2xl py-4 pl-12 pr-12 text-sm font-bold text-black focus:border-brand transition-all outline-none"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -111,7 +107,7 @@ export default function LoginPage() {
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500 transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-brand/70 hover:text-brand transition-colors"
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -121,7 +117,7 @@ export default function LoginPage() {
             <div className="flex justify-end pr-1">
               <Link
                 href="/forgot-password"
-                className="text-[10px] font-black text-slate-400 hover:text-corporate-blue uppercase tracking-widest transition-colors"
+                className="text-[10px] font-black text-black/50 hover:text-brand uppercase tracking-widest transition-colors"
               >
                 Forgot Access?
               </Link>
@@ -130,7 +126,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-slate-900 hover:bg-corporate-blue text-white font-black uppercase tracking-[0.15em] py-5 rounded-2xl shadow-xl shadow-slate-900/10 transition-all active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-70"
+              className="w-full bg-brand hover:-translate-y-0.5 hover:shadow-xl text-cream font-black uppercase tracking-[0.15em] py-5 rounded-2xl shadow-lg shadow-brand/20 transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-70 disabled:hover:translate-y-0"
             >
               {loading ? (
                 <>
@@ -146,7 +142,7 @@ export default function LoginPage() {
 
         {/* Footer info */}
         <div className="mt-8 text-center">
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+          <p className="text-[10px] font-black text-black/60 uppercase tracking-[0.2em]">
             © 2026 Metropolitan EMS
           </p>
         </div>

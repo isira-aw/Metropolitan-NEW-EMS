@@ -1,13 +1,11 @@
 # Metropolitan EMS - Design System
 
-Single source of truth for the corporate-navy visual system already implemented
-in `src/app/globals.css` and `tailwind.config.js`. This document was previously
-describing an unrelated slate/blue-600 palette that nothing in the app actually
-used - it now documents what's real, so components can be checked against it.
+Single source of truth for the two-color brand system implemented in
+`src/app/globals.css` and `tailwind.config.js`.
 
-Design philosophy: simple, clean, professional, enterprise-oriented. No
-gradients, no decorative animation, minimal color palette, one way to build
-each kind of component.
+Design philosophy: simple, clean, professional. Exactly two brand colors,
+used consistently everywhere. No gradients, no decorative animation beyond
+subtle hover transitions, one way to build each kind of component.
 
 ## Color Palette
 
@@ -15,86 +13,116 @@ Defined in `tailwind.config.js`:
 
 | Token | Hex | Use |
 |---|---|---|
-| `corporate-blue` | `#144A92` | Primary actions, active nav, links |
-| `soft-blue` | `#3F6FB5` | Secondary accents, hover highlights |
-| `pure-black` | `#000000` | Primary text |
-| `light-bg` | `#F4F6F8` | Page background |
+| `brand` | `#7b9acc` | Primary brand color - nav/sidebar background, active states, filled buttons, "id" backgrounds |
+| `cream` | `#FCF6F5` | Page background, card/surface background, text-on-brand |
 
-Slate (`slate-50`...`slate-900`) is used for neutral text, borders, and muted
-UI - not a separate competing palette. Red (`red-*`)/green (`green-*`)/amber
-(`amber-*`) are used for destructive/success/warning states respectively, kept
-to background-50/text-600/border-100 combinations (see Alerts below).
+Legacy token names (`corporate-blue`, `soft-blue`, `light-bg`) still exist in
+`tailwind.config.js` remapped to the same two hex values, kept only for
+backward compatibility with old class names - always prefer `brand`/`cream`
+in new or edited code.
 
-Do not introduce new brand colors, gradients, or arbitrary hex values in
-components - use the tokens above or Tailwind's slate/red/green/amber scales.
+### The two-color rule
+
+- Any element with a **cream** (`#FCF6F5`) background **must** use **black**
+  (`#000000`) text.
+- Any element with a **brand** (`#7b9acc`) background **must** use **cream**
+  (`#FCF6F5`) text.
+- Do not introduce new brand hues, gradients, or arbitrary hex values.
+
+**One accessibility exception**: destructive/danger actions and error
+banners keep red (`bg-red-50`/`text-red-600`/`.btn-danger`) so failures and
+delete/reject actions are never confused with normal brand actions. Status
+badges (`StatusBadge`) keep their existing semantic amber/orange/green tints
+for job/ticket states where color reinforces (never replaces) a text label.
+Nothing else in the app should use a third color.
 
 ## Typography
 
-- Page titles: `text-2xl md:text-3xl font-black text-slate-900`
-- Section titles: `text-lg font-black text-slate-900`
-- Labels / helper text: `text-[10px] font-black text-slate-400 uppercase tracking-widest`
-- Body text: `text-sm font-bold text-slate-700`
-- Muted text: `text-sm text-slate-400`
+- Page titles: `text-2xl md:text-3xl font-black text-black`
+- Section titles: `text-lg font-black text-black`
+- Labels / helper text: `text-[10px] font-black text-black/50 uppercase tracking-widest`
+- Body text: `text-sm font-bold text-black`
+- Muted text: `text-sm text-black/50`
 
 Keep the existing uppercase/tracked-out label style already used throughout
-the app - it's part of the visual identity, not a mistake to "correct" back to
-sentence case.
+the app - it's part of the visual identity.
 
 ## Buttons (`Button` component - `src/components/ui/Button.tsx`)
 
-- **Primary**: `bg-corporate-blue text-white`, hover `bg-slate-900` - the main action on a screen.
-- **Secondary**: `bg-slate-100 text-slate-600`, hover `bg-slate-200` - cancel/secondary actions.
-- **Danger**: `bg-red-50 text-red-600 border border-red-100`, hover `bg-red-100` - destructive actions (matches the existing reject/delete styling already in use).
+- **Primary** (filled): `bg-brand text-cream border-2 border-brand` - the main action on a screen.
+- **Secondary** (outline): `bg-cream text-black border-2 border-brand`, hover inverts to `bg-brand text-cream` - cancel/secondary actions.
+- **Danger**: `bg-red-50 text-red-600 border border-red-100`, hover `bg-red-100` - destructive actions only.
+
+Hover feedback is an **animation, not a new color**: `-translate-y-0.5` +
+`shadow-lg` on filled buttons, a brand/cream color-swap on outline buttons.
 
 All variants: `rounded-2xl font-black uppercase tracking-widest text-xs`,
-minimum 44px touch target (already enforced globally in `globals.css` on
-mobile), disabled state `opacity-50 cursor-not-allowed`.
+minimum 44px touch target, disabled state `opacity-50 cursor-not-allowed`.
 
 ## Inputs (`Input` component - `src/components/ui/Input.tsx`)
 
-Wraps the existing `.input-field`/`.input-field-error`/`.input-label` classes
-in `globals.css`. Every field: label with required/optional indicator, input,
+`bg-cream text-black border border-brand/30`, focus ring `ring-brand/40
+border-brand`. Every field: label with required/optional indicator, input,
 optional inline error line below in `text-red-600 text-xs`.
 
 ## Cards
 
-`bg-white rounded-2xl border border-slate-100 shadow-sm p-6` (or the existing
-`Card` component). Avoid the more extreme `rounded-[2rem]`/`rounded-[2.5rem]`
-arbitrary values on new components going forward - `rounded-2xl` is the
-standard.
+`bg-cream rounded-2xl border border-brand/20 shadow-sm p-6` (or the existing
+`Card` component, which now defaults to these tokens).
 
 ## Modals (`Modal` component - `src/components/ui/Modal.tsx`)
 
-- Backdrop: `fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4`
-- Container: `bg-white rounded-2xl shadow-2xl w-full max-w-lg`
-- Header: `bg-slate-900 text-white px-6 py-5 flex justify-between items-center`, close button top-right
+- Backdrop: `fixed inset-0 bg-black/40 backdrop-blur-md z-[100]`
+- Container: `bg-cream rounded-2xl shadow-2xl border border-brand/20`
+- Header: `bg-brand text-cream px-6 py-5`, close button top-right
 - Escape key and backdrop click both close the modal; focus moves into the modal on open
 
-`ConfirmDialog` is a thin wrapper around `Modal` for confirm/cancel flows -
-use it instead of `window.confirm()`.
+`ConfirmDialog` wraps `Modal` with OK/Cancel buttons for confirm/cancel
+flows - use it instead of `window.confirm()`. Used on the employee dashboard
+for the "Start Work Day" / "End Work Day" actions so a mistaken tap can't
+silently clock the employee in/out.
 
 ## Toasts (`Toast`/`ToastProvider` - `src/components/ui/Toast.tsx`)
 
-Replaces `window.alert()` everywhere, including the global API error
-interceptor. Fixed position (bottom-right), auto-dismiss after ~5s, manual
-dismiss button, variants: `success` (green), `error` (red), `info` (slate).
+Fixed position (bottom-right), auto-dismiss after ~5s, manual dismiss
+button. `success`/`info` use `bg-brand text-cream`; `error` keeps
+`bg-red-600` (the one accessibility exception, so failures read distinctly
+from normal brand-colored confirmations).
 
 ## Tables
 
-- Header row: `bg-slate-50/50`, cells `text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]`
-- Body rows: `divide-y divide-slate-50`, hover `hover:bg-slate-50/30`
+- Header row: `bg-brand text-cream`
+- Body rows: `bg-cream`, hover `bg-brand/10`
 - Always pair with an `EmptyState` for the zero-results case and a `LoadingSpinner` while fetching.
-- Below `md`, provide a stacked-card fallback instead of relying solely on horizontal scroll for dense tables.
+- Admin tables are laptop-only and should show full column detail rather than collapsing into a mobile card layout.
 
 ## Empty States (`EmptyState` component - `src/components/ui/EmptyState.tsx`)
 
-Icon (`text-slate-300`) + message (`text-slate-400 text-sm font-bold`) +
+Icon (`text-brand/40`) + message (`text-black/50 text-sm font-bold`) +
 optional action button, centered, generous vertical padding (`py-12`).
 
 ## Status Badges (`StatusBadge` component)
 
 One consistent badge per job/ticket status - reuse the existing component
-rather than inlining status-color logic per page.
+rather than inlining status-color logic per page. On the employee job-card
+detail page this is paired with a linear step tracker (PENDING → TRAVELING
+→ STARTED → ON_HOLD → COMPLETED, with CANCEL as a terminal exception) built
+from `brand`/`cream` only, so employees can see progress at a glance without
+reading table columns.
+
+## Layout differences by role
+
+- **Admin** (`AdminLayout`, `src/app/admin/**`): laptop-only, dense. Small
+  padding/margins, wide (`max-w-[1600px]`-ish) content area, full-detail
+  tables, professional/no playful rounding.
+- **Employee** (`EmployeeLayout`, `src/app/employee/**`): mobile-first,
+  friendly, minimal. No total-time/overtime figures anywhere in the
+  employee-facing UI (that data still exists for admin reporting only).
+
+## Logo
+
+- `public/metrosmall.png` - icon-only mark, used in the collapsed sidebar and browser tab favicon.
+- `public/metro.png` - full logo with wordmark, used on the login screen.
 
 ## Accessibility
 
@@ -108,10 +136,11 @@ rather than inlining status-color logic per page.
 When touching a page as part of the design-system migration:
 
 1. Replace `window.confirm(...)` with `ConfirmDialog`.
-2. Replace `window.alert(...)` with the `Toast` system (remove the page-level `alert()` in the `catch` block once the global interceptor's toast covers it - don't double up).
+2. Replace `window.alert(...)` with the `Toast` system.
 3. Replace bespoke modal backdrops with `Modal`.
 4. Replace raw `<input>`/`<label>` pairs with `Input`.
 5. Replace one-off buttons with `Button`.
 6. Replace `<div onClick>` interactive rows with `<button>` and add keyboard support.
 7. Add an `EmptyState` branch to any table/list that doesn't already have one.
-8. Leave business logic, API calls, and validation rules untouched - this is a presentation-layer migration only.
+8. Replace any `slate-*`/`bg-white`/arbitrary-hex classes with the two-color tokens above.
+9. Leave business logic, API calls, and validation rules untouched - this is a presentation-layer migration only.

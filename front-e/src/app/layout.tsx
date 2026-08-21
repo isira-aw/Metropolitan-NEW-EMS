@@ -6,6 +6,9 @@ import { LoadingOverlayProvider } from '@/components/ui/LoadingOverlay'
 export const metadata: Metadata = {
   title: 'EMS - Employee Management System',
   description: 'Generator Service Employee Management',
+  icons: {
+    icon: '/metrosmall.png',
+  },
 }
 
 export default function RootLayout({

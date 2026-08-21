@@ -9,8 +9,35 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import Pagination from '@/components/ui/Pagination';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { formatMinutes } from '@/lib/utils/format';
-import { Calendar, Star, CheckCircle, Clock, ChevronRight, Filter, LayoutGrid } from 'lucide-react';
+import { Calendar, Star, Clock, ChevronRight, Filter } from 'lucide-react';
 import EmployeeLayout from '@/components/layouts/EmployeeLayout';
+
+const STEPS = ['PENDING', 'TRAVELING', 'STARTED', 'ON_HOLD', 'COMPLETED'] as JobStatus[];
+
+/** Compact linear stepper for the job card list rows. */
+function MiniStepper({ status }: { status: JobStatus }) {
+  if (status === 'CANCEL') return null;
+  const currentIndex = STEPS.indexOf(status);
+  return (
+    <div className="flex items-center w-full">
+      {STEPS.map((step, i) => {
+        const done = i <= currentIndex;
+        return (
+          <div key={step} className="flex items-center flex-1 last:flex-none">
+            <div
+              className={`w-2.5 h-2.5 rounded-full shrink-0 border-2 ${
+                done ? 'bg-brand border-brand' : 'bg-cream border-brand/30'
+              }`}
+            />
+            {i < STEPS.length - 1 && (
+              <div className={`h-0.5 flex-1 ${i < currentIndex ? 'bg-brand' : 'bg-brand/20'}`} />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function EmployeeJobCards() {
   const router = useRouter();
@@ -69,156 +96,139 @@ export default function EmployeeJobCards() {
 
   return (
     <EmployeeLayout pendingJobsCount={pendingCount}>
-      <div className="min-h-screen bg-slate-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          
+      <div className="min-h-screen bg-cream">
+        <div className="max-w-[400px] md:max-w-5xl mx-auto px-4 py-6">
+
           {/* Header Section */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
-            <div>
-              <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">MY JOB CARDS</h2>
-              <p className="text-sm text-slate-500 font-medium">Manage and track your assigned maintenance tasks</p>
-            </div>
-            <div className="hidden md:flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm">
-              <LayoutGrid size={18} className="text-corporate-blue" />
-              <span className="text-sm font-bold text-slate-700">{jobCards?.totalElements || 0} Tasks Found</span>
-            </div>
+          <div className="mb-6">
+            <h2 className="text-2xl font-black text-black tracking-tight">MY JOB CARDS</h2>
+            <p className="text-sm text-black/50 font-medium">{jobCards?.totalElements || 0} tasks found</p>
           </div>
 
-          {/* Filter Bar: Adapts from Stacked (Mobile) to Inline (Desktop) */}
-          <Card className="mb-8 border-none shadow-sm bg-white overflow-visible">
-            <div className="p-4 md:p-6 space-y-6 md:space-y-0 md:flex md:items-end md:gap-6">
-              
-              {/* Date Selection */}
-              <div className="flex-1 space-y-2">
-                <label className="text-[11px] md:text-xs font-black text-slate-400 uppercase tracking-widest">Target Date</label>
-                <div className="flex gap-2">
-                  <input
-                    type="date"
-                    value={selectedDate}
-                    onChange={(e) => { setSelectedDate(e.target.value); setCurrentPage(0); }}
-                    className="flex-1 md:w-48 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-corporate-blue outline-none transition-all"
-                  />
-                  <button 
-                    onClick={handleTodayFilter}
-                    className="bg-slate-900 text-white px-6 py-3 rounded-xl text-xs font-black uppercase hover:bg-slate-800 transition-colors active:scale-95"
+          {/* Filter Bar */}
+          <Card className="mb-6 space-y-4">
+            {/* Date Selection */}
+            <div className="space-y-2">
+              <label className="text-[11px] font-black text-black/50 uppercase tracking-widest">Target Date</label>
+              <div className="flex gap-2">
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => { setSelectedDate(e.target.value); setCurrentPage(0); }}
+                  className="flex-1 bg-cream border-2 border-brand/30 rounded-xl px-4 py-3 text-sm font-bold text-black focus:ring-2 focus:ring-brand outline-none transition-all min-h-[48px]"
+                />
+                <button
+                  onClick={handleTodayFilter}
+                  className="bg-brand text-cream border-2 border-brand px-6 py-3 rounded-xl text-xs font-black uppercase active:scale-95 transition-all min-h-[48px]"
+                >
+                  Today
+                </button>
+              </div>
+            </div>
+
+            {/* Status Filter */}
+            <div className="space-y-2">
+              <label className="text-[11px] font-black text-black/50 uppercase tracking-widest">Work Status</label>
+
+              {/* Mobile Dropdown */}
+              <div className="md:hidden relative">
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as any)}
+                  className="w-full appearance-none bg-cream border-2 border-brand/30 rounded-xl px-4 py-3 text-sm font-bold text-black outline-none min-h-[48px]"
+                >
+                  <option value="ALL">ALL STATUSES</option>
+                  <option value="PENDING">PENDING</option>
+                  <option value="TRAVELING">TRAVELING</option>
+                  <option value="STARTED">STARTED</option>
+                  <option value="ON_HOLD">ON HOLD</option>
+                  <option value="COMPLETED">COMPLETED</option>
+                </select>
+                <Filter size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-black/40 pointer-events-none" />
+              </div>
+
+              {/* Desktop Tabs */}
+              <div className="hidden md:flex flex-wrap gap-2">
+                {['ALL', 'PENDING', 'TRAVELING', 'STARTED', 'ON_HOLD', 'COMPLETED'].map((status) => (
+                  <button
+                    key={status}
+                    onClick={() => setStatusFilter(status as any)}
+                    className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all border-2 ${
+                      statusFilter === status
+                      ? 'bg-brand border-brand text-cream'
+                      : 'bg-cream border-brand/20 text-black/60 hover:border-brand/50'
+                    }`}
                   >
-                    Today
+                    {status.replace('_', ' ')}
                   </button>
-                </div>
-              </div>
-
-              {/* Status Filter: Dropdown on Mobile, Row on Desktop */}
-              <div className="flex-[2] space-y-2">
-                <label className="text-[11px] md:text-xs font-black text-slate-400 uppercase tracking-widest">Work Status</label>
-                
-                {/* Mobile Dropdown (Visible < 768px) */}
-                <div className="md:hidden relative">
-                  <select 
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value as any)}
-                    className="w-full appearance-none bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 outline-none"
-                  >
-                    <option value="ALL">ALL STATUSES</option>
-                    <option value="PENDING">PENDING</option>
-                    <option value="TRAVELING">TRAVELING</option>
-                    <option value="STARTED">STARTED</option>
-                    <option value="ON_HOLD">ON HOLD</option>
-                    <option value="COMPLETED">COMPLETED</option>
-                  </select>
-                  <Filter size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                </div>
-
-                {/* Desktop Tabs (Visible > 768px) */}
-                <div className="hidden md:flex flex-wrap gap-2">
-                  {['ALL', 'PENDING', 'TRAVELING', 'STARTED', 'ON_HOLD', 'COMPLETED'].map((status) => (
-                    <button
-                      key={status}
-                      onClick={() => setStatusFilter(status as any)}
-                      className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all border-2 ${
-                        statusFilter === status 
-                        ? 'bg-corporate-blue border-corporate-blue text-white shadow-md' 
-                        : 'bg-white border-slate-100 text-slate-500 hover:border-slate-300'
-                      }`}
-                    >
-                      {status.replace('_', ' ')}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Selected Date Badge (Desktop Only) */}
-              <div className="hidden lg:block pb-1">
-                <div className="bg-slate-100 px-4 py-3 rounded-xl border border-slate-200 text-right">
-                  <p className="text-[10px] font-black text-slate-400 uppercase">Selected</p>
-                  <p className="text-sm font-black text-slate-700">
-                    {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                  </p>
-                </div>
+                ))}
               </div>
             </div>
           </Card>
 
-          {/* Job Grid: 1 col on Mobile, 2 on Tablet, 3 on Desktop */}
+          {/* Job List */}
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20">
               <LoadingSpinner />
-              <p className="mt-4 text-xs font-black text-slate-400 animate-pulse tracking-tighter">SYNCHRONIZING DATA...</p>
+              <p className="mt-4 text-xs font-black text-black/40 tracking-tighter">Loading...</p>
             </div>
           ) : jobCards && jobCards.content.length > 0 ? (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {jobCards.content.map((card) => (
                   <button
                     type="button"
                     key={card.id}
                     onClick={() => router.push(`/employee/job-cards/${card.id}`)}
-                    className="group bg-white border-2 border-slate-200 rounded-3xl overflow-hidden hover:border-corporate-blue hover:shadow-xl hover:shadow-blue-900/5 transition-all text-left flex flex-col w-full"
+                    className="group bg-cream border-2 border-brand/20 rounded-2xl overflow-hidden hover:border-brand transition-all text-left flex flex-col w-full"
                   >
-                    <div className="p-5 flex-1">
-                      <div className="flex justify-between items-start mb-4">
-                        <span className="text-[10px] font-black bg-slate-100 text-slate-500 px-2.5 py-1 rounded-lg border border-slate-200">
+                    <div className="p-5 flex-1 space-y-4">
+                      <div className="flex justify-between items-start">
+                        <span className="text-[10px] font-black bg-brand/10 text-black px-2.5 py-1 rounded-lg border border-brand/20">
                           #{card.mainTicket.ticketNumber}
                         </span>
                         <StatusBadge status={card.status} />
                       </div>
 
-                      <h3 className="text-lg font-black text-slate-900 leading-tight mb-6 group-hover:text-corporate-blue transition-colors line-clamp-2">
+                      <h3 className="text-lg font-black text-black leading-tight line-clamp-2">
                         {card.mainTicket.title}
                       </h3>
 
-                      <div className="grid grid-cols-2 gap-4 py-4 border-y border-slate-50">
+                      <MiniStepper status={card.status} />
+
+                      <div className="grid grid-cols-2 gap-4 pt-3 border-t border-brand/10">
                         <div className="space-y-1">
-                          <p className="text-[10px] font-black text-slate-400 uppercase">Duration</p>
-                          <div className="flex items-center gap-2 text-slate-700">
-                            <Clock size={16} className="text-corporate-blue" />
+                          <p className="text-[10px] font-black text-black/40 uppercase">Duration</p>
+                          <div className="flex items-center gap-2 text-black">
+                            <Clock size={16} className="text-brand" />
                             <span className="text-sm font-black">{formatMinutes(card.workMinutes)}</span>
                           </div>
                         </div>
                         <div className="space-y-1 text-right">
-                          <p className="text-[10px] font-black text-slate-400 uppercase">Complexity</p>
+                          <p className="text-[10px] font-black text-black/40 uppercase">Complexity</p>
                           <div className="flex justify-end gap-0.5">
                             {[...Array(card.mainTicket.weight)].map((_, i) => (
-                              <Star key={i} size={14} className="text-yellow-500 fill-yellow-500" />
+                              <Star key={i} size={14} className="text-brand fill-brand" />
                             ))}
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    <div className={`px-5 py-4 flex items-center justify-between ${card.approved ? 'bg-green-50/50' : 'bg-slate-50'}`}>
+                    <div className="px-5 py-4 flex items-center justify-between bg-brand/5 border-t border-brand/10">
                       <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${card.approved ? 'bg-green-500' : 'bg-orange-400 animate-pulse'}`}></div>
-                        <span className={`text-[11px] font-black uppercase ${card.approved ? 'text-green-700' : 'text-slate-500'}`}>
+                        <div className={`w-2 h-2 rounded-full ${card.approved ? 'bg-brand' : 'bg-brand/40'}`}></div>
+                        <span className="text-[11px] font-black uppercase text-black/60">
                           {card.approved ? 'Verified by Admin' : 'Pending Verification'}
                         </span>
                       </div>
-                      <ChevronRight size={18} className="text-slate-300 group-hover:text-corporate-blue group-hover:translate-x-1 transition-all" />
+                      <ChevronRight size={18} className="text-brand/50" />
                     </div>
                   </button>
                 ))}
               </div>
 
-              <div className="mt-12 flex justify-center">
+              <div className="mt-10 flex justify-center">
                 <Pagination
                   currentPage={currentPage}
                   totalPages={jobCards.totalPages}
@@ -227,12 +237,12 @@ export default function EmployeeJobCards() {
               </div>
             </>
           ) : (
-            <div className="bg-white border-2 border-dashed border-slate-200 rounded-[2rem] py-20 flex flex-col items-center text-center px-6">
-              <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-                <Calendar size={40} className="text-slate-200" />
+            <div className="bg-cream border-2 border-dashed border-brand/30 rounded-[2rem] py-16 flex flex-col items-center text-center px-6">
+              <div className="w-16 h-16 bg-brand/10 rounded-full flex items-center justify-center mb-4">
+                <Calendar size={32} className="text-brand" />
               </div>
-              <h3 className="text-xl font-black text-slate-900">NO TASKS FOUND</h3>
-              <p className="text-slate-400 max-w-xs mt-2 font-medium">There are no job cards assigned to you for the selected date.</p>
+              <h3 className="text-lg font-black text-black">NO TASKS FOUND</h3>
+              <p className="text-black/50 max-w-xs mt-2 font-medium text-sm">There are no job cards assigned to you for the selected date.</p>
             </div>
           )}
         </div>

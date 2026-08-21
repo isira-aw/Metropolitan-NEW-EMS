@@ -15,9 +15,9 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block ml-1"
+            className="text-[10px] font-black text-black/50 uppercase tracking-widest mb-1.5 block ml-1"
           >
-            {label} {optional && <span className="text-slate-300 normal-case">(optional)</span>}
+            {label} {optional && <span className="text-black/30 normal-case">(optional)</span>}
           </label>
         )}
         <input
@@ -26,10 +26,10 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           required={required}
           aria-invalid={!!error}
           aria-describedby={error && inputId ? `${inputId}-error` : undefined}
-          className={`w-full bg-slate-50 rounded-xl py-3 px-4 text-sm font-bold border outline-none transition-all
+          className={`w-full bg-cream text-black rounded-xl py-3 px-4 text-sm font-bold border outline-none transition-all
             ${error
               ? 'border-red-300 bg-red-50 focus:ring-2 focus:ring-red-500'
-              : 'border-transparent focus:ring-2 focus:ring-corporate-blue/20'}
+              : 'border-brand/30 focus:ring-2 focus:ring-brand/40 focus:border-brand'}
             ${className}`}
           {...rest}
         />
