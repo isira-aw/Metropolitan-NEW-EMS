@@ -77,6 +77,16 @@ apiClient.interceptors.response.use(
       }
     }
 
+    if (error.response?.status === 403) {
+      // Missing/expired/invalid JWT - the backend rejects the request outright.
+      // Clear stale credentials and send the user back to login.
+      localStorage.clear();
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+      return Promise.reject(error);
+    }
+
     // Global error toast handling
     // Surfaces backend error messages via the app-wide toast system.
     // Components can opt-out by adding { skipGlobalError: true } to config.
