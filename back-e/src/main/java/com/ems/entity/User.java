@@ -51,7 +51,10 @@ public class User {
     // Denormalized flag kept in sync whenever a ProfilePicture is set/removed
     // (see ProfilePictureService), so list views can tell whether it's worth
     // fetching an avatar for this user without ever loading the base64 blob.
-    @Column(name = "has_profile_picture", nullable = false)
+    // columnDefinition supplies a DEFAULT so ddl-auto=update can add this
+    // NOT NULL column to the existing (non-empty) users table in production -
+    // a plain "not null" ADD COLUMN with no default fails against existing rows.
+    @Column(name = "has_profile_picture", nullable = false, columnDefinition = "boolean not null default false")
     private Boolean hasProfilePicture = false;
 
     @CreationTimestamp
