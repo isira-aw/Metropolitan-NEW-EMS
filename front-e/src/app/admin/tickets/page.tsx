@@ -496,6 +496,28 @@ export default function AdminTickets() {
                   </label>
                   <input type="text" value={modalEmployeeSearch} onChange={(e) => setModalEmployeeSearch(e.target.value)} placeholder="Type name to find team members..." className="w-full bg-cream border-none rounded-xl p-3 text-sm font-bold text-black focus:ring-2 focus:ring-brand/30" />
 
+                  {/* Selected employees stay pinned here regardless of what's
+                      currently typed in the search box above - otherwise
+                      picking someone via one search then typing a new search
+                      term made them disappear from view even though they
+                      were still selected (the count just kept climbing). */}
+                  {formData.employeeIds.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {formData.employeeIds.map((empId) => {
+                        const emp = employees.find(e => e.id === empId) || modalEmployees.find(e => e.id === empId);
+                        return (
+                          <span key={empId} className="flex items-center gap-1.5 bg-cream border-2 border-brand rounded-full pl-1 pr-2 py-1">
+                            <Avatar userId={empId} hasProfilePicture={emp?.hasProfilePicture} fullName={emp?.fullName} size={20} className="!rounded-full" />
+                            <span className="text-[10px] font-black uppercase text-black truncate max-w-[7rem]">{emp?.fullName || `#${empId}`}</span>
+                            <button type="button" onClick={() => toggleEmployee(empId)} aria-label="Remove" className="text-black/40 hover:text-black">
+                              <X size={12} />
+                            </button>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+
                   <div className="flex-1 min-h-[18rem] md:min-h-0 space-y-2.5 overflow-y-auto p-1">
                     {(modalEmployeeSearch.length >= 3 ? modalEmployees : (editMode ? modalEmployees : [])).map((emp) => (
                       <button
