@@ -32,10 +32,12 @@ export function showGlobalToast(message: string, variant: ToastVariant = 'error'
   }
 }
 
+// Brand theme is intentionally two-color everywhere else; error keeps red as
+// the one accessibility exception so failures are never mistaken for success.
 const variantStyles: Record<ToastVariant, { bg: string; icon: ReactNode }> = {
-  success: { bg: 'bg-emerald-600', icon: <CheckCircle2 size={18} /> },
+  success: { bg: 'bg-brand', icon: <CheckCircle2 size={18} /> },
   error: { bg: 'bg-red-600', icon: <AlertCircle size={18} /> },
-  info: { bg: 'bg-slate-800', icon: <Info size={18} /> },
+  info: { bg: 'bg-brand', icon: <Info size={18} /> },
 };
 
 export function ToastProvider({ children }: { children: ReactNode }) {
@@ -70,7 +72,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`${variantStyles[toast.variant].bg} text-white rounded-2xl shadow-2xl px-5 py-4 flex items-start gap-3`}
+            className={`${variantStyles[toast.variant].bg} text-cream rounded-2xl shadow-2xl px-5 py-4 flex items-start gap-3`}
           >
             <span className="mt-0.5">{variantStyles[toast.variant].icon}</span>
             <p className="text-sm font-bold flex-1">{toast.message}</p>

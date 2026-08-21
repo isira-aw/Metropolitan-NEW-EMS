@@ -8,21 +8,24 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Corporate Color Theme
-        'corporate-blue': '#144A92',    // Primary - Buttons, Navbar, Links
-        'soft-blue': '#3F6FB5',         // Secondary - Hover, Cards, Highlights
-        'pure-black': '#000000',        // Text - All main text
-        'light-bg': '#F4F6F8',          // Background - Pages, Tables
+        // Two-color brand system - do not add further brand colors.
+        'brand': '#7b9acc',             // Primary - nav, buttons, active states, id backgrounds
+        'cream': '#FCF6F5',             // Secondary - page background, card surfaces, button text
 
-        // Maintain backward compatibility
+        // Legacy token names kept so existing classes keep working, remapped to the two-color system.
+        'corporate-blue': '#7b9acc',
+        'soft-blue': '#7b9acc',
+        'pure-black': '#000000',
+        'light-bg': '#FCF6F5',
+
         primary: {
-          DEFAULT: '#144A92',
-          hover: '#0F3A7A',
-          light: '#3F6FB5',
+          DEFAULT: '#7b9acc',
+          hover: '#7b9acc',
+          light: '#7b9acc',
         },
         secondary: {
-          DEFAULT: '#3F6FB5',
-          hover: '#2E5A9E',
+          DEFAULT: '#7b9acc',
+          hover: '#7b9acc',
         },
       },
       boxShadow: {

@@ -12,19 +12,19 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
       <button
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 0}
-        className="px-4 py-2 bg-white border rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-4 py-2 bg-cream text-black border border-brand rounded-lg hover:bg-brand hover:text-cream transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-cream disabled:hover:text-black"
       >
         Previous
       </button>
 
-      <span className="px-4 py-2 text-sm text-gray-700">
+      <span className="px-4 py-2 text-sm text-black">
         Page {currentPage + 1} of {totalPages}
       </span>
 
       <button
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage >= totalPages - 1}
-        className="px-4 py-2 bg-white border rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-4 py-2 bg-cream text-black border border-brand rounded-lg hover:bg-brand hover:text-cream transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-cream disabled:hover:text-black"
       >
         Next
       </button>

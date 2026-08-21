@@ -16,10 +16,11 @@ interface CardProps {
 function withDefaults(className: string) {
   const has = (pattern: RegExp) => pattern.test(className);
   const defaults = [
-    !has(/(^|\s)bg-/) && 'bg-white',
+    !has(/(^|\s)bg-/) && 'bg-cream',
     !has(/(^|\s)rounded/) && 'rounded-lg',
     !has(/(^|\s)shadow/) && 'shadow-md',
     !has(/(^|\s)(p|px|py)-/) && 'p-6',
+    !has(/(^|\s)border/) && 'border border-brand/20',
   ].filter(Boolean);
   return [...defaults, className].join(' ');
 }

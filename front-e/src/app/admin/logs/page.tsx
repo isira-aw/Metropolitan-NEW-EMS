@@ -55,42 +55,36 @@ export default function AdminLogs() {
   };
 
   const getActivityBadgeColor = (activityType: string) => {
-    switch (activityType) {
-      case 'DAY_START': return 'bg-emerald-50 text-emerald-700 border-emerald-100';
-      case 'DAY_END': return 'bg-rose-50 text-rose-700 border-rose-100';
-      case 'STATUS_UPDATE': return 'bg-blue-50 text-blue-700 border-blue-100';
-      case 'JOB_APPROVED': return 'bg-green-50 text-green-700 border-green-100';
-      case 'JOB_REJECTED': return 'bg-orange-50 text-orange-700 border-orange-100';
-      case 'JOB_ASSIGNED': return 'bg-purple-50 text-purple-700 border-purple-100';
-      default: return 'bg-slate-50 text-slate-700 border-slate-100';
-    }
+    // All activity types share one brand-consistent tag style; the
+    // description text itself communicates which event occurred.
+    return 'bg-brand/10 text-brand border-brand/20';
   };
 
   return (
     <AdminLayout>
-      <div className="max-w-7xl mx-auto space-y-8 pb-20">
+      <div className="max-w-[1600px] mx-auto space-y-4 pb-10">
         {/* Header */}
-        <div className="px-2">
-          <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase">Activity Logs</h2>
-          <p className="text-xs font-black text-slate-400 uppercase tracking-widest italic mt-1">Full System Audit & Event History</p>
+        <div>
+          <h2 className="text-2xl font-black text-black tracking-tighter uppercase">Activity Logs</h2>
+          <p className="text-xs font-black text-black/50 uppercase tracking-widest italic mt-0.5">Full System Audit & Event History</p>
         </div>
 
         {/* Filters Card */}
-        <Card className="p-6 border-slate-100 shadow-2xl rounded-[2.5rem] bg-white">
-          <div className="flex items-center gap-2 mb-4 text-corporate-blue">
+        <Card className="p-4 border-brand/20 shadow-sm rounded-xl bg-cream">
+          <div className="flex items-center gap-2 mb-3 text-brand">
             <Filter size={18} />
             <h3 className="text-sm font-black uppercase tracking-widest">Filter Audit Trail</h3>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Personnel</label>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black text-black/50 uppercase tracking-widest px-1">Personnel</label>
               <div className="relative">
-                <UserIcon size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                <UserIcon size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-black/40" />
                 <select
                   value={selectedEmployee || ''}
                   onChange={(e) => setSelectedEmployee(e.target.value ? Number(e.target.value) : null)}
-                  className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-700 focus:ring-2 focus:ring-corporate-blue appearance-none"
+                  className="w-full pl-11 pr-4 py-2.5 bg-brand/5 border-none rounded-xl text-sm font-bold text-black focus:ring-2 focus:ring-brand/30 appearance-none"
                 >
                   <option value="">All Personnel</option>
                   {employees.map((emp) => (
@@ -100,42 +94,42 @@ export default function AdminLogs() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">From Date</label>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black text-black/50 uppercase tracking-widest px-1">From Date</label>
               <div className="relative">
-                <Calendar size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Calendar size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-black/40" />
                 <input
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-700 focus:ring-2 focus:ring-corporate-blue"
+                  className="w-full pl-11 pr-4 py-2.5 bg-brand/5 border-none rounded-xl text-sm font-bold text-black focus:ring-2 focus:ring-brand/30"
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">To Date</label>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black text-black/50 uppercase tracking-widest px-1">To Date</label>
               <div className="relative">
-                <Calendar size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Calendar size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-black/40" />
                 <input
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-700 focus:ring-2 focus:ring-corporate-blue"
+                  className="w-full pl-11 pr-4 py-2.5 bg-brand/5 border-none rounded-xl text-sm font-bold text-black focus:ring-2 focus:ring-brand/30"
                 />
               </div>
             </div>
 
-            <div className="flex items-end gap-3">
+            <div className="flex items-end gap-2">
               <button
                 onClick={() => loadLogs(0)}
-                className="flex-1 bg-corporate-blue text-white h-12 rounded-2xl font-black uppercase text-xs hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 flex items-center justify-center gap-2"
+                className="flex-1 bg-brand text-cream h-10 rounded-xl font-black uppercase text-xs hover:shadow-md transition-all flex items-center justify-center gap-2"
               >
                 <Search size={16} /> Apply
               </button>
               <button
                 onClick={() => { setSelectedEmployee(null); setStartDate(''); setEndDate(''); setTimeout(() => loadLogs(0), 100); }}
-                className="p-3 bg-slate-100 text-slate-500 h-12 w-12 rounded-2xl hover:bg-slate-200 transition-all flex items-center justify-center"
+                className="p-2.5 bg-cream border border-brand/30 text-black h-10 w-10 rounded-xl hover:bg-brand/10 transition-all flex items-center justify-center"
               >
                 <RotateCcw size={18} />
               </button>
@@ -144,71 +138,71 @@ export default function AdminLogs() {
         </Card>
 
         {/* Logs Table */}
-        <Card className="border-slate-100 shadow-2xl rounded-[2.5rem] bg-white overflow-hidden">
+        <Card className="p-0 border-brand/20 shadow-sm rounded-xl bg-cream overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="bg-slate-50/50 border-b border-slate-100">
+                <tr className="bg-brand text-cream">
                   {['Timestamp', 'Subject Personnel', 'Action Performed', 'Status Delta', 'Asset Details', 'GPS'].map((header) => (
-                    <th key={header} className="px-5 py-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{header}</th>
+                    <th key={header} className="px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.2em]">{header}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
+              <tbody className="divide-y divide-brand/10">
                 {loading ? (
                   <tr>
                     <td colSpan={6} className="px-8 py-14 text-center"><LoadingSpinner /></td>
                   </tr>
                 ) : logs && logs.content.length > 0 ? (
                   logs.content.map((log) => (
-                    <tr key={log.id} className="group hover:bg-slate-50/50 transition-colors">
-                      <td className="px-5 py-3">
-                        <div className="font-black text-slate-900 text-xs uppercase">{log.formattedDate}</div>
-                        <div className="text-[10px] font-black text-slate-400 tracking-widest">{log.formattedTime}</div>
+                    <tr key={log.id} className="group hover:bg-brand/10 transition-colors">
+                      <td className="px-4 py-2.5">
+                        <div className="font-black text-black text-xs uppercase">{log.formattedDate}</div>
+                        <div className="text-[10px] font-black text-black/50 tracking-widest">{log.formattedTime}</div>
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-4 py-2.5">
                         <div className="flex items-center gap-2.5">
-                          <div className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 font-black text-xs flex-shrink-0">
+                          <div className="h-8 w-8 rounded-lg bg-brand/10 flex items-center justify-center text-brand font-black text-xs flex-shrink-0">
                             {log.employeeFullName?.charAt(0)}
                           </div>
                           <div>
-                            <div className="font-black text-slate-900 text-xs uppercase leading-none mb-1">{log.employeeFullName || 'N/A'}</div>
-                            <div className="text-[10px] font-bold text-slate-400 lowercase">{log.employeeEmail}</div>
+                            <div className="font-black text-black text-xs uppercase leading-none mb-1">{log.employeeFullName || 'N/A'}</div>
+                            <div className="text-[10px] font-bold text-black/50 lowercase">{log.employeeEmail}</div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-4 py-2.5">
                         <span className={`px-2.5 py-1 text-[10px] font-black rounded-lg border uppercase tracking-wider ${getActivityBadgeColor(log.activityType)}`}>
                           {log.activityDescription}
                         </span>
                         {log.ticketNumber && (
-                          <div className="mt-1 text-[10px] font-black text-corporate-blue">TKT #{log.ticketNumber}</div>
+                          <div className="mt-1 text-[10px] font-black text-brand">TKT #{log.ticketNumber}</div>
                         )}
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-4 py-2.5">
                         {log.oldStatus && log.newStatus ? (
                           <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-black text-slate-400 uppercase">{log.oldStatus}</span>
-                            <ArrowRight size={12} className="text-slate-300" />
-                            <span className="text-[10px] font-black text-corporate-blue uppercase">{log.newStatus}</span>
+                            <span className="text-[10px] font-black text-black/50 uppercase">{log.oldStatus}</span>
+                            <ArrowRight size={12} className="text-black/30" />
+                            <span className="text-[10px] font-black text-brand uppercase">{log.newStatus}</span>
                           </div>
-                        ) : <span className="text-slate-200">—</span>}
+                        ) : <span className="text-black/20">—</span>}
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-4 py-2.5">
                         {log.generatorName ? (
                           <div>
-                            <div className="text-xs font-black text-slate-800 uppercase leading-none mb-1">{log.generatorName}</div>
-                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{log.generatorLocationName}</div>
+                            <div className="text-xs font-black text-black uppercase leading-none mb-1">{log.generatorName}</div>
+                            <div className="text-[10px] font-bold text-black/50 uppercase tracking-tighter">{log.generatorLocationName}</div>
                           </div>
-                        ) : <span className="text-slate-200">—</span>}
+                        ) : <span className="text-black/20">—</span>}
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-4 py-2.5">
                         {log.latitude && (
                           <a
                             href={log.locationMapUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-slate-100 text-slate-400 hover:bg-corporate-blue hover:text-white transition-all shadow-sm"
+                            className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-brand/10 text-brand hover:bg-brand hover:text-cream transition-all"
                           >
                             <MapPin size={16} />
                           </a>
@@ -219,8 +213,8 @@ export default function AdminLogs() {
                 ) : (
                   <tr>
                     <td colSpan={6} className="px-8 py-14 text-center">
-                      <History size={40} className="mx-auto text-slate-100 mb-3" />
-                      <p className="font-black text-slate-300 uppercase tracking-widest text-sm">No activity records found</p>
+                      <History size={40} className="mx-auto text-brand/20 mb-3" />
+                      <p className="font-black text-black/40 uppercase tracking-widest text-sm">No activity records found</p>
                     </td>
                   </tr>
                 )}
@@ -229,7 +223,7 @@ export default function AdminLogs() {
           </div>
 
           {logs && logs.totalPages > 1 && (
-            <div className="px-5 py-4 border-t border-slate-50 bg-slate-50/30">
+            <div className="px-4 py-3 border-t border-brand/10 bg-brand/5">
               <Pagination
                 currentPage={currentPage}
                 totalPages={logs.totalPages}
