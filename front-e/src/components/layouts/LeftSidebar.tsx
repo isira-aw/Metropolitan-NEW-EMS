@@ -93,7 +93,7 @@ export default function LeftSidebar({ role, user, pendingJobsCount }: LeftSideba
         <div className="h-20 flex items-center justify-between px-4">
           <div className={`flex items-center gap-2 min-w-0 ${isCollapsed ? 'lg:hidden' : ''}`}>
             <img
-              src="/metrosmall.png"
+              src="/MetropolitanLOGO.png"
               alt="Metropolitan"
               className="w-9 h-9 rounded-lg object-contain bg-cream/10 flex-shrink-0"
             />
@@ -104,7 +104,7 @@ export default function LeftSidebar({ role, user, pendingJobsCount }: LeftSideba
           </div>
           {isCollapsed && (
             <img
-              src="/metrosmall.png"
+              src="/MetropolitanLOGO.png"
               alt="Metropolitan"
               className="hidden lg:block w-9 h-9 rounded-lg object-contain bg-cream/10 mx-auto"
             />

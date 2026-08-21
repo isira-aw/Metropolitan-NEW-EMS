@@ -51,7 +51,7 @@ export default function LoginPage() {
         {/* Logo Section */}
         <div className="flex flex-col items-center mb-8">
           <img
-            src="/metro.png"
+            src="/MetropolitanLOGO.png"
             alt="Metropolitan"
             className="h-16 object-contain mb-4"
           />
