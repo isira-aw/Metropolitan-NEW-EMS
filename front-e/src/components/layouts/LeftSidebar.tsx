@@ -68,14 +68,14 @@ export default function LeftSidebar({ role, user, pendingJobsCount }: LeftSideba
     <>
       {/* Mobile Overlay */}
       {isMobileOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 lg:hidden" onClick={() => setIsMobileOpen(false)} />
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden" onClick={() => setIsMobileOpen(false)} />
       )}
 
       {/* Mobile Menu Button */}
       {!isMobileOpen && (
         <button
           onClick={() => setIsMobileOpen(true)}
-          className="lg:hidden fixed top-4 left-4 z-50 p-3 bg-slate-900 text-white rounded-2xl shadow-xl"
+          className="lg:hidden fixed top-4 left-4 z-50 p-3 bg-brand text-cream rounded-2xl shadow-xl"
         >
           <Menu size={20} />
         </button>
@@ -84,48 +84,65 @@ export default function LeftSidebar({ role, user, pendingJobsCount }: LeftSideba
       {/* Sidebar Container */}
       <aside
         className={`
-          fixed top-0 left-0 h-full bg-slate-900 text-white z-50 transition-all duration-300 ease-in-out border-r border-white/5
+          fixed top-0 left-0 h-full bg-brand text-cream z-50 transition-all duration-300 ease-in-out border-r border-cream/10
           ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
-          lg:translate-x-0 ${isCollapsed ? 'lg:w-24' : 'lg:w-72'} w-72
+          lg:translate-x-0 ${isCollapsed ? 'lg:w-20' : 'lg:w-64'} w-64 flex flex-col
         `}
       >
         {/* Brand Header */}
-        <div className="h-24 flex items-center justify-between px-6">
-          <div className={`flex items-center gap-3 ${isCollapsed ? 'lg:hidden' : ''}`}>
-            <div className="w-10 h-10 bg-corporate-blue rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
-              <Zap size={22} className="text-white" fill="currentColor" />
-            </div>
-            <div>
-              <h1 className="text-sm font-black tracking-tighter uppercase">EMS <span className="text-corporate-blue">Portal</span></h1>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{role}</p>
+        <div className="h-20 flex items-center justify-between px-4">
+          <div className={`flex items-center gap-2 min-w-0 ${isCollapsed ? 'lg:hidden' : ''}`}>
+            <img
+              src="/metrosmall.png"
+              alt="Metropolitan"
+              className="w-9 h-9 rounded-lg object-contain bg-cream/10 flex-shrink-0"
+            />
+            <div className="min-w-0">
+              <h1 className="text-sm font-black tracking-tight uppercase truncate">EMS Portal</h1>
+              <p className="text-[10px] font-bold text-cream/60 uppercase tracking-widest">{role}</p>
             </div>
           </div>
+          {isCollapsed && (
+            <img
+              src="/metrosmall.png"
+              alt="Metropolitan"
+              className="hidden lg:block w-9 h-9 rounded-lg object-contain bg-cream/10 mx-auto"
+            />
+          )}
 
           <button
             onClick={() => (isMobileOpen ? setIsMobileOpen(false) : setIsCollapsed(!isCollapsed))}
-            className="p-2 hover:bg-white/5 rounded-xl text-slate-400 transition-colors"
+            className={`p-2 hover:bg-cream/10 rounded-xl text-cream/70 hover:text-cream transition-colors ${isCollapsed ? 'lg:hidden' : ''}`}
           >
             {isMobileOpen ? <X size={20} /> : <ChevronLeft size={20} className={isCollapsed ? 'rotate-180' : ''} />}
           </button>
         </div>
+        {isCollapsed && (
+          <button
+            onClick={() => setIsCollapsed(false)}
+            className="hidden lg:flex items-center justify-center p-2 mx-auto -mt-2 mb-2 hover:bg-cream/10 rounded-xl text-cream/70 hover:text-cream transition-colors"
+          >
+            <ChevronLeft size={16} className="rotate-180" />
+          </button>
+        )}
 
         {/* User Quick Profile */}
-        <div className={`px-4 mb-6 ${isCollapsed ? 'lg:px-4' : ''}`}>
-          <div className={`bg-white/5 border border-white/5 rounded-[2rem] p-4 flex items-center gap-3 ${isCollapsed ? 'lg:justify-center' : ''}`}>
-            <div className="w-10 h-10 rounded-full bg-corporate-blue/20 border border-corporate-blue/30 flex items-center justify-center text-corporate-blue flex-shrink-0">
-              <UserIcon size={20} />
+        <div className={`px-3 mb-4 ${isCollapsed ? 'lg:px-3' : ''}`}>
+          <div className={`bg-cream/10 border border-cream/10 rounded-2xl p-3 flex items-center gap-3 ${isCollapsed ? 'lg:justify-center' : ''}`}>
+            <div className="w-9 h-9 rounded-full bg-cream/15 border border-cream/20 flex items-center justify-center text-cream flex-shrink-0">
+              <UserIcon size={18} />
             </div>
             {!isCollapsed && (
               <div className="min-w-0">
                 <p className="text-xs font-black truncate">{user?.fullName || 'Operator'}</p>
-                <p className="text-[10px] font-bold text-slate-500 truncate uppercase tracking-tighter">System Verified</p>
+                <p className="text-[10px] font-bold text-cream/60 truncate uppercase tracking-tighter">System Verified</p>
               </div>
             )}
           </div>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-4 space-y-2">
+        <nav className="flex-1 px-3 space-y-1.5 overflow-y-auto">
           {navItems.map((item) => {
             const active = isActive(item.path);
             const Icon = item.icon;
@@ -135,28 +152,24 @@ export default function LeftSidebar({ role, user, pendingJobsCount }: LeftSideba
                 key={item.path}
                 onClick={() => router.push(item.path)}
                 className={`
-                  w-full group flex items-center gap-4 px-4 py-4 rounded-2xl transition-all relative
-                  ${active 
-                    ? 'bg-corporate-blue text-white shadow-lg shadow-blue-600/20' 
-                    : 'text-slate-400 hover:bg-white/5 hover:text-white'}
+                  w-full group flex items-center gap-3 px-3 py-3 rounded-xl transition-all relative
+                  ${active
+                    ? 'bg-cream text-brand shadow-md'
+                    : 'text-cream/70 hover:bg-cream/10 hover:text-cream'}
                   ${isCollapsed ? 'lg:justify-center lg:px-0' : ''}
                 `}
               >
                 <div className="relative">
                   <Icon size={20} strokeWidth={active ? 2.5 : 2} />
                   {item.badge && item.badge > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-red-500 text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center border-2 border-slate-900">
+                    <span className="absolute -top-2 -right-2 bg-cream text-brand text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center border-2 border-brand">
                       {item.badge}
                     </span>
                   )}
                 </div>
-                
+
                 {!isCollapsed && (
                   <span className="text-xs font-black uppercase tracking-widest">{item.name}</span>
-                )}
-
-                {active && !isCollapsed && (
-                  <div className="absolute right-4 w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                 )}
               </button>
             );
@@ -164,11 +177,11 @@ export default function LeftSidebar({ role, user, pendingJobsCount }: LeftSideba
         </nav>
 
         {/* Bottom Actions */}
-        <div className="p-4 mt-auto">
+        <div className="p-3 mt-auto">
           <button
             onClick={handleLogout}
             className={`
-              w-full flex items-center gap-4 px-4 py-4 rounded-2xl text-slate-500 hover:bg-red-500/10 hover:text-red-500 transition-all
+              w-full flex items-center gap-3 px-3 py-3 rounded-xl text-cream/60 hover:bg-cream/10 hover:text-cream transition-all
               ${isCollapsed ? 'lg:justify-center lg:px-0' : ''}
             `}
           >

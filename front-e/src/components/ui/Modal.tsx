@@ -39,7 +39,7 @@ export default function Modal({ open, onClose, title, subtitle, children, maxWid
 
   return (
     <div
-      className="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-[100] flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black/40 backdrop-blur-md z-[100] flex items-center justify-center p-4"
       onClick={onClose}
     >
       <div
@@ -49,13 +49,13 @@ export default function Modal({ open, onClose, title, subtitle, children, maxWid
         aria-modal="true"
         aria-label={title}
         onClick={(e) => e.stopPropagation()}
-        className={`bg-white w-full ${maxWidth} rounded-2xl shadow-2xl overflow-hidden border border-white/20 outline-none`}
+        className={`bg-cream w-full ${maxWidth} rounded-2xl shadow-2xl overflow-hidden border border-brand/20 outline-none`}
       >
-        <div className="bg-slate-900 px-6 py-5 flex justify-between items-center text-white">
+        <div className="bg-brand px-6 py-5 flex justify-between items-center text-cream">
           <div>
             <h3 className="text-lg font-black uppercase tracking-widest">{title}</h3>
             {subtitle && (
-              <p className="text-[10px] font-bold text-white/50 uppercase tracking-[0.2em] italic mt-0.5">
+              <p className="text-[10px] font-bold text-cream/70 uppercase tracking-[0.2em] italic mt-0.5">
                 {subtitle}
               </p>
             )}
@@ -63,7 +63,7 @@ export default function Modal({ open, onClose, title, subtitle, children, maxWid
           <button
             onClick={onClose}
             aria-label="Close dialog"
-            className="bg-white/10 p-2 rounded-xl hover:bg-white/20 transition-all"
+            className="bg-cream/10 p-2 rounded-xl hover:bg-cream/20 transition-all"
           >
             <X size={20} />
           </button>

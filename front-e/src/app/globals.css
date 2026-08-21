@@ -4,8 +4,9 @@
 
 /* ============================================
    METROPOLITAN EMS - DESIGN SYSTEM
-   Corporate Color Theme
-   Primary: #144A92 | Secondary: #3F6FB5
+   Two-Color Brand Theme
+   Brand: #7b9acc (d) | Surface/Text-on-brand: #FCF6F5
+   Rule: bg #FCF6F5 -> text black. bg #7b9acc -> text #FCF6F5.
    ============================================ */
 
 body {
@@ -15,35 +16,38 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #F4F6F8;
+  background-color: #FCF6F5;
   color: #000000;
 }
 
 /* ============================================
    BUTTONS
+   Filled: brand background, cream text.
+   Outline: cream background, brand border, black text.
+   Hover uses scale/shadow animation only - no new colors.
    ============================================ */
 
-/* Primary Button - Corporate Blue */
+/* Primary Button - filled brand */
 .btn-primary {
-  @apply bg-corporate-blue text-white px-4 py-2 rounded-lg font-medium;
-  @apply hover:bg-[#0F3A7A] transition-colors duration-200;
-  @apply disabled:bg-soft-blue disabled:cursor-not-allowed;
+  @apply bg-brand text-cream px-4 py-2 rounded-lg font-medium border-2 border-brand;
+  @apply hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0;
 }
 
-/* Secondary/Text Button - Soft Blue */
+/* Secondary/Outline Button - cream with brand border */
 .btn-secondary {
-  @apply text-corporate-blue px-4 py-2 rounded-lg font-medium;
-  @apply hover:text-soft-blue hover:bg-[#E8F0FB] transition-colors duration-200;
+  @apply bg-cream text-black px-4 py-2 rounded-lg font-medium border-2 border-brand;
+  @apply hover:bg-brand hover:text-cream transition-all duration-200;
 }
 
-/* Success Button - Corporate Blue (consistent theme) */
+/* Success Button - filled brand (single-brand theme, no separate success color) */
 .btn-success {
-  @apply bg-soft-blue text-white px-4 py-2 rounded-lg font-medium;
-  @apply hover:bg-corporate-blue transition-colors duration-200;
-  @apply disabled:bg-[#A0BFE0] disabled:cursor-not-allowed;
+  @apply bg-brand text-cream px-4 py-2 rounded-lg font-medium border-2 border-brand;
+  @apply hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed;
 }
 
-/* Danger Button - Red action */
+/* Danger Button - reserved for destructive actions only */
 .btn-danger {
   @apply bg-red-600 text-white px-4 py-2 rounded-lg font-medium;
   @apply hover:bg-red-700 transition-colors duration-200;
@@ -55,8 +59,8 @@ body {
    ============================================ */
 
 .input-field {
-  @apply w-full px-3 py-2 rounded-lg border border-slate-300 text-sm text-pure-black bg-white;
-  @apply focus:outline-none focus:ring-2 focus:ring-corporate-blue focus:border-transparent;
+  @apply w-full px-3 py-2 rounded-lg border border-brand text-sm text-black bg-cream;
+  @apply focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent;
   @apply transition-all duration-200;
 }
 
@@ -69,7 +73,7 @@ body {
 
 /* Input label */
 .input-label {
-  @apply text-sm font-medium text-pure-black mb-1 block;
+  @apply text-sm font-medium text-black mb-1 block;
 }
 
 /* ============================================
@@ -77,12 +81,12 @@ body {
    ============================================ */
 
 .card {
-  @apply bg-white shadow-md rounded-lg p-6 border border-slate-200;
+  @apply bg-cream shadow-md rounded-lg p-6 border border-brand/30;
 }
 
 /* Modal container */
 .modal-container {
-  @apply bg-white rounded-2xl shadow-2xl p-8 max-w-2xl w-full;
+  @apply bg-cream rounded-2xl shadow-2xl p-8 max-w-2xl w-full;
 }
 
 /* Modal backdrop */
@@ -95,19 +99,19 @@ body {
    ============================================ */
 
 .page-title {
-  @apply text-3xl font-bold text-pure-black;
+  @apply text-3xl font-bold text-black;
 }
 
 .section-title {
-  @apply text-xl font-semibold text-pure-black;
+  @apply text-xl font-semibold text-black;
 }
 
 .body-text {
-  @apply text-sm text-pure-black;
+  @apply text-sm text-black;
 }
 
 .muted-text {
-  @apply text-sm text-slate-500;
+  @apply text-sm text-black/60;
 }
 
 /* ============================================
@@ -123,20 +127,20 @@ body {
 }
 
 .table thead {
-  @apply bg-light-bg;
+  @apply bg-brand;
 }
 
 .table th {
-  @apply px-4 py-3 text-left text-pure-black font-semibold text-sm;
+  @apply px-4 py-3 text-left text-cream font-semibold text-sm;
 }
 
 .table tbody tr {
-  @apply border-b border-slate-200 bg-white;
-  @apply hover:bg-[#E8F0FB] transition-colors duration-150;
+  @apply border-b border-brand/20 bg-cream;
+  @apply hover:bg-brand/10 transition-colors duration-150;
 }
 
 .table td {
-  @apply px-4 py-3 text-sm text-pure-black;
+  @apply px-4 py-3 text-sm text-black;
 }
 
 /* ============================================
@@ -144,12 +148,12 @@ body {
    ============================================ */
 
 .dropdown {
-  @apply bg-white rounded-lg shadow-lg border border-slate-200;
+  @apply bg-cream rounded-lg shadow-lg border border-brand/30;
 }
 
 .dropdown-item {
-  @apply px-4 py-2 text-sm text-pure-black;
-  @apply hover:bg-[#E8F0FB] cursor-pointer transition-colors duration-150;
+  @apply px-4 py-2 text-sm text-black;
+  @apply hover:bg-brand hover:text-cream cursor-pointer transition-colors duration-150;
 }
 
 /* ============================================
@@ -177,15 +181,15 @@ body {
 }
 
 .empty-state-icon {
-  @apply text-slate-300 mb-4;
+  @apply text-brand/40 mb-4;
 }
 
 .empty-state-text {
-  @apply text-slate-500 text-sm mb-2;
+  @apply text-black/50 text-sm mb-2;
 }
 
 .empty-state-action {
-  @apply text-corporate-blue text-sm hover:text-soft-blue;
+  @apply text-brand text-sm hover:underline;
 }
 
 /* ============================================
@@ -194,7 +198,7 @@ body {
 
 /* Stat card with colored left border */
 .stat-card {
-  @apply bg-white shadow-md rounded-lg p-6 border-l-4;
+  @apply bg-cream shadow-md rounded-lg p-6 border-l-4 border-brand;
 }
 
 /* Form group spacing */
@@ -247,15 +251,15 @@ main {
 
 /* Enhanced shadow utilities */
 .shadow-soft {
-  box-shadow: 0 2px 8px rgba(20, 74, 146, 0.08);
+  box-shadow: 0 2px 8px rgba(123, 154, 204, 0.08);
 }
 
 .shadow-medium {
-  box-shadow: 0 4px 16px rgba(20, 74, 146, 0.12);
+  box-shadow: 0 4px 16px rgba(123, 154, 204, 0.12);
 }
 
 .shadow-strong {
-  box-shadow: 0 8px 24px rgba(20, 74, 146, 0.16);
+  box-shadow: 0 8px 24px rgba(123, 154, 204, 0.16);
 }
 
 /* Card hover effect */
@@ -264,7 +268,7 @@ main {
 }
 
 .card-hover:hover {
-  box-shadow: 0 4px 16px rgba(20, 74, 146, 0.12);
+  box-shadow: 0 4px 16px rgba(123, 154, 204, 0.12);
   transform: translateY(-4px);
 }
 

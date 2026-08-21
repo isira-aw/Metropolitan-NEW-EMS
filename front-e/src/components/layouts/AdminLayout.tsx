@@ -16,12 +16,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   }
 
   return (
-    <div className="flex min-h-screen bg-light-bg">
+    <div className="flex min-h-screen bg-cream">
       <LeftSidebar role="ADMIN" user={user} />
 
-      {/* Main Content Area */}
-      <main className="flex-1 lg:ml-72 transition-all duration-300">
-        <div className="p-4 md:p-8 pt-20 lg:pt-8">
+      {/* Main Content Area - dense padding, laptop-width layout */}
+      <main className="flex-1 lg:ml-64 transition-all duration-300">
+        <div className="px-4 py-4 lg:px-6 lg:py-5 max-w-[1600px]">
           {children}
         </div>
       </main>
