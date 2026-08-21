@@ -48,6 +48,12 @@ public class User {
     @Column(name = "protected_account", nullable = false)
     private Boolean protectedAccount = false;
 
+    // Denormalized flag kept in sync whenever a ProfilePicture is set/removed
+    // (see ProfilePictureService), so list views can tell whether it's worth
+    // fetching an avatar for this user without ever loading the base64 blob.
+    @Column(name = "has_profile_picture", nullable = false)
+    private Boolean hasProfilePicture = false;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

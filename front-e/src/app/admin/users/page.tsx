@@ -1,18 +1,25 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { userService } from '@/lib/services/admin.service';
+import { userService, profilePictureService } from '@/lib/services/admin.service';
 import { User, UserRequest, PageResponse, UserRole } from '@/types';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import Pagination from '@/components/ui/Pagination';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import EmptyState from '@/components/ui/EmptyState';
+import Avatar, { invalidateAvatarCache } from '@/components/ui/Avatar';
+import { showGlobalToast } from '@/components/ui/Toast';
 import { formatDate } from '@/lib/utils/format';
 import {
   Plus, Search, Pencil, ShieldCheck, Mail, Phone, X,
-  User as UserIcon, CheckCircle2, AlertCircle, Contact2, Fingerprint, Eye, EyeOff
+  User as UserIcon, CheckCircle2, AlertCircle, Contact2, Fingerprint, Eye, EyeOff, Camera, Trash2
 } from 'lucide-react';
+
+// NOTE: this upload/replace control is intentionally admin-only and lives
+// only on this admin-only page. If an employee-side profile view is ever
+// built, it should reuse <Avatar> for display but must NOT get this upload
+// control - photo management stays admin-managed per spec.
 
 export default function AdminUsers() {
   const router = useRouter();
@@ -26,6 +33,9 @@ export default function AdminUsers() {
     username: '', password: '', fullName: '', role: UserRole.EMPLOYEE, phone: '', email: '', active: true,
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [avatarVersion, setAvatarVersion] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { loadUsers(0); }, []);
 
@@ -74,6 +84,52 @@ export default function AdminUsers() {
       setShowModal(false);
       loadUsers(currentPage, searchQuery);
     } catch (error: any) { alert(error.response?.data?.message || 'Error saving user'); }
+  };
+
+  const readFileAsDataUrl = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+
+  const handlePhotoSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-selecting the same file later
+    if (!file || !editingUser) return;
+
+    try {
+      setUploadingPhoto(true);
+      const dataUrl = await readFileAsDataUrl(file);
+      await profilePictureService.uploadPhoto(editingUser.id, { imageBase64: dataUrl });
+      invalidateAvatarCache(editingUser.id);
+      setAvatarVersion((v) => v + 1);
+      setEditingUser({ ...editingUser, hasProfilePicture: true });
+      loadUsers(currentPage, searchQuery);
+      showGlobalToast('Profile picture updated', 'success');
+    } catch (error: any) {
+      showGlobalToast(error.response?.data?.message || 'Failed to upload profile picture', 'error');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const handlePhotoRemove = async () => {
+    if (!editingUser) return;
+    try {
+      setUploadingPhoto(true);
+      await profilePictureService.deletePhoto(editingUser.id);
+      invalidateAvatarCache(editingUser.id);
+      setAvatarVersion((v) => v + 1);
+      setEditingUser({ ...editingUser, hasProfilePicture: false });
+      loadUsers(currentPage, searchQuery);
+      showGlobalToast('Profile picture removed', 'success');
+    } catch (error: any) {
+      showGlobalToast(error.response?.data?.message || 'Failed to remove profile picture', 'error');
+    } finally {
+      setUploadingPhoto(false);
+    }
   };
 
   const toggleActive = async (id: number, active: boolean) => {
@@ -138,9 +194,13 @@ export default function AdminUsers() {
                   <tr key={u.id} className="hover:bg-brand/10 transition-colors group">
                     <td className="px-4 py-2.5">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-brand/10 flex items-center justify-center text-brand font-black text-xs group-hover:bg-brand group-hover:text-cream transition-all flex-shrink-0">
-                          {u.fullName.split(' ').map(n => n[0]).join('')}
-                        </div>
+                        <Avatar
+                          key={`${u.id}-${avatarVersion}`}
+                          userId={u.id}
+                          hasProfilePicture={u.hasProfilePicture}
+                          fullName={u.fullName}
+                          size={32}
+                        />
                         <div>
                           <p className="text-xs font-black text-black uppercase tracking-tight">{u.fullName}</p>
                           <p className="text-[10px] font-bold text-black/50 italic">@{u.username}</p>
@@ -218,6 +278,50 @@ export default function AdminUsers() {
             </div>
 
             <form onSubmit={handleSubmit} autoComplete="off" className="p-6 space-y-4 max-h-[80vh] overflow-y-auto custom-scrollbar">
+              {/* Profile Picture - upload/replace is admin-only, only available once the
+                  user exists (needs an id for PUT /admin/users/{id}/photo) */}
+              {editingUser && (
+                <div className="flex items-center gap-4 p-3 bg-brand/5 rounded-xl border border-brand/10">
+                  <Avatar
+                    key={`edit-${editingUser.id}-${avatarVersion}`}
+                    userId={editingUser.id}
+                    hasProfilePicture={editingUser.hasProfilePicture}
+                    fullName={editingUser.fullName}
+                    size={64}
+                  />
+                  <div className="flex-1 space-y-1.5">
+                    <p className="text-[10px] font-black text-black/50 uppercase tracking-widest">Profile Picture</p>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        disabled={uploadingPhoto}
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex items-center gap-1.5 bg-brand text-cream px-3 py-1.5 rounded-lg font-black uppercase tracking-widest text-[10px] disabled:opacity-50"
+                      >
+                        <Camera size={12} /> {editingUser.hasProfilePicture ? 'Replace' : 'Upload'}
+                      </button>
+                      {editingUser.hasProfilePicture && (
+                        <button
+                          type="button"
+                          disabled={uploadingPhoto}
+                          onClick={handlePhotoRemove}
+                          className="flex items-center gap-1.5 bg-red-50 text-red-600 border border-red-100 px-3 py-1.5 rounded-lg font-black uppercase tracking-widest text-[10px] disabled:opacity-50"
+                        >
+                          <Trash2 size={12} /> Remove
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handlePhotoSelected}
+                    />
+                  </div>
+                </div>
+              )}
+
               {/* Profile Identity Section */}
               <div className="space-y-3">
                 <p className="text-[10px] font-black text-brand uppercase tracking-widest flex items-center gap-2">

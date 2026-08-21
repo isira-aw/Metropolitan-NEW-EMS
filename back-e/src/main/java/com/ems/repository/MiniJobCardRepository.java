@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -47,4 +48,26 @@ public interface MiniJobCardRepository extends JpaRepository<MiniJobCard, Long> 
     Page<MiniJobCard> findByEmployeeAndScheduledDateAndStatusOrderByScheduledTime(
             @Param("employee") User employee, @Param("date") LocalDate date,
             @Param("status") JobStatus status, Pageable pageable);
+
+    // --- Approvals calendar support ---
+
+    /**
+     * Pending approvals (COMPLETED + not approved) whose endTime falls within
+     * a given range, filtered further by exact endTime date on the frontend/service.
+     * Used to build the monthly calendar counts.
+     */
+    @Query("SELECT m FROM MiniJobCard m WHERE m.status = :status AND m.approved = :approved " +
+            "AND m.endTime >= :start AND m.endTime < :end")
+    List<MiniJobCard> findByStatusAndApprovedAndEndTimeBetween(
+            @Param("status") JobStatus status, @Param("approved") Boolean approved,
+            @Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    /**
+     * Pending approvals (COMPLETED + not approved) whose endTime falls on a single day.
+     */
+    @Query("SELECT m FROM MiniJobCard m WHERE m.status = :status AND m.approved = :approved " +
+            "AND m.endTime >= :start AND m.endTime < :end")
+    Page<MiniJobCard> findByStatusAndApprovedAndEndTimeBetween(
+            @Param("status") JobStatus status, @Param("approved") Boolean approved,
+            @Param("start") LocalDateTime start, @Param("end") LocalDateTime end, Pageable pageable);
 }

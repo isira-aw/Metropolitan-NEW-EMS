@@ -16,7 +16,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Admin Approval Controller
@@ -38,16 +40,46 @@ public class AdminApprovalController {
      *
      * @param page Page number (default 0)
      * @param size Page size (default 10)
+     * @param date Optional ISO date (yyyy-MM-dd); when present, only mini job cards
+     *             whose endTime falls on this date are returned (used by the
+     *             admin approvals calendar view). When absent, behaves exactly
+     *             as before.
      * @return Page of MiniJobCard entities with COMPLETED status and approved=false
      */
     @GetMapping("/pending")
     public ResponseEntity<Page<MiniJobCard>> getPendingApprovals(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false)
+            @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            LocalDate date) {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("endTime").descending());
-        Page<MiniJobCard> pendingApprovals = ticketService.getPendingApprovals(pageable);
+        Page<MiniJobCard> pendingApprovals = date != null
+                ? ticketService.getPendingApprovalsByDate(date, pageable)
+                : ticketService.getPendingApprovals(pageable);
         return ResponseEntity.ok(pendingApprovals);
+    }
+
+    /**
+     * Get counts of pending approvals per day for a given month.
+     * Powers the monthly calendar highlight on the admin approvals page.
+     * Response shape: { "2026-08-21": 3, "2026-08-14": 1, ... } — only dates
+     * with at least one unreviewed (COMPLETED + approved=false) mini job card
+     * are included. A Map<LocalDate, Long> was chosen over a List<{date,count}>
+     * because it serializes directly to this shape via Jackson with no extra DTO.
+     *
+     * @param year  calendar year, e.g. 2026
+     * @param month calendar month 1-12
+     * @return Map of ISO date string -> unreviewed job card count
+     */
+    @GetMapping("/calendar")
+    public ResponseEntity<Map<LocalDate, Long>> getApprovalsCalendar(
+            @RequestParam int year,
+            @RequestParam int month) {
+
+        Map<LocalDate, Long> calendar = ticketService.getPendingApprovalsCalendar(year, month);
+        return ResponseEntity.ok(calendar);
     }
 
     /**

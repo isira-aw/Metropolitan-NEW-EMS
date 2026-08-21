@@ -13,6 +13,7 @@ import {
   ScoreRequest,
   ApprovalStatistics,
   BulkApprovalResult,
+  ApprovalCalendarCounts,
   TimeTrackingReportResponse,
   OTReportResponse,
   DailyTimeTrackingReportDTO,
@@ -25,6 +26,8 @@ import {
   UserRole,
   ActivityLogResponse,
   ActivityLogFilterRequest,
+  ProfilePictureResponse,
+  ProfilePictureRequest,
 } from '@/types';
 
 // ===========================
@@ -83,6 +86,41 @@ export const userService = {
       params: { query, page: 0, size: 10, ...params },
     });
     return response.data;
+  },
+};
+
+// ===========================
+// PROFILE PICTURE ENDPOINTS
+// ===========================
+//
+// GET is open to any authenticated user (ADMIN or EMPLOYEE) for any user id -
+// used for the sidebar avatar (own photo), the admin users page, and the
+// ticket personnel-assignment panel. Upload/replace/delete are admin-managed.
+export const profilePictureService = {
+  async getPhoto(userId: number): Promise<ProfilePictureResponse> {
+    const response = await apiClient.get<ProfilePictureResponse>(`/users/${userId}/photo`, {
+      skipGlobalLoading: true,
+    });
+    return response.data;
+  },
+
+  // Own-photo lookup for the logged-in user (any role) - used by the sidebar
+  // avatar, which only has the JWT identity (no numeric id) client-side.
+  async getMyPhoto(): Promise<ProfilePictureResponse> {
+    const response = await apiClient.get<ProfilePictureResponse>('/users/me/photo', {
+      skipGlobalLoading: true,
+    });
+    return response.data;
+  },
+
+  // ADMIN only. Replaces any existing picture for the user.
+  async uploadPhoto(userId: number, data: ProfilePictureRequest): Promise<void> {
+    await apiClient.put(`/admin/users/${userId}/photo`, data);
+  },
+
+  // ADMIN only.
+  async deletePhoto(userId: number): Promise<void> {
+    await apiClient.delete(`/admin/users/${userId}/photo`);
   },
 };
 
@@ -236,9 +274,21 @@ export const ticketService = {
 // ===========================
 
 export const approvalService = {
-  async getPending(params: PageRequest = {}): Promise<PageResponse<MiniJobCard>> {
+  async getPending(params: PageRequest & { date?: string } = {}): Promise<PageResponse<MiniJobCard>> {
     const response = await apiClient.get<PageResponse<MiniJobCard>>('/admin/approvals/pending', {
       params: { page: 0, size: 10, ...params },
+    });
+    return response.data;
+  },
+
+  /**
+   * Counts of unreviewed (COMPLETED + approved=false) mini job cards per day,
+   * grouped by endTime's date, for the given month. Powers the approvals
+   * calendar view. `month` is 1-12.
+   */
+  async getCalendar(year: number, month: number): Promise<ApprovalCalendarCounts> {
+    const response = await apiClient.get<ApprovalCalendarCounts>('/admin/approvals/calendar', {
+      params: { year, month },
     });
     return response.data;
   },
