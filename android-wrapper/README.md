@@ -7,8 +7,9 @@ project only opens the production URL.
 ## One-time setup (on your PC)
 
 1. Install prerequisites: Node.js, [Android Studio](https://developer.android.com/studio) (includes the Android SDK).
-2. Edit `capacitor.config.ts` and replace `REPLACE-WITH-YOUR-PRODUCTION-URL`
-   with your deployed EMS URL (e.g. the Railway production URL).
+2. `capacitor.config.ts` already points at the production URL
+   (`https://metropolitan.up.railway.app`). Update it there if that URL
+   ever changes.
 3. From this folder:
    ```bash
    npm install
@@ -35,7 +36,7 @@ project only opens the production URL.
 3. Upload the APK as a release asset named exactly `ems-app.apk` — this keeps
    the "latest release" link stable:
    ```
-   https://github.com/<org>/<repo>/releases/latest/download/ems-app.apk
+   https://github.com/isira-aw/Metropolitan-NEW-EMS/releases/latest/download/ems-app.apk
    ```
 4. Set `NEXT_PUBLIC_APK_DOWNLOAD_URL` (in `front-e`'s environment config) to
    that URL. The sidebar "Get Android App" link only needs updating if you
