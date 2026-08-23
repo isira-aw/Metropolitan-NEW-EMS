@@ -19,6 +19,7 @@ import {
   Menu,
   X,
   ChevronLeft,
+  Smartphone,
 } from 'lucide-react';
 import Avatar from '@/components/ui/Avatar';
 import Modal from '@/components/ui/Modal';
@@ -42,6 +43,11 @@ export default function LeftSidebar({ role, user, pendingJobsCount }: LeftSideba
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isAndroid, setIsAndroid] = useState(false);
+
+  useEffect(() => {
+    setIsAndroid(/android/i.test(window.navigator.userAgent) && !('Capacitor' in window));
+  }, []);
 
   const adminNavItems: NavItem[] = [
     { name: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
@@ -209,7 +215,19 @@ export default function LeftSidebar({ role, user, pendingJobsCount }: LeftSideba
         </nav>
 
         {/* Bottom Actions */}
-        <div className="p-3 mt-auto">
+        <div className="p-3 mt-auto space-y-1.5">
+          {isAndroid && process.env.NEXT_PUBLIC_APK_DOWNLOAD_URL && (
+            <a
+              href={process.env.NEXT_PUBLIC_APK_DOWNLOAD_URL}
+              className={`
+                w-full flex items-center gap-3 px-3 py-3 rounded-xl bg-cream/10 text-cream hover:bg-cream/20 transition-all
+                ${isCollapsed ? 'lg:justify-center lg:px-0' : ''}
+              `}
+            >
+              <Smartphone size={20} />
+              {!isCollapsed && <span className="text-xs font-black uppercase tracking-widest">Get Android App</span>}
+            </a>
+          )}
           <button
             onClick={handleLogout}
             className={`
