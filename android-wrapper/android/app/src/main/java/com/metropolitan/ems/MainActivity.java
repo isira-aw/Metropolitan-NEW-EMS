@@ -1,5 +1,22 @@
 package com.metropolitan.ems;
 
+import android.os.Bundle;
+import androidx.activity.OnBackPressedCallback;
 import com.getcapacitor.BridgeActivity;
 
-public class MainActivity extends BridgeActivity {}
+public class MainActivity extends BridgeActivity {
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (bridge.getWebView().canGoBack()) {
+                    bridge.getWebView().goBack();
+                } else {
+                    moveTaskToBack(true);
+                }
+            }
+        });
+    }
+}

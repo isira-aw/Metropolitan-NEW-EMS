@@ -11,6 +11,9 @@ declare module 'axios' {
     // Internal: tracks whether this request incremented the loading counter,
     // so the response/error handler decrements it exactly once.
     _globalLoadingStarted?: boolean;
+    // Internal: prevents an infinite refresh loop if the retried request
+    // still comes back unauthorized after a token refresh.
+    _retriedAfterRefresh?: boolean;
   }
 }
 
@@ -55,10 +58,11 @@ apiClient.interceptors.response.use(
       error.config._globalLoadingStarted = false;
     }
 
-    if (error.response?.status === 401) {
-      // Token expired, try to refresh
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      // Token expired/missing/invalid - the backend rejects both cases as 401 or 403
+      // depending on the endpoint, so try a refresh before forcing the user back to login.
       const refreshToken = localStorage.getItem('refreshToken');
-      if (refreshToken) {
+      if (refreshToken && !error.config?._retriedAfterRefresh) {
         try {
           const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
             refreshToken,
@@ -68,23 +72,24 @@ apiClient.interceptors.response.use(
 
           // Retry original request
           error.config.headers.Authorization = `Bearer ${response.data.accessToken}`;
+          error.config._retriedAfterRefresh = true;
           return axios.request(error.config);
         } catch (refreshError) {
           // Refresh failed, logout
           localStorage.clear();
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login';
+          }
+          return Promise.reject(error);
+        }
+      } else {
+        // No refresh token, or the retried request still failed authorization.
+        localStorage.clear();
+        if (window.location.pathname !== '/login') {
           window.location.href = '/login';
         }
+        return Promise.reject(error);
       }
-    }
-
-    if (error.response?.status === 403) {
-      // Missing/expired/invalid JWT - the backend rejects the request outright.
-      // Clear stale credentials and send the user back to login.
-      localStorage.clear();
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
-      }
-      return Promise.reject(error);
     }
 
     // Global error toast handling
