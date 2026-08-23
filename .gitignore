@@ -22,6 +22,22 @@ front-e/.env
 *.env
 !.env.example
 
+# Android wrapper (Capacitor)
+android-wrapper/node_modules/
+android-wrapper/android/local.properties
+android-wrapper/android/.gradle/
+android-wrapper/android/**/build/
+android-wrapper/android/.idea/
+android-wrapper/android/*.iml
+android-wrapper/android/**/*.iml
+android-wrapper/android/captures/
+android-wrapper/android/app/release/
+android-wrapper/android/app/debug/
+# Signing keys/keystores must never be committed
+android-wrapper/**/*.keystore
+android-wrapper/**/*.jks
+android-wrapper/**/key.properties
+
 # IDE
 .vscode/
 .idea/
