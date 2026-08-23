@@ -116,8 +116,16 @@ export default function JobCardDetail() {
       }
       navigator.geolocation.getCurrentPosition(
         (pos) => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
-        (err) => reject(new Error('Location permission denied. Please enable GPS.')),
-        { enableHighAccuracy: true, timeout: 10000 }
+        (err) => {
+          if (err.code === err.PERMISSION_DENIED) {
+            reject(new Error('Location permission denied. Please enable location access for this app.'));
+          } else if (err.code === err.POSITION_UNAVAILABLE) {
+            reject(new Error('Could not determine your location. Please check your GPS signal and try again.'));
+          } else {
+            reject(new Error('Getting your location timed out. Please try again.'));
+          }
+        },
+        { enableHighAccuracy: true, timeout: 20000 }
       );
     });
   };
