@@ -34,7 +34,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             try {
                 username = jwtUtil.extractUsername(token);
             } catch (Exception e) {
-                logger.error("JWT token extraction failed: " + e.getMessage());
+                // Expected on every expired/invalid token (routine, happens on every
+                // access-token expiry for every logged-in user) - not an application
+                // error, so keep it at debug to avoid flooding production logs.
+                logger.debug("JWT token extraction failed: " + e.getMessage());
             }
         }
         
