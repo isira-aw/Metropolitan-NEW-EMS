@@ -70,4 +70,19 @@ public interface MiniJobCardRepository extends JpaRepository<MiniJobCard, Long> 
     Page<MiniJobCard> findByStatusAndApprovedAndEndTimeBetween(
             @Param("status") JobStatus status, @Param("approved") Boolean approved,
             @Param("start") LocalDateTime start, @Param("end") LocalDateTime end, Pageable pageable);
+
+    /**
+     * Pending approvals (COMPLETED + not approved) whose <em>startTime</em> falls on a
+     * single day.
+     *
+     * <p>Separate from the endTime variant above because the approvals screen's plain
+     * date filter has always matched on startTime, while its calendar view matches on
+     * endTime. That filtering used to run in the browser after fetching up to 1000
+     * rows; doing it here returns the same cards one page at a time.
+     */
+    @Query("SELECT m FROM MiniJobCard m WHERE m.status = :status AND m.approved = :approved " +
+            "AND m.startTime >= :start AND m.startTime < :end")
+    Page<MiniJobCard> findByStatusAndApprovedAndStartTimeBetween(
+            @Param("status") JobStatus status, @Param("approved") Boolean approved,
+            @Param("start") LocalDateTime start, @Param("end") LocalDateTime end, Pageable pageable);
 }

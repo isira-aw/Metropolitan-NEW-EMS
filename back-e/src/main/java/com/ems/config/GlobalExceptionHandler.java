@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,6 +23,21 @@ import java.util.Map;
 @Slf4j
 public class GlobalExceptionHandler {
 
+    private final TimeZoneConfig timeZoneConfig;
+
+    public GlobalExceptionHandler(TimeZoneConfig timeZoneConfig) {
+        this.timeZoneConfig = timeZoneConfig;
+    }
+
+    /**
+     * Error timestamps use the application timezone (APP_TIMEZONE) rather than a
+     * hardcoded zone, so they stay consistent with every other timestamp the
+     * application produces if that setting is ever changed.
+     */
+    private LocalDateTime now() {
+        return LocalDateTime.now(timeZoneConfig.getZoneId());
+    }
+
     /**
      * Handle RuntimeException
      * Most service layer exceptions are thrown as RuntimeException
@@ -33,7 +47,7 @@ public class GlobalExceptionHandler {
             RuntimeException ex, WebRequest request) {
 
         Map<String, Object> errorResponse = new HashMap<>();
-        errorResponse.put("timestamp", LocalDateTime.now(ZoneId.of("Asia/Colombo")));
+        errorResponse.put("timestamp", now());
         errorResponse.put("status", HttpStatus.BAD_REQUEST.value());
         errorResponse.put("error", "Bad Request");
         errorResponse.put("message", ex.getMessage());
@@ -56,7 +70,7 @@ public class GlobalExceptionHandler {
         }
 
         Map<String, Object> errorResponse = new HashMap<>();
-        errorResponse.put("timestamp", LocalDateTime.now(ZoneId.of("Asia/Colombo")));
+        errorResponse.put("timestamp", now());
         errorResponse.put("status", HttpStatus.BAD_REQUEST.value());
         errorResponse.put("error", "Validation Failed");
         errorResponse.put("message", "Invalid input data");
@@ -74,7 +88,7 @@ public class GlobalExceptionHandler {
             BadCredentialsException ex, WebRequest request) {
 
         Map<String, Object> errorResponse = new HashMap<>();
-        errorResponse.put("timestamp", LocalDateTime.now(ZoneId.of("Asia/Colombo")));
+        errorResponse.put("timestamp", now());
         errorResponse.put("status", HttpStatus.UNAUTHORIZED.value());
         errorResponse.put("error", "Unauthorized");
         errorResponse.put("message", "Invalid username or password");
@@ -91,7 +105,7 @@ public class GlobalExceptionHandler {
             AccessDeniedException ex, WebRequest request) {
 
         Map<String, Object> errorResponse = new HashMap<>();
-        errorResponse.put("timestamp", LocalDateTime.now(ZoneId.of("Asia/Colombo")));
+        errorResponse.put("timestamp", now());
         errorResponse.put("status", HttpStatus.FORBIDDEN.value());
         errorResponse.put("error", "Forbidden");
         errorResponse.put("message", "Access denied");
@@ -108,7 +122,7 @@ public class GlobalExceptionHandler {
             Exception ex, WebRequest request) {
 
         Map<String, Object> errorResponse = new HashMap<>();
-        errorResponse.put("timestamp", LocalDateTime.now(ZoneId.of("Asia/Colombo")));
+        errorResponse.put("timestamp", now());
         errorResponse.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
         errorResponse.put("error", "Internal Server Error");
         errorResponse.put("message", "An unexpected error occurred");

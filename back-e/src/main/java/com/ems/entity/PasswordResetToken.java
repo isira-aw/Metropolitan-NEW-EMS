@@ -30,6 +30,10 @@ public class PasswordResetToken {
     @Column(nullable = false)
     private LocalDateTime expiryDate;
 
+    // @Builder.Default is required: without it Lombok's builder ignores this
+    // initializer and inserts null into a NOT NULL column for any caller that
+    // does not set `used` explicitly.
+    @Builder.Default
     @Column(nullable = false)
     private Boolean used = false;
 

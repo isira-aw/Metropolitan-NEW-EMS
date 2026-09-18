@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { approvalService } from '@/lib/services/admin.service';
+import { approvalService, jobCardImageService } from '@/lib/services/admin.service';
 import { MiniJobCard, PageResponse } from '@/types';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import Card from '@/components/ui/Card';
@@ -11,6 +11,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
+import JobCardImage from '@/components/ui/JobCardImage';
 import { formatDateTime, formatMinutes } from '@/lib/utils/format';
 import { getTodayInTimezone } from '@/lib/config/timezone';
 import { ApprovalCalendarCounts } from '@/types';
@@ -120,39 +121,11 @@ export default function AdminApprovals() {
         return;
       }
 
-      const data = await approvalService.getPending({ page: 0, size: 1000 });
-
-      // Filter by selected date based on start time
-      const filteredContent = data.content.filter((card) => {
-        if (!card.startTime) return false;
-        const cardDate = new Date(card.startTime).toISOString().split('T')[0];
-        return cardDate === selectedDate;
-      });
-
-      // Paginate filtered results
-      const pageSize = 10;
-      const startIndex = page * pageSize;
-      const endIndex = startIndex + pageSize;
-      const paginatedContent = filteredContent.slice(startIndex, endIndex);
-
-      setPending({
-        content: paginatedContent,
-        pageable: {
-          pageNumber: page,
-          pageSize: pageSize,
-          offset: page * pageSize,
-          paged: true,
-          unpaged: false,
-        },
-        totalPages: Math.ceil(filteredContent.length / pageSize),
-        totalElements: filteredContent.length,
-        last: page >= Math.ceil(filteredContent.length / pageSize) - 1,
-        first: page === 0,
-        size: pageSize,
-        number: page,
-        numberOfElements: paginatedContent.length,
-        empty: paginatedContent.length === 0,
-      });
+      // Filter by startTime's date server-side. This previously fetched 1000 job
+      // cards - each of which carried a multi-megabyte base64 photo - and filtered
+      // them in the browser. Same cards, one page at a time.
+      const data = await approvalService.getPending({ page, size: 10, startDate: selectedDate });
+      setPending(data);
       setCurrentPage(page);
     } catch (error) {
       console.error('Error loading pending approvals:', error);
@@ -402,9 +375,12 @@ export default function AdminApprovals() {
                     />
                   </div>
 
-                  {card.imageUrl && (
-                    <img
-                      src={card.imageUrl}
+                  {card.hasImage && (
+                    <JobCardImage
+                      miniJobCardId={card.id}
+                      hasImage={card.hasImage}
+                      scope="admin"
+                      fetcher={jobCardImageService.getForAdmin}
                       alt="Job review"
                       className="w-16 h-16 rounded-xl object-cover border border-brand/20 flex-shrink-0"
                     />
@@ -568,9 +544,12 @@ export default function AdminApprovals() {
               </div>
             </div>
 
-            {viewingCard.imageUrl && (
-              <img
-                src={viewingCard.imageUrl}
+            {viewingCard.hasImage && (
+              <JobCardImage
+                miniJobCardId={viewingCard.id}
+                hasImage={viewingCard.hasImage}
+                scope="admin"
+                fetcher={jobCardImageService.getForAdmin}
                 alt="Job review"
                 className="w-full max-h-[320px] object-contain rounded-2xl border border-brand/20 bg-brand/5"
               />

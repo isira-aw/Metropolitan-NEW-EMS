@@ -1,5 +1,6 @@
 package com.ems.controller;
 
+import com.ems.config.SortWhitelist;
 import com.ems.dto.MainTicketRequest;
 import com.ems.entity.MainTicket;
 import com.ems.entity.MiniJobCard;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Admin Ticket Controller
@@ -32,6 +34,10 @@ import java.util.List;
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminTicketController {
+
+    /** Properties a client may sort the ticket list by - see SortWhitelist. */
+    private static final Set<String> SORTABLE_FIELDS = Set.of(
+            "createdAt", "scheduledDate", "scheduledTime", "ticketNumber", "title", "status", "weight", "type");
 
     private final TicketService ticketService;
 
@@ -70,9 +76,7 @@ public class AdminTicketController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
 
-        Sort sort = sortDir.equalsIgnoreCase("asc")
-            ? Sort.by(sortBy).ascending()
-            : Sort.by(sortBy).descending();
+        Sort sort = SortWhitelist.resolve(sortBy, sortDir, SORTABLE_FIELDS, "createdAt");
 
         Pageable pageable = PageRequest.of(page, size, sort);
         Page<MainTicket> tickets = ticketService.getAllMainTickets(pageable);
@@ -215,6 +219,33 @@ public class AdminTicketController {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<MainTicket> tickets = ticketService.getTicketsByStatus(status, pageable);
         return ResponseEntity.ok(tickets);
+    }
+
+    /**
+     * Combined ticket search - the admin tickets screen's single list endpoint.
+     * All filters are optional and are applied in the database, so a returned page
+     * contains a page of actual matches and the pagination totals are correct.
+     *
+     * @param scheduledDate  exact scheduled date, omit for any
+     * @param status         ticket status, omit or "ALL" for any
+     * @param generatorName  case-insensitive substring of the generator's name
+     * @param employeeId     only tickets this employee is assigned to
+     */
+    @GetMapping("/search")
+    public ResponseEntity<Page<MainTicket>> searchTickets(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate scheduledDate,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String generatorName,
+            @RequestParam(required = false) Long employeeId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "scheduledTime") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir) {
+
+        Sort sort = SortWhitelist.resolve(sortBy, sortDir, SORTABLE_FIELDS, "scheduledTime");
+        Pageable pageable = PageRequest.of(page, size, sort);
+        return ResponseEntity.ok(
+                ticketService.searchTickets(scheduledDate, status, generatorName, employeeId, pageable));
     }
 
     /**

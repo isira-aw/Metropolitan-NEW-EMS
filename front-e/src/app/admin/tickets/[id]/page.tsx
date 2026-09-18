@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { ticketService, approvalService } from '@/lib/services/admin.service';
+import { ticketService, approvalService, jobCardImageService } from '@/lib/services/admin.service';
 import { MainTicket, MiniJobCard, PageResponse } from '@/types';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import Card from '@/components/ui/Card';
@@ -12,6 +12,7 @@ import Pagination from '@/components/ui/Pagination';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
+import JobCardImage from '@/components/ui/JobCardImage';
 import { formatDateTime, formatMinutes } from '@/lib/utils/format';
 import {
   ArrowLeft,
@@ -50,6 +51,20 @@ export default function AdminTicketDetail() {
   const [rejectingId, setRejectingId] = useState<number | null>(null);
   const [rejectionNoteInput, setRejectionNoteInput] = useState('');
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+
+  /**
+   * The full-size preview needs the actual data URL (for both `src` and the download
+   * link), and job card payloads no longer carry it. Fetch it when the thumbnail is
+   * clicked - JobCardImage caches the same response, so this is usually free.
+   */
+  const openImagePreview = async (miniJobCardId: number) => {
+    try {
+      const { imageBase64 } = await jobCardImageService.getForAdmin(miniJobCardId);
+      if (imageBase64) setPreviewImageUrl(imageBase64);
+    } catch {
+      // Interceptor already surfaces a toast; nothing useful to add here.
+    }
+  };
 
   useEffect(() => {
     loadTicket();
@@ -263,14 +278,17 @@ export default function AdminTicketDetail() {
                         <p className="text-[10px] font-black text-black/50 uppercase tracking-widest mb-2 flex items-center gap-2">
                           <ImageIcon size={13} /> Site Evidence
                         </p>
-                        {job.imageUrl ? (
+                        {job.hasImage ? (
                           <button
                             type="button"
-                            onClick={() => setPreviewImageUrl(job.imageUrl!)}
+                            onClick={() => openImagePreview(job.id)}
                             className="relative group/img cursor-zoom-in block w-full text-left"
                           >
-                            <img
-                              src={job.imageUrl}
+                            <JobCardImage
+                              miniJobCardId={job.id}
+                              hasImage={job.hasImage}
+                              scope="admin"
+                              fetcher={jobCardImageService.getForAdmin}
                               alt="Site work evidence"
                               className="rounded-xl w-full h-28 object-cover shadow-sm grayscale group-hover/img:grayscale-0 transition-all duration-500"
                             />

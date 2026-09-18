@@ -27,6 +27,21 @@ export function getTodayInTimezone(): string {
 }
 
 /**
+ * Format a Date as yyyy-MM-dd using its *local* calendar fields.
+ *
+ * Use this instead of `date.toISOString().split('T')[0]`, which first converts to
+ * UTC and therefore reports the wrong day for part of every day in any timezone
+ * ahead of UTC - in Asia/Colombo (UTC+5:30) anything after 18:30 local rolls
+ * forward, and anything before 05:30 rolls back.
+ */
+export function toLocalIsoDate(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+/**
  * Get the current date and time in the configured timezone
  * @returns Date object
  */

@@ -1,5 +1,6 @@
 package com.ems.service;
 
+import com.ems.dto.EmployeeOptionDTO;
 import com.ems.dto.UserPutRequest;
 import com.ems.dto.UserRequest;
 import com.ems.entity.User;
@@ -10,6 +11,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class UserService {
@@ -55,6 +58,16 @@ public class UserService {
 
     public Page<User> getAdmins(Pageable pageable) {
         return userRepository.findByRole(UserRole.ADMIN, pageable);
+    }
+
+    /**
+     * Every employee as a minimal {id, fullName, active} row, for dropdowns and
+     * filter selects. Unpaginated on purpose: the payload is small enough to send
+     * whole, which is what removes the silent truncation those controls had from
+     * their hard-coded page sizes.
+     */
+    public List<EmployeeOptionDTO> getEmployeeOptions(boolean activeOnly) {
+        return userRepository.findEmployeeOptions(UserRole.EMPLOYEE, activeOnly);
     }
 
     public User getUserById(Long id) {

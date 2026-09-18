@@ -7,6 +7,7 @@ import { MiniJobCard, JobStatusLog, JobStatus } from '@/types';
 import StatusBadge from '@/components/ui/StatusBadge';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import JobCardImage, { invalidateJobCardImageCache } from '@/components/ui/JobCardImage';
 import { formatDateTime, formatMinutes } from '@/lib/utils/format';
 import { Star, CheckCircle, Clock, MapPin, AlertTriangle, ChevronLeft, Camera, Shield, Info, ExternalLink, Check } from 'lucide-react';
 import EmployeeLayout from '@/components/layouts/EmployeeLayout';
@@ -154,6 +155,9 @@ export default function JobCardDetail() {
     try {
       await jobCardService.uploadImage(id, selectedFile);
       setSelectedFile(null);
+      // The photo is fetched separately and cached, so drop the cached copy or the
+      // newly uploaded one won't show until the session ends.
+      invalidateJobCardImageCache(id);
       loadJobCard();
     } catch (error) {
       console.error(error);
@@ -291,9 +295,16 @@ export default function JobCardDetail() {
             <Camera size={18} className="text-brand" /> Job Photo Evidence
           </h3>
 
-          {jobCard.imageUrl && (
+          {jobCard.hasImage && (
             <div className="mb-6 rounded-2xl overflow-hidden border-4 border-brand/10">
-              <img src={jobCard.imageUrl} alt="Review" className="w-full object-cover max-h-[300px]" />
+              <JobCardImage
+                miniJobCardId={jobCard.id}
+                hasImage={jobCard.hasImage}
+                scope="employee"
+                fetcher={jobCardService.getImage}
+                alt="Review"
+                className="w-full object-cover max-h-[300px]"
+              />
             </div>
           )}
 

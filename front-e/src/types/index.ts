@@ -189,9 +189,34 @@ export interface MiniJobCard {
   endTime?: string;
   approved: boolean;
   workMinutes: number;
-  imageUrl?: string;
+  /**
+   * Whether a photo has been uploaded for this job card. The image itself is no
+   * longer part of this payload - it was a multi-megabyte base64 blob repeated
+   * once per row in every list response. Fetch it on demand with
+   * jobCardImageService.getForEmployee / getForAdmin.
+   */
+  hasImage: boolean;
   rejectionNote?: string;
   createdAt: string;
+}
+
+/** Response shape of the job-card image endpoints. */
+export interface JobCardImageResponse {
+  imageBase64: string | null;
+}
+
+/**
+ * Minimal employee row for dropdowns and filter selects, from
+ * GET /admin/users/employees/options. Deliberately tiny so the whole list can be
+ * returned in one response rather than truncated at an arbitrary page size.
+ */
+export interface EmployeeOption {
+  id: number;
+  fullName: string;
+  email?: string;
+  active: boolean;
+  /** Lets <Avatar> skip the photo request for employees known to have none. */
+  hasProfilePicture: boolean;
 }
 
 export interface BulkApprovalResult {

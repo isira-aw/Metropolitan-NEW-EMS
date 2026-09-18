@@ -4,9 +4,11 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
@@ -15,18 +17,40 @@ import java.util.function.Function;
 
 @Component
 public class JwtUtil {
-    
+
+    // HS256 requires a key of at least 256 bits. jjwt throws WeakKeyException when
+    // given less, but only at the moment a token is first signed or parsed - i.e.
+    // on the first real request, long after the app reported itself healthy. The
+    // startup check below turns that into an immediate, obvious boot failure.
+    private static final int MIN_SECRET_BYTES = 32;
+
     @Value("${jwt.secret}")
     private String secret;
-    
+
     @Value("${jwt.access-token-expiration}")
     private Long accessTokenExpiration;
-    
+
     @Value("${jwt.refresh-token-expiration}")
     private Long refreshTokenExpiration;
-    
+
+    @PostConstruct
+    void validateSecret() {
+        if (secret == null || secret.isBlank()) {
+            throw new IllegalStateException(
+                    "JWT_SECRET is not set. Set it to a random value of at least "
+                            + MIN_SECRET_BYTES + " bytes before starting the application.");
+        }
+        int length = secret.getBytes(StandardCharsets.UTF_8).length;
+        if (length < MIN_SECRET_BYTES) {
+            // Deliberately reports only the length - never the secret itself.
+            throw new IllegalStateException(
+                    "JWT_SECRET is too short for HS256: " + length + " bytes, minimum is "
+                            + MIN_SECRET_BYTES + ". Generate one with: openssl rand -base64 64");
+        }
+    }
+
     private Key getSigningKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes());
+        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
     
     public String generateAccessToken(String username, String role) {

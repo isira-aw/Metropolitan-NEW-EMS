@@ -1,5 +1,7 @@
 'use client';
 
+import { toLocalIsoDate } from '@/lib/config/timezone';
+
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { reportService, userService } from '@/lib/services/admin.service';
@@ -10,7 +12,7 @@ import {
   DailyTimeTrackingReportDTO,
   EmployeeDailyWorkTimeReportDTO,
   LocationPoint,
-  User,
+  EmployeeOption,
 } from '@/types';
 import {
   Calendar,
@@ -28,7 +30,7 @@ import {
 
 export default function AdminReports() {
   const [loading, setLoading] = useState(true);
-  const [employees, setEmployees] = useState<User[]>([]);
+  const [employees, setEmployees] = useState<EmployeeOption[]>([]);
 
   // Filters
   const [startDate, setStartDate] = useState('');
@@ -50,15 +52,15 @@ export default function AdminReports() {
     const end = new Date();
     const start = new Date();
     start.setDate(start.getDate() - 7);
-    setEndDate(end.toISOString().split('T')[0]);
-    setStartDate(start.toISOString().split('T')[0]);
+    setEndDate(toLocalIsoDate(end));
+    setStartDate(toLocalIsoDate(start));
     setLoading(false);
   }, []);
 
   const loadEmployees = async () => {
     try {
-      const response = await userService.getEmployees({ page: 0, size: 1000 });
-      setEmployees(response.content);
+      const response = await userService.getEmployeeOptions(true);
+      setEmployees(response);
     } catch (error) {
       console.error('Error loading employees:', error);
     }

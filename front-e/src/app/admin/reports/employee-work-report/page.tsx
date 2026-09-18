@@ -1,12 +1,13 @@
 'use client';
 
+import { toLocalIsoDate } from '@/lib/config/timezone';
+
 import { useState, useEffect } from 'react';
 import { reportService, userService } from '@/lib/services/admin.service';
 import {
   EmployeeWorkReportDTO,
   DailyWorkRecord,
-  User,
-  UserRole,
+  EmployeeOption,
 } from '@/types';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import Card from '@/components/ui/Card';
@@ -26,7 +27,7 @@ import {
 } from 'lucide-react';
 
 export default function EmployeeWorkReportPage() {
-  const [employees, setEmployees] = useState<User[]>([]);
+  const [employees, setEmployees] = useState<EmployeeOption[]>([]);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(
     null
   );
@@ -43,17 +44,14 @@ export default function EmployeeWorkReportPage() {
     const now = new Date();
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
     const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    setStartDate(firstDay.toISOString().split('T')[0]);
-    setEndDate(lastDay.toISOString().split('T')[0]);
+    setStartDate(toLocalIsoDate(firstDay));
+    setEndDate(toLocalIsoDate(lastDay));
   }, []);
 
   const loadEmployees = async () => {
     try {
-      const response = await userService.getEmployees({
-        page: 0,
-        size: 1000,
-      });
-      setEmployees(response.content);
+      const response = await userService.getEmployeeOptions(true);
+      setEmployees(response);
     } catch (err: any) {
       console.error('Failed to load employees:', err);
     }

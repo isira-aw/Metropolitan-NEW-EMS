@@ -9,6 +9,7 @@ import {
   PageResponse,
   PageRequest,
   JobStatus,
+  JobCardImageResponse,
 } from '@/types';
 
 // ===========================
@@ -93,6 +94,15 @@ export const jobCardService = {
 
   async getPendingCount(): Promise<number> {
     const response = await apiClient.get<number>('/employee/job-cards/pending/count');
+    return response.data;
+  },
+
+  // Job card payloads carry only `hasImage`; the blob is fetched here on demand so
+  // list responses stay small. Ownership is enforced server-side.
+  async getImage(id: number): Promise<JobCardImageResponse> {
+    const response = await apiClient.get<JobCardImageResponse>(`/employee/job-cards/${id}/image`, {
+      skipGlobalLoading: true,
+    });
     return response.data;
   },
 

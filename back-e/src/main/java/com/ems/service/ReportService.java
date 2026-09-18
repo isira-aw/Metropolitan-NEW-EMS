@@ -288,9 +288,11 @@ public class ReportService {
         Generator generator = generatorRepository.findById(generatorId)
                 .orElseThrow(() -> new RuntimeException("Generator not found"));
 
-        List<MainTicket> tickets = mainTicketRepository.findAll().stream()
-                .filter(t -> t.getGenerator().getId().equals(generatorId))
-                .toList();
+        // Filter by generator in the database instead of scanning every ticket in
+        // the system in memory. Identical result set, far fewer rows loaded.
+        List<MainTicket> tickets = mainTicketRepository
+                .findByGeneratorId(generatorId, org.springframework.data.domain.Pageable.unpaged())
+                .getContent();
 
         long completed = tickets.stream().filter(t -> t.getStatus() == JobStatus.COMPLETED).count();
 
