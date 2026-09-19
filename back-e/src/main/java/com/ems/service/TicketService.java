@@ -7,7 +7,9 @@ import com.ems.dto.MainTicketRequest;
 import com.ems.dto.StatusUpdateRequest;
 import com.ems.entity.*;
 import com.ems.repository.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -21,6 +23,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class TicketService {
     
     @Autowired
@@ -58,6 +61,15 @@ public class TicketService {
 
     @Autowired
     private NotificationService notificationService;
+
+    /**
+     * Self-reference through the Spring proxy, so bulk operations can invoke this
+     * bean's own @Transactional methods and actually get a transaction each. Lazy to
+     * avoid a circular-dependency failure at startup.
+     */
+    @Autowired
+    @Lazy
+    private TicketService self;
 
     @Transactional
     public MainTicket createMainTicket(MainTicketRequest request, String createdBy) {
@@ -128,10 +140,22 @@ public class TicketService {
             throw new RuntimeException("Unauthorized: This job card doesn't belong to you");
         }
 
-        // Employee Status Update Restriction: Only allow updating status for tickets scheduled for today
+        // Employee Status Update Restriction: Only allow updating status for tickets scheduled for today.
+        //
+        // One deliberate exception: a job card an admin has REJECTED. Rejection puts the
+        // card back to ON_HOLD with a rejection note, but admins routinely review work
+        // the day after it was done - and without this exception the scheduled date has
+        // already passed by then, leaving the employee permanently unable to correct it
+        // (which in turn permanently blocks endDay for that date). The exception is
+        // narrow on purpose: it requires BOTH ON_HOLD status AND a rejection note, so it
+        // cannot be used to bypass the restriction for any other state.
         LocalDate today = LocalDate.now(timeZoneConfig.getZoneId());
         LocalDate ticketScheduledDate = miniJobCard.getMainTicket().getScheduledDate();
-        if (!ticketScheduledDate.equals(today)) {
+        boolean isRejectedCorrection = miniJobCard.getStatus() == JobStatus.ON_HOLD
+                && miniJobCard.getRejectionNote() != null
+                && !miniJobCard.getRejectionNote().isBlank();
+
+        if (!ticketScheduledDate.equals(today) && !isRejectedCorrection) {
             throw new RuntimeException("Cannot update status for tickets not scheduled for today. This ticket is scheduled for " +
                     ticketScheduledDate + ". Only tickets scheduled for today (" + today + ") can be updated.");
         }
@@ -383,6 +407,30 @@ public class TicketService {
         return employeeScoreRepository.save(employeeScore);
     }
     
+    /**
+     * Base64 image for a mini job card, restricted to the employee it belongs to.
+     * Kept separate from the job-card payload itself so list responses never carry
+     * the blob - see MiniJobCard#imageUrl.
+     *
+     * @return the stored data URL, or empty when no photo has been uploaded
+     */
+    public Optional<String> getJobCardImageForEmployee(Long miniJobCardId, String username) {
+        // Reuses the existing ownership check, so an employee cannot read another
+        // employee's photo by guessing an id.
+        MiniJobCard card = getJobCardByIdForEmployee(miniJobCardId, username);
+        return Optional.ofNullable(card.getImageUrl()).filter(url -> !url.isBlank());
+    }
+
+    /**
+     * Base64 image for any mini job card. Callers must already be ADMIN - enforced by
+     * the /api/admin/** security rule on the controller.
+     */
+    public Optional<String> getJobCardImage(Long miniJobCardId) {
+        MiniJobCard card = miniJobCardRepository.findById(miniJobCardId)
+                .orElseThrow(() -> new RuntimeException("Mini job card not found"));
+        return Optional.ofNullable(card.getImageUrl()).filter(url -> !url.isBlank());
+    }
+
     public List<JobStatusLog> getJobStatusLogs(Long miniJobCardId) {
         return jobStatusLogRepository.findByMiniJobCardIdOrderByLoggedAtDesc(miniJobCardId);
     }
@@ -440,7 +488,7 @@ public class TicketService {
 
         return miniJobCardRepository.countByEmployeeAndMainTicket_ScheduledDateAndStatus(
                 employee,
-                LocalDate.now(),
+                LocalDate.now(timeZoneConfig.getZoneId()),
                 JobStatus.PENDING
         );
     }
@@ -624,6 +672,26 @@ public class TicketService {
         return mainTicketRepository.findByCreatedBy(createdBy, pageable);
     }
 
+    /**
+     * Combined, fully server-side ticket search for the admin tickets screen.
+     * Every filter is optional. See MainTicketRepository#search for why this moved
+     * off the client.
+     *
+     * @param status blank/null/"ALL" means no status filter
+     */
+    public Page<MainTicket> searchTickets(LocalDate scheduledDate, String status,
+                                          String generatorName, Long employeeId,
+                                          Pageable pageable) {
+        JobStatus jobStatus = null;
+        if (status != null && !status.isBlank() && !status.equalsIgnoreCase("ALL")) {
+            jobStatus = JobStatus.valueOf(status.toUpperCase());
+        }
+
+        String name = (generatorName == null || generatorName.isBlank()) ? null : generatorName.trim();
+
+        return mainTicketRepository.search(scheduledDate, jobStatus, name, employeeId, pageable);
+    }
+
     @Transactional
     public MainTicket cancelTicket(Long id) {
         MainTicket ticket = mainTicketRepository.findById(id)
@@ -786,6 +854,21 @@ public class TicketService {
     }
 
     /**
+     * Pending approvals (COMPLETED + approved=false) whose startTime falls on the given
+     * date - the approvals screen's plain date filter.
+     *
+     * <p>This filtering previously happened in the browser: the page fetched up to 1000
+     * job cards in one response and discarded most of them. Same cards, same ordering,
+     * one page at a time.
+     */
+    public Page<MiniJobCard> getPendingApprovalsByStartDate(LocalDate date, Pageable pageable) {
+        LocalDateTime start = date.atStartOfDay();
+        LocalDateTime end = date.plusDays(1).atStartOfDay();
+        return miniJobCardRepository.findByStatusAndApprovedAndStartTimeBetween(
+                JobStatus.COMPLETED, false, start, end, pageable);
+    }
+
+    /**
      * Counts of pending approvals (COMPLETED + approved=false), grouped by the
      * LocalDate of endTime, for every day in the given month that has at least
      * one such job card. Powers the monthly calendar highlight on the admin
@@ -845,7 +928,7 @@ public class TicketService {
                 employeeScoreRepository.save(employeeScore);
             } catch (Exception e) {
                 // Log but don't fail approval if score creation fails
-                System.err.println("Warning: Failed to create EmployeeScore for job card " + miniJobCardId + ": " + e.getMessage());
+                log.warn("Failed to create EmployeeScore for job card {}", miniJobCardId, e);
             }
         }
 
@@ -868,14 +951,26 @@ public class TicketService {
         return miniJobCardRepository.save(card);
     }
 
-    @Transactional
+    /**
+     * Approve several job cards, reporting per-card success and failure.
+     *
+     * <p>Deliberately NOT @Transactional. It used to be, which meant a failure
+     * partway through left the shared persistence context dirty: the exception was
+     * caught and the loop continued, but subsequent saves - or the final commit -
+     * could then fail, so the method could report successes that were silently rolled
+     * back. Each card is now approved in its own transaction via the self-injected
+     * proxy below, so one bad card genuinely cannot undo the others.
+     */
     public BulkApprovalResult bulkApproveMiniJobCards(List<Long> ids, String approvedBy) {
         List<MiniJobCard> approved = new ArrayList<>();
         List<BulkApprovalResult.FailedApproval> failed = new ArrayList<>();
 
         for (Long id : ids) {
             try {
-                MiniJobCard card = approveMiniJobCard(id, approvedBy);
+                // Through the proxy, so @Transactional on approveMiniJobCard actually
+                // applies - a direct this.approveMiniJobCard(...) call would bypass it
+                // and run inside whatever transaction the caller had.
+                MiniJobCard card = self.approveMiniJobCard(id, approvedBy);
                 approved.add(card);
             } catch (Exception e) {
                 failed.add(new BulkApprovalResult.FailedApproval(id, e.getMessage()));
@@ -970,7 +1065,7 @@ public class TicketService {
                     employeeScoreRepository.save(employeeScore);
                     count++;
                 } catch (Exception e) {
-                    System.err.println("Warning: Failed to backfill score for job card " + jobCard.getId() + ": " + e.getMessage());
+                    log.warn("Failed to backfill score for job card {}", jobCard.getId(), e);
                 }
             }
         }

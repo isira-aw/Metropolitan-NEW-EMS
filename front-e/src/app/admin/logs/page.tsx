@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { logsService, userService } from '@/lib/services/admin.service';
-import { ActivityLogResponse, PageResponse, User } from '@/types';
+import { ActivityLogResponse, PageResponse, EmployeeOption } from '@/types';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import Card from '@/components/ui/Card';
 import Pagination from '@/components/ui/Pagination';
@@ -13,7 +13,7 @@ import { MapPin, Search, Filter, RotateCcw, Calendar, User as UserIcon, ArrowRig
 export default function AdminLogs() {
   const [loading, setLoading] = useState(true);
   const [logs, setLogs] = useState<PageResponse<ActivityLogResponse> | null>(null);
-  const [employees, setEmployees] = useState<User[]>([]);
+  const [employees, setEmployees] = useState<EmployeeOption[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
 
   // Filters
@@ -28,8 +28,9 @@ export default function AdminLogs() {
 
   const loadEmployees = async () => {
     try {
-      const response = await userService.getEmployees({ page: 0, size: 1000, activeOnly: false });
-      setEmployees(response.content);
+      // Includes inactive staff - their historical activity still shows in the logs.
+      const response = await userService.getEmployeeOptions(false);
+      setEmployees(response);
     } catch (error) {
       console.error('Error loading employees:', error);
     }

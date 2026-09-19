@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ticketService, generatorService, userService } from '@/lib/services/admin.service';
-import { MainTicket, MainTicketRequest, PageResponse, Generator, User, JobCardType, JobStatus, TicketAssignment } from '@/types';
+import { MainTicket, MainTicketRequest, PageResponse, Generator, User, JobCardType, JobStatus, TicketAssignment, EmployeeOption } from '@/types';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import Card from '@/components/ui/Card';
 import StatusBadge from '@/components/ui/StatusBadge';
@@ -12,6 +12,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Avatar from '@/components/ui/Avatar';
 import { formatDate } from '@/lib/utils/format';
+import { toLocalIsoDate } from '@/lib/config/timezone';
 import {
   Plus, Search, Calendar, User as UserIcon,
   Settings2, Filter, X, Clock, Star,
@@ -44,7 +45,9 @@ export default function AdminTickets() {
     return `${year}-${month}-${day}`;
   };
   const [selectedDate, setSelectedDate] = useState(getTodayDate());
-  const [employees, setEmployees] = useState<User[]>([]);
+  // Lightweight {id, fullName, active, hasProfilePicture} rows - enough for the
+  // filter dropdown and the selected-employee chips, without loading full users.
+  const [employees, setEmployees] = useState<EmployeeOption[]>([]);
   const [generatorSearchTerm, setGeneratorSearchTerm] = useState('');
   const [employeeFilter, setEmployeeFilter] = useState<number | 'ALL'>('ALL');
   const [ticketAssignments, setTicketAssignments] = useState<Record<number, User[]>>({});
@@ -78,49 +81,41 @@ export default function AdminTickets() {
   const loadTickets = async (page: number) => {
     try {
       setLoading(true);
-      let data: PageResponse<MainTicket>;
-      const allTickets = await ticketService.getByDateRange(selectedDate, selectedDate, { page, size: 10 });
 
-      if (statusFilter !== 'ALL') {
-        const filteredContent = allTickets.content.filter(ticket => ticket.status === statusFilter);
-        data = { ...allTickets, content: filteredContent, totalElements: filteredContent.length, totalPages: Math.ceil(filteredContent.length / 10) };
-      } else {
-        data = allTickets;
-      }
+      // Every filter is applied in the database. Previously this fetched one page
+      // and filtered those ten rows in the browser, then recomputed totalPages from
+      // the survivors - so matching tickets on other pages were invisible and the
+      // pager showed wrong counts.
+      const data = await ticketService.search(
+        {
+          scheduledDate: selectedDate,
+          status: statusFilter === 'ALL' ? undefined : statusFilter,
+          generatorName: generatorSearchTerm.trim() || undefined,
+          employeeId: employeeFilter === 'ALL' ? undefined : employeeFilter,
+        },
+        { page, size: 10 }
+      );
 
-      if (generatorSearchTerm.trim() !== '') {
-        const searchLower = generatorSearchTerm.toLowerCase();
-        data.content = data.content.filter(ticket => ticket.generator.name.toLowerCase().includes(searchLower));
-        data.totalElements = data.content.length;
-        data.totalPages = Math.ceil(data.content.length / 10);
-      }
+      // Fetch the visible page's assignments in parallel. This used to await one
+      // request per ticket inside a for-loop, so a 10-row page meant 10 sequential
+      // round trips stacked on top of the list request itself.
+      const assignmentResults = await Promise.all(
+        data.content.map(async (ticket) => {
+          try {
+            const ticketAssignments = await ticketService.getAssignments(ticket.id);
+            return { id: ticket.id, employees: ticketAssignments.map((a: TicketAssignment) => a.employee) };
+          } catch {
+            return { id: ticket.id, employees: [] as User[] };
+          }
+        })
+      );
 
       const assignments: Record<number, User[]> = {};
-      const filteredTickets: MainTicket[] = [];
-
-      for (const ticket of data.content) {
-        try {
-          const ticketAssignments = await ticketService.getAssignments(ticket.id);
-          const assignedEmployees = ticketAssignments.map((a: TicketAssignment) => a.employee);
-          assignments[ticket.id] = assignedEmployees;
-          if (employeeFilter !== 'ALL') {
-            if (assignedEmployees.some(emp => emp.id === employeeFilter)) filteredTickets.push(ticket);
-          } else {
-            filteredTickets.push(ticket);
-          }
-        } catch (error) {
-          assignments[ticket.id] = [];
-          if (employeeFilter === 'ALL') filteredTickets.push(ticket);
-        }
+      for (const { id: ticketId, employees } of assignmentResults) {
+        assignments[ticketId] = employees;
       }
 
       setTicketAssignments(assignments);
-      if (employeeFilter !== 'ALL') {
-        data.content = filteredTickets;
-        data.totalElements = filteredTickets.length;
-        data.totalPages = Math.ceil(filteredTickets.length / 10);
-      }
-
       setTickets(data);
       setCurrentPage(page);
     } catch (error) {
@@ -130,10 +125,13 @@ export default function AdminTickets() {
     }
   };
 
+  // Employee filter options. The whole list arrives in one small response, so
+  // nobody is silently dropped past an arbitrary page size the way the previous
+  // size:100 fetch did.
   const loadEmployees = async () => {
     try {
-      const data = await userService.getEmployees({ page: 0, size: 100, activeOnly: true });
-      setEmployees(data.content);
+      const data = await userService.getEmployeeOptions(true);
+      setEmployees(data);
     } catch (error) {
       console.error('Error loading employees:', error);
     }
@@ -215,7 +213,9 @@ export default function AdminTickets() {
     setEditingTicketId(null);
     setFormData({
       generatorId: 0, title: '', description: '', type: JobCardType.SERVICE,
-      weight: 3, scheduledDate: tomorrow.toISOString().split('T')[0],
+      // toLocalIsoDate, not toISOString: the latter converts to UTC, so in
+      // Asia/Colombo (UTC+5:30) "tomorrow" resolved to today after 18:30 local.
+      weight: 3, scheduledDate: toLocalIsoDate(tomorrow),
       scheduledTime: '09:00:00', employeeIds: [],
     });
     setSelectedGenerator(null);

@@ -1,5 +1,6 @@
 package com.ems.controller;
 
+import com.ems.config.SortWhitelist;
 import com.ems.dto.GeneratorRequest;
 import com.ems.entity.Generator;
 import com.ems.entity.MainTicket;
@@ -16,6 +17,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+import java.util.Set;
 
 /**
  * Admin Generator Controller
@@ -28,6 +30,10 @@ import jakarta.validation.Valid;
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminGeneratorController {
+
+    /** Properties a client may sort the generator list by - see SortWhitelist. */
+    private static final Set<String> SORTABLE_FIELDS = Set.of(
+            "createdAt", "name", "model", "locationName", "capacity");
 
     private final GeneratorService generatorService;
     private final TicketService ticketService;
@@ -62,9 +68,7 @@ public class AdminGeneratorController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
 
-        Sort sort = sortDir.equalsIgnoreCase("asc")
-            ? Sort.by(sortBy).ascending()
-            : Sort.by(sortBy).descending();
+        Sort sort = SortWhitelist.resolve(sortBy, sortDir, SORTABLE_FIELDS, "createdAt");
 
         Pageable pageable = PageRequest.of(page, size, sort);
         Page<Generator> generators = generatorService.getAllGenerators(pageable);

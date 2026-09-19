@@ -28,6 +28,8 @@ import {
   ActivityLogFilterRequest,
   ProfilePictureResponse,
   ProfilePictureRequest,
+  JobCardImageResponse,
+  EmployeeOption,
 } from '@/types';
 
 // ===========================
@@ -84,6 +86,16 @@ export const userService = {
   async search(query: string, params: PageRequest = {}): Promise<PageResponse<User>> {
     const response = await apiClient.get<PageResponse<User>>('/admin/users/search', {
       params: { query, page: 0, size: 10, ...params },
+    });
+    return response.data;
+  },
+
+  // Minimal {id, fullName, active} rows for dropdowns and filter selects. Replaces
+  // calling getEmployees with a hard-coded size of 100/1000, which silently dropped
+  // anyone past the cap.
+  async getEmployeeOptions(activeOnly = true): Promise<EmployeeOption[]> {
+    const response = await apiClient.get<EmployeeOption[]>('/admin/users/employees/options', {
+      params: { activeOnly },
     });
     return response.data;
   },
@@ -241,6 +253,28 @@ export const ticketService = {
     return response.data;
   },
 
+  /**
+   * Combined server-side ticket search. All filters optional.
+   *
+   * Replaces fetching one page and then filtering it in the browser, which hid
+   * matching tickets that happened to sit on another page and produced wrong
+   * pagination totals.
+   */
+  async search(
+    filters: {
+      scheduledDate?: string;
+      status?: string;
+      generatorName?: string;
+      employeeId?: number;
+    } = {},
+    params: PageRequest = {}
+  ): Promise<PageResponse<MainTicket>> {
+    const response = await apiClient.get<PageResponse<MainTicket>>('/admin/tickets/search', {
+      params: { page: 0, size: 10, ...filters, ...params },
+    });
+    return response.data;
+  },
+
   async getByDateRange(startDate: string, endDate: string, params: PageRequest = {}): Promise<PageResponse<MainTicket>> {
     const response = await apiClient.get<PageResponse<MainTicket>>('/admin/tickets/date-range', {
       params: { startDate, endDate, page: 0, size: 10, ...params },
@@ -274,7 +308,12 @@ export const ticketService = {
 // ===========================
 
 export const approvalService = {
-  async getPending(params: PageRequest & { date?: string } = {}): Promise<PageResponse<MiniJobCard>> {
+  // `date` filters on endTime (calendar view); `startDate` filters on startTime
+  // (plain date filter). Both are applied server-side - this used to fetch 1000 rows
+  // and filter in the browser.
+  async getPending(
+    params: PageRequest & { date?: string; startDate?: string } = {}
+  ): Promise<PageResponse<MiniJobCard>> {
     const response = await apiClient.get<PageResponse<MiniJobCard>>('/admin/approvals/pending', {
       params: { page: 0, size: 10, ...params },
     });
@@ -325,9 +364,12 @@ export const approvalService = {
     return response.data;
   },
 
-  async updateScore(scoreId: number, newScore: number): Promise<EmployeeScore> {
+  // The backend parameter is `newWeight` (weight and score are the same value on
+  // EmployeeScore). This previously sent `newScore`, so every call failed with
+  // "Required request parameter 'newWeight' is not present".
+  async updateScore(scoreId: number, newWeight: number): Promise<EmployeeScore> {
     const response = await apiClient.put<EmployeeScore>(`/admin/approvals/scores/${scoreId}`, null, {
-      params: { newScore },
+      params: { newWeight },
     });
     return response.data;
   },
@@ -338,6 +380,23 @@ export const approvalService = {
 
   async getStatistics(): Promise<ApprovalStatistics> {
     const response = await apiClient.get<ApprovalStatistics>('/admin/approvals/statistics');
+    return response.data;
+  },
+};
+
+// ===========================
+// JOB CARD IMAGE ENDPOINT
+// ===========================
+//
+// Mini job card payloads carry only `hasImage`. The base64 blob lives behind this
+// endpoint so approvals/ticket lists don't ship megabytes per row. ADMIN only -
+// employees use jobCardService.getImage for their own cards.
+export const jobCardImageService = {
+  async getForAdmin(miniJobCardId: number): Promise<JobCardImageResponse> {
+    const response = await apiClient.get<JobCardImageResponse>(
+      `/admin/job-cards/${miniJobCardId}/image`,
+      { skipGlobalLoading: true }
+    );
     return response.data;
   },
 };

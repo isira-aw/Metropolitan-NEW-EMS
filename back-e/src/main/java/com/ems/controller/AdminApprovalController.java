@@ -52,12 +52,24 @@ public class AdminApprovalController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false)
             @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
-            LocalDate date) {
+            LocalDate date,
+            @RequestParam(required = false)
+            @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            LocalDate startDate) {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("endTime").descending());
-        Page<MiniJobCard> pendingApprovals = date != null
-                ? ticketService.getPendingApprovalsByDate(date, pageable)
-                : ticketService.getPendingApprovals(pageable);
+
+        // `date` filters on endTime (calendar view). `startDate` filters on startTime
+        // and backs the plain date filter, which the page used to apply client-side
+        // after fetching up to 1000 rows. `date` wins if both are supplied.
+        Page<MiniJobCard> pendingApprovals;
+        if (date != null) {
+            pendingApprovals = ticketService.getPendingApprovalsByDate(date, pageable);
+        } else if (startDate != null) {
+            pendingApprovals = ticketService.getPendingApprovalsByStartDate(startDate, pageable);
+        } else {
+            pendingApprovals = ticketService.getPendingApprovals(pageable);
+        }
         return ResponseEntity.ok(pendingApprovals);
     }
 

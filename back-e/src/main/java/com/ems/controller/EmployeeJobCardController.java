@@ -185,6 +185,28 @@ public class EmployeeJobCardController {
     }
 
     /**
+     * Fetch the job card's photo on demand.
+     *
+     * The blob is no longer embedded in job card payloads (see MiniJobCard#imageUrl),
+     * so list views stay small and only screens that actually display a photo pay for
+     * it. Ownership is checked, so an employee can only read their own card's image.
+     *
+     * @param id Mini job card ID
+     * @param auth Spring Security authentication
+     * @return {"imageBase64": "data:image/...;base64,..."} or {"imageBase64": null}
+     */
+    @GetMapping("/{id}/image")
+    public ResponseEntity<Map<String, String>> getJobCardImage(
+            @PathVariable Long id,
+            Authentication auth) {
+
+        String image = ticketService.getJobCardImageForEmployee(id, auth.getName()).orElse(null);
+        Map<String, String> body = new HashMap<>();
+        body.put("imageBase64", image);
+        return ResponseEntity.ok(body);
+    }
+
+    /**
      * Upload image for a job card as base64
      * Only one image per job card is allowed
      * Validates that job card belongs to current employee

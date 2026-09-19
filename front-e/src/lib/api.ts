@@ -40,6 +40,14 @@ apiClient.interceptors.request.use(
     return config;
   },
   (error) => {
+    // A request rejected before it was ever dispatched still incremented the
+    // counter above. Without this the overlay's pending count never returns to
+    // zero and the full-screen "Processing..." spinner blocks the UI until the
+    // page is reloaded.
+    if (error?.config?._globalLoadingStarted) {
+      endGlobalLoading();
+      error.config._globalLoadingStarted = false;
+    }
     return Promise.reject(error);
   }
 );
@@ -58,9 +66,16 @@ apiClient.interceptors.response.use(
       error.config._globalLoadingStarted = false;
     }
 
-    if (error.response?.status === 401 || error.response?.status === 403) {
-      // Token expired/missing/invalid - the backend rejects both cases as 401 or 403
-      // depending on the endpoint, so try a refresh before forcing the user back to login.
+    // Only 401 means "your token is missing, expired or invalid" - that is the one
+    // case worth attempting a refresh for.
+    //
+    // 403 deliberately does NOT trigger this path. A 403 means the caller is
+    // authenticated but not allowed to perform *this* action (an employee hitting an
+    // admin route, a @PreAuthorize denial, an ownership check). Treating it as an
+    // expired session meant any such response silently wiped localStorage and bounced
+    // the user to /login mid-task, which read as the app randomly logging people out.
+    // A 403 is now surfaced as a normal error like any other.
+    if (error.response?.status === 401) {
       const refreshToken = localStorage.getItem('refreshToken');
       if (refreshToken && !error.config?._retriedAfterRefresh) {
         try {

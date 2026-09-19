@@ -1,5 +1,7 @@
 package com.ems.controller;
 
+import com.ems.config.SortWhitelist;
+import com.ems.dto.EmployeeOptionDTO;
 import com.ems.dto.UserPutRequest;
 import com.ems.dto.UserRequest;
 import com.ems.entity.User;
@@ -15,6 +17,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Admin User Controller
@@ -27,6 +31,10 @@ import jakarta.validation.Valid;
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminUserController {
+
+    /** Properties a client may sort the user list by - see SortWhitelist. */
+    private static final Set<String> SORTABLE_FIELDS = Set.of(
+            "createdAt", "fullName", "username", "email", "role", "active");
 
     private final UserService userService;
 
@@ -61,9 +69,7 @@ public class AdminUserController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
 
-        Sort sort = sortDir.equalsIgnoreCase("asc")
-            ? Sort.by(sortBy).ascending()
-            : Sort.by(sortBy).descending();
+        Sort sort = SortWhitelist.resolve(sortBy, sortDir, SORTABLE_FIELDS, "createdAt");
 
         Pageable pageable = PageRequest.of(page, size, sort);
         Page<User> users = userService.getAllUsers(pageable);
@@ -88,6 +94,22 @@ public class AdminUserController {
         Pageable pageable = PageRequest.of(page, size, Sort.by("fullName").ascending());
         Page<User> employees = userService.getEmployees(pageable, activeOnly);
         return ResponseEntity.ok(employees);
+    }
+
+    /**
+     * All employees as minimal {id, fullName, active} rows for dropdowns and filter
+     * selects.
+     *
+     * Those controls previously called /employees with a hard-coded size of 100 or
+     * 1000 and silently dropped anyone past the cap. This returns the full list in
+     * one small response instead.
+     *
+     * @param activeOnly restrict to active employees (default true)
+     */
+    @GetMapping("/employees/options")
+    public ResponseEntity<List<EmployeeOptionDTO>> getEmployeeOptions(
+            @RequestParam(defaultValue = "true") boolean activeOnly) {
+        return ResponseEntity.ok(userService.getEmployeeOptions(activeOnly));
     }
 
     /**

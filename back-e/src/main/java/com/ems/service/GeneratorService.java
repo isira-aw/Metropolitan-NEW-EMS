@@ -63,6 +63,20 @@ public class GeneratorService {
     }
     
     public void deleteGenerator(Long id) {
+        // Verify the generator exists first so a bad id is a clear "not found"
+        // rather than a silent no-op (deleteById ignores missing rows).
+        getGeneratorById(id);
+
+        // main_tickets.generator_id is a NOT NULL foreign key, so deleting a
+        // generator that still has tickets raises a DataIntegrityViolationException
+        // that the global handler renders as "An unexpected error occurred". Check
+        // up front and explain what is actually blocking the delete.
+        long ticketCount = mainTicketRepository.countByGeneratorId(id);
+        if (ticketCount > 0) {
+            throw new RuntimeException("Cannot delete this generator - it still has "
+                    + ticketCount + " ticket(s) linked to it. Delete or reassign those tickets first.");
+        }
+
         generatorRepository.deleteById(id);
     }
 
@@ -77,9 +91,12 @@ public class GeneratorService {
     public Map<String, Object> getGeneratorStatistics(Long id) {
         Generator generator = getGeneratorById(id);
 
-        List<MainTicket> allTickets = mainTicketRepository.findAll().stream()
-                .filter(t -> t.getGenerator().getId().equals(id))
-                .toList();
+        // Filter by generator in the database rather than loading every ticket in the
+        // system and discarding most of them in memory. Same result, one indexed
+        // lookup instead of a full table scan.
+        List<MainTicket> allTickets = mainTicketRepository
+                .findByGeneratorId(id, Pageable.unpaged())
+                .getContent();
 
         long totalTickets = allTickets.size();
         long completedTickets = allTickets.stream()

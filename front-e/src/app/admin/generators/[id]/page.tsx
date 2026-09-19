@@ -9,6 +9,7 @@ import Card from '@/components/ui/Card';
 import StatusBadge from '@/components/ui/StatusBadge';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import Pagination from '@/components/ui/Pagination';
+import { toLocalIsoDate } from '@/lib/config/timezone';
 import {
   Zap, ArrowLeft, Calendar, BarChart3,
   CheckCircle2, Clock, Filter, X,
@@ -74,7 +75,9 @@ export default function AdminGeneratorDetail() {
   };
 
   const handleTodayFilter = () => {
-    const today = new Date().toISOString().split('T')[0];
+    // Local calendar date, not UTC - toISOString() reports the wrong day for part
+    // of every day in Asia/Colombo.
+    const today = toLocalIsoDate(new Date());
     setSelectedDate(today);
     setDateFilterActive(true);
     setCurrentPage(0);

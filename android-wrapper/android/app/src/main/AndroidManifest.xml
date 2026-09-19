@@ -1,7 +1,17 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--
+        allowBackup is disabled deliberately. The app is a WebView onto the EMS
+        portal, so the only thing in its data directory is the WebView's storage -
+        which holds the signed-in user's JWT access and refresh tokens. With backup
+        enabled that directory can be pulled off a device via adb backup or synced to
+        cloud backup, handing over working credentials. There is no local app state
+        worth preserving, so nothing is lost by turning it off.
+    -->
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
