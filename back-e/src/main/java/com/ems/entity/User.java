@@ -45,7 +45,11 @@ public class User {
     // System-seeded admin accounts (see AdminBootstrapInitializer) that can never be
     // deactivated, demoted, or have their role changed via the admin API - guarantees
     // there is always at least one working admin login.
-    @Column(name = "protected_account", nullable = false)
+    // columnDefinition supplies a DEFAULT so ddl-auto=update can add this NOT NULL
+    // column to the existing (non-empty) users table in production - a plain
+    // "not null" ADD COLUMN with no default fails against existing rows (same class
+    // of bug fixed for has_profile_picture below).
+    @Column(name = "protected_account", nullable = false, columnDefinition = "boolean not null default false")
     private Boolean protectedAccount = false;
 
     // Denormalized flag kept in sync whenever a ProfilePicture is set/removed
