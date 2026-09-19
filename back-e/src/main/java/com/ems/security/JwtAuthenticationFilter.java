@@ -44,13 +44,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             if (jwtUtil.validateToken(token, username)) {
                 String role = jwtUtil.extractRole(token);
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        username,
-                        null,
-                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role))
-                );
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+
+                // Only an access token carries a role claim; a refresh token does not
+                // (see JwtUtil.generateRefreshToken). Without this check a refresh
+                // token presented as a Bearer token authenticated successfully with
+                // the authority "ROLE_null", which satisfies no role rule and no
+                // ownership check - so every protected call returned 403. That is a
+                // token problem, and 403 is the one status the client will not
+                // refresh or sign out on, leaving the user stuck. Leaving the request
+                // unauthenticated instead routes it to JwtAuthenticationEntryPoint,
+                // which answers 401 so the client can renew or send them to sign in.
+                if (role != null && !role.isBlank()) {
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            username,
+                            null,
+                            Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role))
+                    );
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                } else {
+                    logger.debug("Token has no role claim - treating as unauthenticated");
+                }
             }
         }
         

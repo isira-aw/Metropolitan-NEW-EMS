@@ -1,5 +1,7 @@
 package com.ems.config;
 
+import com.ems.security.JwtAccessDeniedHandler;
+import com.ems.security.JwtAuthenticationEntryPoint;
 import com.ems.security.JwtAuthenticationFilter;
 import com.ems.security.RateLimitFilter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +35,12 @@ public class SecurityConfig {
     @Autowired
     private RateLimitFilter rateLimitFilter;
 
+    @Autowired
+    private JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+
+    @Autowired
+    private JwtAccessDeniedHandler jwtAccessDeniedHandler;
+
     @Value("${app.frontend.url}")
     private String frontendUrl;
 
@@ -51,6 +59,16 @@ public class SecurityConfig {
             )
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            )
+            // Without these two the chain falls back to Http403ForbiddenEntryPoint,
+            // because it configures neither HTTP Basic nor form login. That default
+            // answered 403 for an expired or missing token, so the API never emitted
+            // 401 at all - and the web client, which refreshes on 401 and deliberately
+            // ignores 403, could never renew a session. Users were locked out an hour
+            // after signing in, once the access token expired.
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                .accessDeniedHandler(jwtAccessDeniedHandler)
             )
             // Registration order matters here: both filters are inserted immediately
             // before UsernamePasswordAuthenticationFilter and ties preserve insertion
