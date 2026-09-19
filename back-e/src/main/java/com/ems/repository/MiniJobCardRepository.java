@@ -1,5 +1,7 @@
 package com.ems.repository;
 
+import com.ems.dto.EmployeeJobCardStatsDTO;
+import com.ems.dto.PendingApprovalDayCountDTO;
 import com.ems.entity.JobStatus;
 import com.ems.entity.MiniJobCard;
 import com.ems.entity.User;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 
 @Repository
@@ -85,4 +88,143 @@ public interface MiniJobCardRepository extends JpaRepository<MiniJobCard, Long> 
     Page<MiniJobCard> findByStatusAndApprovedAndStartTimeBetween(
             @Param("status") JobStatus status, @Param("approved") Boolean approved,
             @Param("start") LocalDateTime start, @Param("end") LocalDateTime end, Pageable pageable);
+
+    // ------------------------------------------------------------------
+    // Aggregates
+    //
+    // Everything below answers a question with counts and sums computed in the
+    // database. None of it selects MiniJobCard entities, and therefore none of it
+    // reads the imageUrl column.
+    //
+    // That distinction is the point: imageUrl holds a multi-megabyte base64 photo and
+    // is a plain eagerly-fetched column, so every MiniJobCard entity Hibernate
+    // materialises drags its photo into the heap even though @JsonIgnore keeps it out
+    // of the response. Statistics endpoints that loaded whole tables this way were
+    // exhausting the container's heap in production.
+    // ------------------------------------------------------------------
+
+    /**
+     * Pending approvals (COMPLETED + not approved) grouped by the calendar day of
+     * {@code endTime}, for job cards inside the given half-open range.
+     *
+     * <p>Grouping on YEAR/MONTH/DAY rather than casting to a date keeps the query
+     * portable between PostgreSQL in production and H2 in the tests, and matches the
+     * previous in-memory grouping on {@code endTime.toLocalDate()} exactly: the column
+     * is a timestamp without time zone, so both read the same wall-clock day. Rows with
+     * a null endTime cannot satisfy the range predicate, which reproduces the explicit
+     * null filter the in-memory version applied.
+     */
+    @Query("""
+            SELECT new com.ems.dto.PendingApprovalDayCountDTO(
+                       YEAR(m.endTime), MONTH(m.endTime), DAY(m.endTime), COUNT(m.id))
+            FROM MiniJobCard m
+            WHERE m.status = :status AND m.approved = :approved
+              AND m.endTime >= :start AND m.endTime < :end
+            GROUP BY YEAR(m.endTime), MONTH(m.endTime), DAY(m.endTime)
+            """)
+    List<PendingApprovalDayCountDTO> countPendingApprovalsByDay(
+            @Param("status") JobStatus status, @Param("approved") Boolean approved,
+            @Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    long countByStatus(JobStatus status);
+
+    long countByStatusAndApproved(JobStatus status, Boolean approved);
+
+    long countByEmployee(User employee);
+
+    long countByEmployeeAndStatus(User employee, JobStatus status);
+
+    long countByEmployeeAndStatusIn(User employee, Collection<JobStatus> statuses);
+
+    /**
+     * Sum of workMinutes for one employee over a half-open endTime range. Returns null
+     * when no job card matches - SQL SUM over an empty set is null - so callers treat
+     * null as zero.
+     */
+    @Query("SELECT SUM(m.workMinutes) FROM MiniJobCard m WHERE m.employee = :employee " +
+            "AND m.endTime >= :start AND m.endTime < :end")
+    Long sumWorkMinutesByEmployeeAndEndTimeRange(
+            @Param("employee") User employee,
+            @Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    /**
+     * Per-employee job-card totals over a half-open createdAt range, optionally
+     * narrowed to a single employee. One query in place of one query per employee.
+     */
+    @Query("""
+            SELECT new com.ems.dto.EmployeeJobCardStatsDTO(
+                       m.employee.id,
+                       COUNT(m.id),
+                       SUM(CASE WHEN m.status = com.ems.entity.JobStatus.COMPLETED THEN 1 ELSE 0 END),
+                       COALESCE(SUM(m.workMinutes), 0))
+            FROM MiniJobCard m
+            WHERE m.createdAt >= :start AND m.createdAt < :end
+              AND (:employeeId IS NULL OR m.employee.id = :employeeId)
+            GROUP BY m.employee.id
+            """)
+    List<EmployeeJobCardStatsDTO> aggregateByEmployeeForCreatedAtRange(
+            @Param("start") LocalDateTime start, @Param("end") LocalDateTime end,
+            @Param("employeeId") Long employeeId);
+
+    /**
+     * How many *other* job cards this employee has in one of the given statuses on a
+     * scheduled date. Backs the single-active-ticket rule, which previously loaded the
+     * employee's entire job-card history - photos included - to answer the same
+     * question on a hot mobile path.
+     */
+    @Query("SELECT COUNT(m.id) FROM MiniJobCard m WHERE m.employee = :employee " +
+            "AND m.id <> :excludeId AND m.mainTicket.scheduledDate = :date " +
+            "AND m.status IN :statuses")
+    long countOtherCardsForEmployeeOnDateWithStatusIn(
+            @Param("employee") User employee, @Param("excludeId") Long excludeId,
+            @Param("date") LocalDate date, @Param("statuses") Collection<JobStatus> statuses);
+
+    /**
+     * Job cards for one employee on a scheduled date whose status is not one of the
+     * given "finished" statuses. Backs the day-closure restriction, which needs the
+     * matching tickets themselves to name them in the error message.
+     */
+    @Query("SELECT m FROM MiniJobCard m WHERE m.employee = :employee " +
+            "AND m.mainTicket.scheduledDate = :date AND m.status NOT IN :statuses")
+    List<MiniJobCard> findByEmployeeAndScheduledDateAndStatusNotIn(
+            @Param("employee") User employee, @Param("date") LocalDate date,
+            @Param("statuses") Collection<JobStatus> statuses);
+
+    /**
+     * One employee's job cards inside a half-open endTime range. Same rows the work
+     * report used to obtain by loading the employee's whole history and filtering in
+     * the browser-facing service layer.
+     */
+    @Query("SELECT m FROM MiniJobCard m WHERE m.employee = :employee " +
+            "AND m.endTime >= :start AND m.endTime < :end")
+    List<MiniJobCard> findByEmployeeAndEndTimeRange(
+            @Param("employee") User employee,
+            @Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    /**
+     * Ids of approved, completed job cards that have an endTime but no EmployeeScore
+     * yet - the exact set the score backfill acts on.
+     *
+     * <p>The backfill used to load the whole table as entities and skip almost all of
+     * them. Selecting ids lets it fetch only the cards it will actually write a score
+     * for, so an admin running it cannot take the container down with it.
+     */
+    @Query("""
+            SELECT m.id FROM MiniJobCard m
+            WHERE m.approved = true
+              AND m.status = com.ems.entity.JobStatus.COMPLETED
+              AND m.endTime IS NOT NULL
+              AND NOT EXISTS (SELECT 1 FROM EmployeeScore s WHERE s.miniJobCard.id = m.id)
+            ORDER BY m.id
+            """)
+    List<Long> findIdsNeedingScoreBackfill();
+
+    /**
+     * One employee's job cards inside a half-open startTime range.
+     */
+    @Query("SELECT m FROM MiniJobCard m WHERE m.employee = :employee " +
+            "AND m.startTime >= :start AND m.startTime < :end")
+    List<MiniJobCard> findByEmployeeAndStartTimeRange(
+            @Param("employee") User employee,
+            @Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 }

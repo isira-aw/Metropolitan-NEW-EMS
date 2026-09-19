@@ -26,6 +26,13 @@ public interface UserRepository extends JpaRepository<User, Long> {
             String fullName, String email, Pageable pageable);
     boolean existsByRole(UserRole role);
 
+    // Headcounts for the admin dashboard. Previously derived by loading every user
+    // with the role and counting/filtering the list in memory. countByRoleAndActive
+    // matches on active = true, which excludes nulls in exactly the same way the
+    // previous "getActive() != null && getActive()" filter did.
+    long countByRole(UserRole role);
+    long countByRoleAndActive(UserRole role, Boolean active);
+
     /**
      * Minimal employee rows for dropdowns/filters - id, name and active flag only.
      * Projected in the query so the base64-free but still comparatively wide User

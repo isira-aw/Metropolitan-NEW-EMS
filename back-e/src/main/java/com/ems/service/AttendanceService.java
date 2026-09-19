@@ -41,6 +41,15 @@ public class AttendanceService {
 
     private static final LocalTime MORNING_OT_CUTOFF = LocalTime.of(8, 30);
     private static final LocalTime EVENING_OT_CUTOFF = LocalTime.of(17, 30);
+
+    /**
+     * The statuses that mean a job card no longer blocks closing the workday. Named
+     * here so the day-closure rule can be expressed as a NOT IN clause without
+     * restating it, and it stays the exact complement of the previous check
+     * ({@code status != COMPLETED && status != CANCEL}).
+     */
+    private static final List<JobStatus> FINISHED_JOB_STATUSES =
+            List.of(JobStatus.COMPLETED, JobStatus.CANCEL);
     
     public EmployeeDayAttendance startDay(String username) {
         User employee = userRepository.findByUsername(username)
@@ -90,12 +99,12 @@ public class AttendanceService {
             throw new RuntimeException("Day already ended");
         }
 
-        // Day Closure Restriction: Check for open tickets scheduled for today
-        List<MiniJobCard> allEmployeeCards = miniJobCardRepository.findByEmployee(employee, Pageable.unpaged()).getContent();
-        List<MiniJobCard> openTicketsForToday = allEmployeeCards.stream()
-                .filter(card -> card.getMainTicket().getScheduledDate().equals(today))
-                .filter(card -> card.getStatus() != JobStatus.COMPLETED && card.getStatus() != JobStatus.CANCEL)
-                .collect(Collectors.toList());
+        // Day Closure Restriction: Check for open tickets scheduled for today.
+        // Filtered in the database. This used to load every job card the employee has
+        // ever had, each carrying a multi-megabyte base64 photo in imageUrl, to find
+        // the handful scheduled for today. Same cards, same rule, bounded cost.
+        List<MiniJobCard> openTicketsForToday = miniJobCardRepository
+                .findByEmployeeAndScheduledDateAndStatusNotIn(employee, today, FINISHED_JOB_STATUSES);
 
         if (!openTicketsForToday.isEmpty()) {
             String ticketNumbers = openTicketsForToday.stream()

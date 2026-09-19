@@ -3,7 +3,9 @@ package com.ems.service;
 import com.ems.config.TimeZoneConfig;
 import com.ems.dto.BulkApprovalResult;
 import com.ems.dto.EmployeeDashboardResponse;
+import com.ems.dto.EmployeeJobCardStatsDTO;
 import com.ems.dto.MainTicketRequest;
+import com.ems.dto.PendingApprovalDayCountDTO;
 import com.ems.dto.StatusUpdateRequest;
 import com.ems.entity.*;
 import com.ems.repository.*;
@@ -12,7 +14,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,7 +29,15 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 public class TicketService {
-    
+
+    /**
+     * The statuses that mean a job card is currently being worked on. Named here so
+     * the single-active-ticket rule and the employee dashboard's "in progress" count
+     * cannot drift apart, and so the set can be passed straight to an IN clause.
+     */
+    private static final Set<JobStatus> ACTIVE_JOB_STATUSES =
+            Set.of(JobStatus.TRAVELING, JobStatus.STARTED, JobStatus.ON_HOLD);
+
     @Autowired
     private MainTicketRepository mainTicketRepository;
     
@@ -176,14 +188,13 @@ public class TicketService {
             request.getNewStatus() == JobStatus.STARTED ||
             request.getNewStatus() == JobStatus.ON_HOLD) {
 
-            // Check if there's already another active ticket scheduled for TODAY
-            List<MiniJobCard> allEmployeeCards = miniJobCardRepository.findByEmployee(employee, Pageable.unpaged()).getContent();
-            boolean hasActiveTicket = allEmployeeCards.stream()
-                    .filter(card -> !card.getId().equals(miniJobCardId)) // Exclude current ticket
-                    .filter(card -> card.getMainTicket().getScheduledDate().equals(today)) // Only check tickets scheduled for today
-                    .anyMatch(card -> card.getStatus() == JobStatus.TRAVELING ||
-                                     card.getStatus() == JobStatus.STARTED ||
-                                     card.getStatus() == JobStatus.ON_HOLD);
+            // Check if there's already another active ticket scheduled for TODAY.
+            // Counted in the database: this runs on every status change from the
+            // mobile app, and it used to load the employee's entire job-card history
+            // - base64 photos included - to answer a yes/no question.
+            boolean hasActiveTicket = miniJobCardRepository
+                    .countOtherCardsForEmployeeOnDateWithStatusIn(
+                            employee, miniJobCardId, today, ACTIVE_JOB_STATUSES) > 0;
 
             if (hasActiveTicket) {
                 throw new RuntimeException("You already have an active ticket in progress. Please complete or cancel it before starting another ticket.");
@@ -497,26 +508,25 @@ public class TicketService {
         User employee = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
 
-        List<MiniJobCard> allCards = miniJobCardRepository.findByEmployee(employee, Pageable.unpaged()).getContent();
-
-        long pendingCount = allCards.stream().filter(c -> c.getStatus() == JobStatus.PENDING).count();
-        long inProgressCount = allCards.stream().filter(c ->
-                c.getStatus() == JobStatus.TRAVELING ||
-                c.getStatus() == JobStatus.STARTED ||
-                c.getStatus() == JobStatus.ON_HOLD
-        ).count();
-        long completedCount = allCards.stream().filter(c -> c.getStatus() == JobStatus.COMPLETED).count();
+        // Counts and the monthly work total are computed in the database. This
+        // endpoint used to load every job card the employee has ever had - each
+        // carrying a multi-megabyte base64 photo in imageUrl - and reduce the list in
+        // memory, so its cost grew without limit as an employee accumulated history.
+        long totalCount = miniJobCardRepository.countByEmployee(employee);
+        long pendingCount = miniJobCardRepository.countByEmployeeAndStatus(employee, JobStatus.PENDING);
+        long inProgressCount = miniJobCardRepository.countByEmployeeAndStatusIn(employee, ACTIVE_JOB_STATUSES);
+        long completedCount = miniJobCardRepository.countByEmployeeAndStatus(employee, JobStatus.COMPLETED);
 
         // Get current month stats
         LocalDate now = LocalDate.now(timeZoneConfig.getZoneId());
         LocalDate monthStart = now.withDayOfMonth(1);
 
-        int totalWorkMinutes = allCards.stream()
-                .filter(c -> c.getEndTime() != null &&
-                        c.getEndTime().toLocalDate().isAfter(monthStart.minusDays(1)) &&
-                        c.getEndTime().toLocalDate().isBefore(now.plusDays(1)))
-                .mapToInt(MiniJobCard::getWorkMinutes)
-                .sum();
+        // Same window as before: job cards whose endTime falls on a day from the first
+        // of the month through today inclusive, expressed as a half-open range so the
+        // database can answer it.
+        Long monthWorkMinutes = miniJobCardRepository.sumWorkMinutesByEmployeeAndEndTimeRange(
+                employee, monthStart.atStartOfDay(), now.plusDays(1).atStartOfDay());
+        int totalWorkMinutes = monthWorkMinutes == null ? 0 : monthWorkMinutes.intValue();
 
         // Get scores
         List<EmployeeScore> scores = employeeScoreRepository.findByEmployeeId(employee.getId());
@@ -525,11 +535,13 @@ public class TicketService {
                 .average()
                 .orElse(0.0);
 
-        // Recent job cards
-        List<MiniJobCard> recentCards = allCards.stream()
-                .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
-                .limit(5)
-                .collect(Collectors.toList());
+        // Recent job cards - the five newest, ordered and limited by the database.
+        // These are real entities because the response has always included them, but
+        // five rows is a bounded cost where the whole history was not.
+        List<MiniJobCard> recentCards = miniJobCardRepository.findByEmployee(
+                        employee,
+                        PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "createdAt", "id")))
+                .getContent();
 
         boolean dayStarted = attendanceService.hasDayStarted(employee);
         boolean dayEnded = attendanceService.hasDayEnded(employee);
@@ -538,7 +550,7 @@ public class TicketService {
         dashboard.setPendingJobCardsCount(pendingCount);
         dashboard.setInProgressJobCardsCount(inProgressCount);
         dashboard.setCompletedJobCardsCount(completedCount);
-        dashboard.setTotalJobCardsCount((long) allCards.size());
+        dashboard.setTotalJobCardsCount(totalCount);
         dashboard.setTotalWorkMinutes(totalWorkMinutes);
         dashboard.setTotalOTMinutes(0); // Would need attendance calculation
         dashboard.setMorningOTMinutes(0);
@@ -560,29 +572,26 @@ public class TicketService {
         LocalDate startDate = LocalDate.of(year, month, 1);
         LocalDate endDate = startDate.plusMonths(1).minusDays(1);
 
-        List<MiniJobCard> cards = miniJobCardRepository.findByEmployee(employee, Pageable.unpaged())
-                .getContent()
+        // Aggregated in the database over the same createdAt window (first of the
+        // month through the last day, inclusive) rather than by loading the
+        // employee's whole job-card history and filtering it here. An employee with
+        // no cards in the month produces no group, which is the zeroed result below.
+        EmployeeJobCardStatsDTO stats = miniJobCardRepository
+                .aggregateByEmployeeForCreatedAtRange(
+                        startDate.atStartOfDay(), endDate.plusDays(1).atStartOfDay(),
+                        employee.getId())
                 .stream()
-                .filter(c -> c.getCreatedAt().toLocalDate().isAfter(startDate.minusDays(1)) &&
-                        c.getCreatedAt().toLocalDate().isBefore(endDate.plusDays(1)))
-                .collect(Collectors.toList());
+                .findFirst()
+                .orElse(new EmployeeJobCardStatsDTO(employee.getId(), 0L, 0L, 0L));
 
-        int totalWorkMinutes = cards.stream()
-                .mapToInt(MiniJobCard::getWorkMinutes)
-                .sum();
+        Map<String, Object> result = new HashMap<>();
+        result.put("year", year);
+        result.put("month", month);
+        result.put("totalWorkMinutes", stats.totalWorkMinutes().intValue());
+        result.put("completedJobs", stats.completedJobs());
+        result.put("totalJobs", stats.totalJobs().intValue());
 
-        long completedJobs = cards.stream()
-                .filter(c -> c.getStatus() == JobStatus.COMPLETED)
-                .count();
-
-        Map<String, Object> stats = new HashMap<>();
-        stats.put("year", year);
-        stats.put("month", month);
-        stats.put("totalWorkMinutes", totalWorkMinutes);
-        stats.put("completedJobs", completedJobs);
-        stats.put("totalJobs", cards.size());
-
-        return stats;
+        return result;
     }
 
     // Admin ticket methods
@@ -874,6 +883,18 @@ public class TicketService {
      * one such job card. Powers the monthly calendar highlight on the admin
      * approvals page.
      *
+     * <p>The counting happens in the database. It used to happen here, over every
+     * unreviewed job card in the month loaded as a full entity - and a MiniJobCard
+     * entity carries {@code imageUrl}, a multi-megabyte base64 photo in an eagerly
+     * fetched column. {@code @JsonIgnore} keeps that photo out of the response but
+     * cannot stop Hibernate reading it, so a month's worth of pending cards was enough
+     * to exhaust the container's heap; the process was killed and every request in
+     * flight, plus everything until the restart finished, came back as a 502.
+     *
+     * <p>The response is unchanged: same map, same keys, same counts. Days with no
+     * unreviewed card still produce no entry, because a GROUP BY only emits groups
+     * that exist.
+     *
      * @param year  calendar year, e.g. 2026
      * @param month calendar month 1-12
      * @return map of date -> count, only including dates with count > 0
@@ -883,14 +904,12 @@ public class TicketService {
         LocalDateTime start = monthStart.atStartOfDay();
         LocalDateTime end = monthStart.plusMonths(1).atStartOfDay();
 
-        List<MiniJobCard> cards = miniJobCardRepository
-                .findByStatusAndApprovedAndEndTimeBetween(JobStatus.COMPLETED, false, start, end);
-
-        return cards.stream()
-                .filter(c -> c.getEndTime() != null)
-                .collect(Collectors.groupingBy(
-                        c -> c.getEndTime().toLocalDate(),
-                        Collectors.counting()));
+        return miniJobCardRepository
+                .countPendingApprovalsByDay(JobStatus.COMPLETED, false, start, end)
+                .stream()
+                .collect(Collectors.toMap(
+                        PendingApprovalDayCountDTO::date,
+                        PendingApprovalDayCountDTO::count));
     }
 
     @Transactional
@@ -1011,20 +1030,17 @@ public class TicketService {
         employeeScoreRepository.delete(score);
     }
 
+    /**
+     * Approval totals, counted in the database.
+     *
+     * <p>Previously loaded every mini job card in the system - each carrying its
+     * base64 photo in {@code imageUrl} - to produce three numbers. Same numbers, no
+     * rows materialised.
+     */
     public Map<String, Object> getApprovalStatistics() {
-        List<MiniJobCard> allCards = miniJobCardRepository.findAll();
-
-        long pending = allCards.stream()
-                .filter(c -> c.getStatus() == JobStatus.COMPLETED && !c.getApproved())
-                .count();
-
-        long approved = allCards.stream()
-                .filter(c -> c.getStatus() == JobStatus.COMPLETED && c.getApproved())
-                .count();
-
-        long rejected = allCards.stream()
-                .filter(c -> c.getStatus() == JobStatus.ON_HOLD)
-                .count();
+        long pending = miniJobCardRepository.countByStatusAndApproved(JobStatus.COMPLETED, false);
+        long approved = miniJobCardRepository.countByStatusAndApproved(JobStatus.COMPLETED, true);
+        long rejected = miniJobCardRepository.countByStatus(JobStatus.ON_HOLD);
 
         Map<String, Object> stats = new HashMap<>();
         stats.put("pendingApprovals", pending);
@@ -1044,11 +1060,22 @@ public class TicketService {
      */
     @Transactional
     public int backfillEmployeeScores(String adminUsername) {
-        List<MiniJobCard> allJobCards = miniJobCardRepository.findAll();
+        // Select the ids that qualify, then load only those cards. The same rows are
+        // written as before; what changes is that the whole mini_job_cards table -
+        // every row carrying a multi-megabyte base64 photo in imageUrl - is no longer
+        // pulled into the heap so that almost all of it can be skipped. No existing
+        // score is read, changed or removed here; this only inserts missing ones.
+        List<Long> candidateIds = miniJobCardRepository.findIdsNeedingScoreBackfill();
         int count = 0;
 
-        for (MiniJobCard jobCard : allJobCards) {
-            // Only backfill for approved, completed jobs that don't have scores
+        for (Long candidateId : candidateIds) {
+            MiniJobCard jobCard = miniJobCardRepository.findById(candidateId).orElse(null);
+            if (jobCard == null) {
+                continue;
+            }
+
+            // Re-checked against the loaded card so the guard is identical to the one
+            // this method has always applied.
             if (jobCard.getApproved() &&
                 jobCard.getStatus() == JobStatus.COMPLETED &&
                 jobCard.getEndTime() != null &&
