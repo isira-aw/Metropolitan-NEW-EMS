@@ -23,6 +23,10 @@ public interface MainTicketRepository extends JpaRepository<MainTicket, Long> {
     // violation is reported as a clear 400 instead of surfacing as a generic 500.
     long countByGeneratorId(Long generatorId);
 
+    // Status totals for the admin dashboard. Previously derived by loading every
+    // ticket in the system and counting the list in memory.
+    long countByStatus(JobStatus status);
+
     /**
      * Combined ticket search for the admin tickets screen. Every filter is optional -
      * pass null to skip it.

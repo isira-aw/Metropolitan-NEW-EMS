@@ -3,6 +3,8 @@ package com.ems.service;
 import com.ems.config.TimeZoneConfig;
 import com.ems.dto.DailyTimeTrackingReportDTO;
 import com.ems.dto.EmployeeDailyWorkTimeReportDTO;
+import com.ems.dto.EmployeeJobCardStatsDTO;
+import com.ems.dto.EmployeeOtMinutesDTO;
 import com.ems.dto.OTReportResponse;
 import com.ems.dto.TimeTrackingReportResponse;
 import com.ems.entity.*;
@@ -70,36 +72,35 @@ public class ReportService {
             report.setDayStartTime(attendance.getDayStartTime());
             report.setDayEndTime(attendance.getDayEndTime());
             
-            // Calculate work, idle, and travel time from job status logs
-            List<MiniJobCard> jobCards = miniJobCardRepository.findByEmployee(
-                    attendance.getEmployee(), 
-                    org.springframework.data.domain.Pageable.unpaged()
-            ).getContent();
-            
+            // Calculate work, idle, and travel time from job status logs.
+            // Restricted to this attendance day by the database; this sits inside a
+            // loop over every attendance row and used to load the employee's entire
+            // job-card history - base64 photos included - on each pass.
+            List<MiniJobCard> jobCards = miniJobCardRepository.findByEmployeeAndStartTimeRange(
+                    attendance.getEmployee(),
+                    attendance.getDate().atStartOfDay(),
+                    attendance.getDate().plusDays(1).atStartOfDay());
+
             int totalWorkMinutes = 0;
             int totalIdleMinutes = 0;
             int totalTravelMinutes = 0;
-            
+
             for (MiniJobCard jobCard : jobCards) {
-                if (jobCard.getStartTime() != null && 
-                    jobCard.getStartTime().toLocalDate().equals(attendance.getDate())) {
-                    
-                    List<JobStatusLog> logs = jobStatusLogRepository.findByMiniJobCardIdOrderByLoggedAtDesc(jobCard.getId());
-                    
-                    // Calculate time in each status
-                    for (int i = logs.size() - 1; i > 0; i--) {
-                        JobStatusLog currentLog = logs.get(i);
-                        JobStatusLog nextLog = logs.get(i - 1);
-                        
-                        long minutes = java.time.Duration.between(currentLog.getLoggedAt(), nextLog.getLoggedAt()).toMinutes();
-                        
-                        if (currentLog.getNewStatus() == JobStatus.STARTED) {
-                            totalWorkMinutes += minutes;
-                        } else if (currentLog.getNewStatus() == JobStatus.ON_HOLD) {
-                            totalIdleMinutes += minutes;
-                        } else if (currentLog.getNewStatus() == JobStatus.TRAVELING) {
-                            totalTravelMinutes += minutes;
-                        }
+                List<JobStatusLog> logs = jobStatusLogRepository.findByMiniJobCardIdOrderByLoggedAtDesc(jobCard.getId());
+
+                // Calculate time in each status
+                for (int i = logs.size() - 1; i > 0; i--) {
+                    JobStatusLog currentLog = logs.get(i);
+                    JobStatusLog nextLog = logs.get(i - 1);
+
+                    long minutes = java.time.Duration.between(currentLog.getLoggedAt(), nextLog.getLoggedAt()).toMinutes();
+
+                    if (currentLog.getNewStatus() == JobStatus.STARTED) {
+                        totalWorkMinutes += minutes;
+                    } else if (currentLog.getNewStatus() == JobStatus.ON_HOLD) {
+                        totalIdleMinutes += minutes;
+                    } else if (currentLog.getNewStatus() == JobStatus.TRAVELING) {
+                        totalTravelMinutes += minutes;
                     }
                 }
             }
@@ -158,14 +159,13 @@ public class ReportService {
             List<EmployeeDayAttendance> attendances = attendanceRepository.findByEmployeeAndDateBetween(employee, startDate, endDate);
             
             for (EmployeeDayAttendance attendance : attendances) {
-                // Get job cards for this employee on this date
-                List<MiniJobCard> jobCards = miniJobCardRepository.findByEmployee(
-                        employee, 
-                        org.springframework.data.domain.Pageable.unpaged()
-                ).getContent().stream()
-                        .filter(jc -> jc.getStartTime() != null && 
-                                     jc.getStartTime().toLocalDate().equals(attendance.getDate()))
-                        .collect(Collectors.toList());
+                // Get job cards for this employee on this date. Filtered by the
+                // database; each pass of this nested loop used to load the employee's
+                // whole job-card history, base64 photos included, and keep one day.
+                List<MiniJobCard> jobCards = miniJobCardRepository.findByEmployeeAndStartTimeRange(
+                        employee,
+                        attendance.getDate().atStartOfDay(),
+                        attendance.getDate().plusDays(1).atStartOfDay());
                 
                 for (MiniJobCard jobCard : jobCards) {
                     String generatorName = jobCard.getMainTicket().getGenerator().getName();
@@ -249,34 +249,43 @@ public class ReportService {
                     org.springframework.data.domain.Pageable.unpaged()).getContent();
         }
 
+        // Two grouped queries replace two queries per employee, each of which used to
+        // load that employee's entire job-card history - base64 photos included - only
+        // to count and sum it here. With every employee selected that amounted to
+        // pulling the whole mini_job_cards table, photos and all, into the heap.
+        //
+        // Employees with nothing in the window produce no group, so they are defaulted
+        // to zero below and still get a row, exactly as before.
+        Map<Long, EmployeeJobCardStatsDTO> cardStats = miniJobCardRepository
+                .aggregateByEmployeeForCreatedAtRange(
+                        startDate.atStartOfDay(), endDate.plusDays(1).atStartOfDay(), employeeId)
+                .stream()
+                .collect(Collectors.toMap(EmployeeJobCardStatsDTO::employeeId, s -> s));
+
+        Map<Long, Long> otByEmployee = attendanceRepository
+                .sumOtMinutesByEmployee(startDate, endDate, employeeId)
+                .stream()
+                .collect(Collectors.toMap(EmployeeOtMinutesDTO::employeeId, EmployeeOtMinutesDTO::otMinutes));
+
         List<Map<String, Object>> report = new ArrayList<>();
 
         for (User employee : employees) {
-            List<MiniJobCard> cards = miniJobCardRepository.findByEmployee(
-                            employee, org.springframework.data.domain.Pageable.unpaged())
-                    .getContent()
-                    .stream()
-                    .filter(c -> c.getCreatedAt().toLocalDate().isAfter(startDate.minusDays(1)) &&
-                            c.getCreatedAt().toLocalDate().isBefore(endDate.plusDays(1)))
-                    .toList();
+            EmployeeJobCardStatsDTO stats = cardStats.getOrDefault(
+                    employee.getId(), new EmployeeJobCardStatsDTO(employee.getId(), 0L, 0L, 0L));
 
-            long completedJobs = cards.stream().filter(c -> c.getStatus() == JobStatus.COMPLETED).count();
-            int totalWorkMinutes = cards.stream().mapToInt(MiniJobCard::getWorkMinutes).sum();
-
-            List<EmployeeDayAttendance> attendances = attendanceRepository.findByEmployeeAndDateBetween(
-                    employee, startDate, endDate);
-            int totalOT = attendances.stream()
-                    .mapToInt(a -> a.getMorningOtMinutes() + a.getEveningOtMinutes())
-                    .sum();
+            int totalJobs = stats.totalJobs().intValue();
+            long completedJobs = stats.completedJobs();
+            int totalWorkMinutes = stats.totalWorkMinutes().intValue();
+            int totalOT = otByEmployee.getOrDefault(employee.getId(), 0L).intValue();
 
             Map<String, Object> empReport = new HashMap<>();
             empReport.put("employeeId", employee.getId());
             empReport.put("employeeName", employee.getFullName());
-            empReport.put("totalJobs", cards.size());
+            empReport.put("totalJobs", totalJobs);
             empReport.put("completedJobs", completedJobs);
             empReport.put("totalWorkMinutes", totalWorkMinutes);
             empReport.put("totalOTMinutes", totalOT);
-            empReport.put("completionRate", cards.size() > 0 ? (completedJobs * 100.0 / cards.size()) : 0);
+            empReport.put("completionRate", totalJobs > 0 ? (completedJobs * 100.0 / totalJobs) : 0);
 
             report.add(empReport);
         }
@@ -421,59 +430,52 @@ public class ReportService {
         return csv.toString().getBytes();
     }
 
+    /**
+     * Real-time admin dashboard counters, every one of them computed by the database.
+     *
+     * <p>This method used to begin with {@code mainTicketRepository.findAll()},
+     * {@code miniJobCardRepository.findAll()} and {@code generatorRepository.findAll()},
+     * then run one attendance query per employee. The mini job card load was the fatal
+     * one: {@code MiniJobCard.imageUrl} holds a multi-megabyte base64 photo in an
+     * eagerly fetched column, so loading the table loaded every photo in the system
+     * into the heap. {@code @JsonIgnore} keeps those photos out of the response but
+     * cannot stop Hibernate reading them. The container was killed on heap exhaustion
+     * and everything returned 502 until it finished restarting.
+     *
+     * <p>The numbers and their meanings are unchanged - the same nine keys, computed
+     * over the same rows.
+     */
     public Map<String, Object> getDashboardStatistics() {
-        List<MainTicket> allTickets = mainTicketRepository.findAll();
-        List<MiniJobCard> allJobCards = miniJobCardRepository.findAll();
-        List<User> allEmployees = userRepository.findByRole(UserRole.EMPLOYEE,
-                org.springframework.data.domain.Pageable.unpaged()).getContent();
+        // Employee counts. countByRoleAndActive matches active = true, which excludes
+        // nulls exactly as the previous "getActive() != null && getActive()" did.
+        long totalEmployees = userRepository.countByRole(UserRole.EMPLOYEE);
+        long activeEmployees = userRepository.countByRoleAndActive(UserRole.EMPLOYEE, true);
 
-        // Calculate employee counts
-        long totalEmployees = allEmployees.size();
-        long activeEmployees = allEmployees.stream()
-                .filter(emp -> emp.getActive() != null && emp.getActive())
-                .count();
+        // Generator count
+        long totalGenerators = generatorRepository.count();
 
-        // Calculate generator count
-        long totalGenerators = generatorRepository.findAll().size();
+        // Ticket counts
+        long totalTickets = mainTicketRepository.count();
+        long pendingTickets = mainTicketRepository.countByStatus(JobStatus.PENDING);
+        long completedTickets = mainTicketRepository.countByStatus(JobStatus.COMPLETED);
 
-        // Calculate ticket counts
-        long totalTickets = allTickets.size();
-        long pendingTickets = allTickets.stream()
-                .filter(t -> t.getStatus() == JobStatus.PENDING)
-                .count();
-        long completedTickets = allTickets.stream()
-                .filter(t -> t.getStatus() == JobStatus.COMPLETED)
-                .count();
+        // Pending approvals
+        long pendingApprovals = miniJobCardRepository.countByStatusAndApproved(JobStatus.COMPLETED, false);
 
-        // Calculate pending approvals
-        long pendingApprovals = allJobCards.stream()
-                .filter(c -> c.getStatus() == JobStatus.COMPLETED && !c.getApproved())
-                .count();
-
-        // Calculate monthly work and OT minutes
+        // Monthly work and OT minutes, summed in the database across every employee
+        // rather than one query per employee. Restricted to role EMPLOYEE, which is
+        // the set the previous loop iterated over.
         LocalDate today = LocalDate.now(timeZoneConfig.getZoneId());
         LocalDate firstDayOfMonth = today.withDayOfMonth(1);
         LocalDate lastDayOfMonth = today.withDayOfMonth(today.lengthOfMonth());
 
-        long totalWorkMinutesThisMonth = 0;
-        long totalOTMinutesThisMonth = 0;
+        Long workMinutes = attendanceRepository.sumTotalWorkMinutesByRoleAndDateBetween(
+                UserRole.EMPLOYEE, firstDayOfMonth, lastDayOfMonth);
+        Long otMinutes = attendanceRepository.sumOtMinutesByRoleAndDateBetween(
+                UserRole.EMPLOYEE, firstDayOfMonth, lastDayOfMonth);
 
-        for (User employee : allEmployees) {
-            List<EmployeeDayAttendance> monthlyAttendance =
-                attendanceRepository.findByEmployeeAndDateBetween(employee, firstDayOfMonth, lastDayOfMonth);
-
-            for (EmployeeDayAttendance attendance : monthlyAttendance) {
-                if (attendance.getTotalWorkMinutes() != null) {
-                    totalWorkMinutesThisMonth += attendance.getTotalWorkMinutes();
-                }
-                if (attendance.getMorningOtMinutes() != null) {
-                    totalOTMinutesThisMonth += attendance.getMorningOtMinutes();
-                }
-                if (attendance.getEveningOtMinutes() != null) {
-                    totalOTMinutesThisMonth += attendance.getEveningOtMinutes();
-                }
-            }
-        }
+        long totalWorkMinutesThisMonth = workMinutes == null ? 0L : workMinutes;
+        long totalOTMinutesThisMonth = otMinutes == null ? 0L : otMinutes;
 
         Map<String, Object> stats = new HashMap<>();
         stats.put("totalEmployees", totalEmployees);
@@ -514,15 +516,12 @@ public class ReportService {
         List<EmployeeDayAttendance> attendances = attendanceRepository
                 .findByEmployeeAndDateBetween(employee, startDate, endDate);
 
-        // Fetch all mini job cards in date range
-        List<MiniJobCard> allJobCards = miniJobCardRepository
-                .findByEmployee(employee, org.springframework.data.domain.Pageable.unpaged())
-                .getContent()
-                .stream()
-                .filter(jc -> jc.getEndTime() != null &&
-                        !jc.getEndTime().toLocalDate().isBefore(startDate) &&
-                        !jc.getEndTime().toLocalDate().isAfter(endDate))
-                .collect(Collectors.toList());
+        // Fetch all mini job cards in date range. Filtered by the database on the same
+        // endTime window as before, expressed as a half-open range; it used to load
+        // the employee's whole history - base64 photos included - and discard most of
+        // it here. A null endTime cannot satisfy the range, matching the old filter.
+        List<MiniJobCard> allJobCards = miniJobCardRepository.findByEmployeeAndEndTimeRange(
+                employee, startDate.atStartOfDay(), endDate.plusDays(1).atStartOfDay());
 
         // Fetch scores for the period
         List<EmployeeScore> scores = employeeScoreRepository
@@ -700,14 +699,12 @@ public class ReportService {
             for (EmployeeDayAttendance attendance : attendances) {
                 LocalDate date = attendance.getDate();
 
-                // Get all job cards for this employee on this date
-                List<MiniJobCard> jobCards = miniJobCardRepository
-                        .findByEmployee(employee, org.springframework.data.domain.Pageable.unpaged())
-                        .getContent()
-                        .stream()
-                        .filter(jc -> jc.getStartTime() != null &&
-                                jc.getStartTime().toLocalDate().equals(date))
-                        .collect(Collectors.toList());
+                // Get all job cards for this employee on this date. Filtered by the
+                // database: this sits inside a loop over every employee and every day
+                // in the range, and each iteration used to load that employee's entire
+                // job-card history - base64 photos included - to keep one day's worth.
+                List<MiniJobCard> jobCards = miniJobCardRepository.findByEmployeeAndStartTimeRange(
+                        employee, date.atStartOfDay(), date.plusDays(1).atStartOfDay());
 
                 // Calculate work, idle, and travel time from job status logs
                 int totalWorkMinutes = 0;
