@@ -150,6 +150,11 @@ public interface MiniJobCardRepository extends JpaRepository<MiniJobCard, Long> 
     /**
      * Per-employee job-card totals over a half-open createdAt range, optionally
      * narrowed to a single employee. One query in place of one query per employee.
+     *
+     * <p>{@code :employeeId} is cast in its IS NULL test because PostgreSQL cannot
+     * infer a type for a placeholder that stands alone as {@code $n IS NULL} and
+     * rejects the statement with SQLSTATE 42P18. Without the cast this fails for
+     * every caller that passes null, which is the "all employees" performance report.
      */
     @Query("""
             SELECT new com.ems.dto.EmployeeJobCardStatsDTO(
@@ -159,7 +164,7 @@ public interface MiniJobCardRepository extends JpaRepository<MiniJobCard, Long> 
                        COALESCE(SUM(m.workMinutes), 0))
             FROM MiniJobCard m
             WHERE m.createdAt >= :start AND m.createdAt < :end
-              AND (:employeeId IS NULL OR m.employee.id = :employeeId)
+              AND (CAST(:employeeId AS long) IS NULL OR m.employee.id = :employeeId)
             GROUP BY m.employee.id
             """)
     List<EmployeeJobCardStatsDTO> aggregateByEmployeeForCreatedAtRange(
