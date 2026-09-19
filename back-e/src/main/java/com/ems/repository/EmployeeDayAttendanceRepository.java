@@ -51,6 +51,11 @@ public interface EmployeeDayAttendanceRepository extends JpaRepository<EmployeeD
      * Overtime minutes per employee over an inclusive date range, optionally narrowed
      * to a single employee. Employees with no attendance in the range produce no row;
      * callers default them to zero.
+     *
+     * <p>{@code :employeeId} is cast in its IS NULL test because PostgreSQL cannot
+     * infer a type for a placeholder that stands alone as {@code $n IS NULL} and
+     * rejects the statement with SQLSTATE 42P18. Without the cast this fails for
+     * every caller that passes null, which is the "all employees" performance report.
      */
     @Query("""
             SELECT new com.ems.dto.EmployeeOtMinutesDTO(
@@ -58,7 +63,7 @@ public interface EmployeeDayAttendanceRepository extends JpaRepository<EmployeeD
                        COALESCE(SUM(COALESCE(a.morningOtMinutes, 0) + COALESCE(a.eveningOtMinutes, 0)), 0))
             FROM EmployeeDayAttendance a
             WHERE a.date BETWEEN :startDate AND :endDate
-              AND (:employeeId IS NULL OR a.employee.id = :employeeId)
+              AND (CAST(:employeeId AS long) IS NULL OR a.employee.id = :employeeId)
             GROUP BY a.employee.id
             """)
     List<EmployeeOtMinutesDTO> sumOtMinutesByEmployee(
